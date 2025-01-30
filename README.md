@@ -1,144 +1,187 @@
-# FE Quiz
+# FE-Quiz
 
-## React
+> **공식 문서와 개념을 정리한 MDX 파일을 기반으로, 퀴즈 풀이를 통해 학습할 수 있는 웹 애플리케이션**  
+> React/Next.js 기반으로 동작하며, 다양한 기술 스택(Front/Back/CS/JavaScript/React/Next.js/Node.js 등)에 대한 학습 자료와 퀴즈가 포함되어 있습니다.
 
-1. 기초 개념 단계
+<br />
 
-- Rules of React
+## 데모 (예시)
 
-2. 핵심 Hooks & 기본 컴포넌트
+- 배포 링크: [https://fe-quiz-one.vercel.app](https://fe-quiz-one.vercel.app)
 
-- useState
-- useEffect
-- useRef
-- Fragment
+<br />
 
-3. 성능 최적화 관련 Hooks
+## 주요 기능
 
-- useCallback
-- useMemo
-- memo
-- useLayoutEffect
-- Profiler
+1. **MDX 기반 학습 자료 열람**
 
-4. 상태 관리 심화
+   - `src/constants` 폴더 내에 기술별로 정리된 `.mdx` 파일들을 웹 UI에서 확인 가능합니다.
+   - 문서와 함께 코드 예제가 포함되어 있으며, Tiptap 에디터 등 다양한 텍스트 에디터 기능을 활용해 내용을 표시합니다.
 
-- useReducer
-- useContext
-- createContext
-- useSyncExternalStore
+2. **퀴즈 풀이 기능**
 
-5. 비동기 처리 & 코드 분할
+   - 각 문서 또는 챕터 별로 준비된 퀴즈를 **동적으로 로드**하여 사용자에게 질문을 제공합니다.
+   - **코드 형태의 퀴즈**(code-quiz)부터 단답형, 객관식 등 여러 유형으로 구성되어 있습니다.
 
-- Suspense
-- lazy
-- useTransition
-- useDeferredValue
-- startTransition
+3. **카테고리/챕터 분류**
 
-6. DOM 조작 & 통합
+   - 프론트엔드, 백엔드, 알고리즘, CS 등 다양한 영역을 카테고리별로 나누어 관리합니다.
+   - 학습 진도에 따라 문서를 순서대로 열람하거나, 원하는 주제를 골라 확인할 수 있습니다.
 
-- createPortal
-- createRoot
-- flushSync
-- useImperativeHandle
-- useInsertionEffect
+4. **에디터 기능(Tiptap)**
 
-7. 서버 사이드 렌더링
+   - 개발 문서를 손쉽게 수정·추가할 수 있도록 Tiptap 기반의 에디터를 제공합니다.
+   - 글자 크기, 색상, 테이블, 이미지 삽입, 코드 블록 등 다양한 에디팅 옵션 지원.
 
-- hydrateRoot
-- renderToPipeableStream
-- renderToReadableStream
-- renderToStaticMarkup
+5. **테마 전환** (Next Themes)
+   - 라이트/다크 모드 전환 기능이 제공됩니다.
+   - 사용자 취향 또는 시스템 설정에 따라 UI 테마가 변경됩니다.
 
-8. React Server Components
+<br />
 
-- Server Components
-- Server Functions
-- Directives
+## 기술 스택
 
-9. 고급 최적화 & 유틸리티
+| 분류              | 스택/도구                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Language**      | TypeScript, JavaScript                                                                                          |
+| **Framework**     | [Next.js (v15)](https://nextjs.org/), [React (v19)](https://react.dev/)                                         |
+| **Styling**       | [Tailwind CSS](https://tailwindcss.com/), [Tailwind Typography](https://tailwindcss.com/docs/typography-plugin) |
+| **Editor**        | [Tiptap](https://tiptap.dev/), [MDX](https://mdxjs.com/)                                                        |
+| **State Mgmt**    | [Zustand](https://github.com/pmndrs/zustand)                                                                    |
+| **UI Components** | Radix UI, [Lucide Icons](https://lucide.dev/), Shadcn UI Patterns                                               |
+| **Forms**         | React Hook Form, Zod                                                                                            |
+| **Others**        | ESLint, Prettier, Turbopack, Gray-matter, GitHub Actions(CI/CD) 등                                              |
 
-- cache
-- use
-- useOptimistic
-- useFormStatus
-- useDebugValue
-- useId
+<br />
 
-10. 리소스 최적화
+## 프로젝트 구조
 
-- preconnect
-- prefetchDNS
-- preinit/preinitModule
-- preload/preloadModule
-- prerender
-
-```md
-해당 문서를 예시 mdx 처럼 한국어 mdx로 제공해주세요
-단, shadcn(callout x), tailwind를 적극 활용해주세요
-단, 너무 길면 나눠서 제공하더라도 해당 문서 전반적인 내용이 전부 포함되어야합니다
-이 작업의 핵심은 영어 -> 한국어 / 가독성 상승 / 약간 복잡한 설명을 쉽게 이해가능하게(단 원래 내용에서 벗어나 틀린 내용이 되면 안됨) / 너무 길면 채팅 하나가 아닌 여러개로 제공하더라도 전체 내용을 전부 포함해야함 / 밑 예시 포멧이어야함 / 배경색이나 텍스트 컬러 지양, 만약 꼭 필요하면 다크모드 고려해서 설정
-이 6가지입니다.
-
----
-
-## 예시:
-
-title: "useCallback"
-description: "함수 정의를 리렌더링 사이에 캐싱할 수 있게 해주는 React Hook"
-
----
-
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-<Card className="mb-6">
-<CardHeader>
-<CardTitle>useCallback이란?</CardTitle>
-<CardDescription>
-컴포넌트의 리렌더링 사이에 함수 정의를 캐싱할 수 있게 해주는 React Hook입니다.
-</CardDescription>
-</CardHeader>
-<CardContent>
-tsx
-const cachedFn = useCallback(fn, dependencies)
-
-  </CardContent>
-</Card>
+```
+fe-quiz
+.
+├── .env.local               # 로컬 환경변수
+├── package.json
+├── pnpm-lock.yaml
+├── next.config.ts
+├── tailwind.config.ts
+├── tsconfig.json
+├── src
+│   ├── app
+│   │   ├── (root)
+│   │   │   ├── contents
+│   │   │   │   └── [category]
+│   │   │   │       ├── [id]
+│   │   │   │       │   ├── layout.tsx
+│   │   │   │       │   ├── page.tsx
+│   │   │   │       │   └── quiz
+│   │   │   │       │       └── page.tsx
+│   │   │   │       └── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   ├── fonts
+│   │   ├── globals.css
+│   │   └── layout.tsx
+│   ├── components          # 재사용되는 UI 컴포넌트
+│   │   ├── contents
+│   │   ├── quiz
+│   │   └── ui
+│   ├── constants           # 기술별 챕터 문서, 퀴즈(typescript, react, nextjs, ...)
+│   │   ├── front_tech
+│   │   ├── backend_tech
+│   │   ├── cs
+│   │   ├── javascript
+│   │   ├── react
+│   │   ├── nextjs
+│   │   ├── node
+│   │   └── typescript
+│   ├── extensions          # 에디터(Tiptap) 확장
+│   ├── hooks
+│   ├── lib
+│   ├── providers
+│   └── types
+└── public                  # 이미지, SVG, 기타 static 파일
 ```
 
+- **`app/(root)/contents/[category]/[id]/quiz`**: 특정 챕터의 퀴즈 페이지 라우트
+- **`constants/**`\*\*: 모든 MDX 문서 및 퀴즈가 배치된 폴더
+- **`components/quiz`**: 퀴즈를 구현하는 컴포넌트 (`quiz.tsx`, `code-quiz.tsx`)
+- **`mdx-remote-wrapper.tsx`**: MDX 문서 렌더링에 사용되는 컴포넌트
+
+<br />
+
+## 사전 요구사항
+
+- **Node.js >= 21**
+  - (프로젝트 루트의 `.nvmrc` 파일을 통해 Node 버전을 관리하면 좋습니다.)
+- **pnpm**
+  - 패키지 매니저로 `pnpm`을 사용합니다. (기본 npm, yarn 대체 가능하지만 `pnpm@9.15.0` 권장)
+
+<br />
+
+## 설치 및 실행
+
+1. **프로젝트 클론**
+
+   ```bash
+   git clone https://github.com/kym0807/fe-quiz.git
+   ```
+
+2. **의존성 설치**
+
+   ```bash
+   pnpm install
+   ```
+
+3. **개발 서버 실행**
+
+   ```bash
+   pnpm dev
+   ```
+
+   - `http://localhost:3000`
+
+4. **빌드 & 배포**
+
+   ```bash
+   # 빌드
+   pnpm build
+
+   # 프로덕션 서버 실행
+   pnpm start
+   ```
+
+<br />
+
+## 주요 스크립트
+
+| 스크립트   | 명령어        | 설명                               |
+| ---------- | ------------- | ---------------------------------- |
+| **dev**    | `pnpm dev`    | Next.js 개발 서버 구동 (Turbopack) |
+| **build**  | `pnpm build`  | 프로덕션 빌드 생성                 |
+| **start**  | `pnpm start`  | 빌드된 프로덕션 서버 실행          |
+| **lint**   | `pnpm lint`   | ESLint 검사                        |
+| **format** | `pnpm format` | Prettier를 사용한 코드/문서 포맷팅 |
+
+<br />
+
+<br />
+
+## 참고 자료
+
+- [Next.js 공식 문서](https://nextjs.org/docs)
+- [MDX.js](https://mdxjs.com/)
+- [React 공식 문서](https://react.dev/)
+- [Tailwind CSS](https://tailwindcss.com/)
+
+<br />
+
 ---
 
-```md
-첨부된 문서 범위 내에서 제공된 타입에 맞게 퀴즈를 만들어주세요
-단, 해당 퀴즈를 통해 문서 전 범위를 학습할 수 있어야합니다.
-단, 너무 길면 다음 채팅으로 제공하더라도 (제가 "계속"이라고 치면,,,) 전 범위를 포함시켜주세요, 다만 채팅을 나누더라도 결국 하나의 파일이니 id는 이어져야합니다
+#### 문의
 
-- ex: 첫번째 채팅에서 제공한 문제가 id: 7에서 끝나면 제가 계속을 말한 이후 제공해주시는 채팅의 문제는 id 8부터 시작해야합니다
+- Author: [김영민](mailto:youngmin0807ray@gmail.com)
+- 깃허브 이슈나 Pull Request를 통해 문의 및 제안 부탁드립니다.
 
-단, 해당 문서에 직접적인 내용이 아니더라도 꼬리질문 형태로 이 개념을 알면, 또는 알아야하면 알아야하는 개념 문제도 포함해주세요
-오직 문제만 제공해주세요 (문제 구현 컴포넌트 구현 필요 x)
-단, 중복되는 질문은 없어야합니다.
-단, 문제에 코드가 포함되는 경우 "\n"을 통해 줄바꿈을 확실히 해주세요
+<br />
 
-export type QuizQuestion = {
-id: number;
-question: string;
-options: string[];
-correctAnswer: number;
-explanation: string;
-};
-
-export type QuizCategory = {
-title: string;
-description: string;
-questions: QuizQuestion[];
-};
-
-export type Quiz = {
-title: string;
-description: string;
-categories: QuizCategory[];
-};
-```
+> **FE-Quiz**는 공식 문서의 내용을 번역·정리하고, 퀴즈로 만들어 학습 효율을 높이기 위한 목적으로 제작되었습니다.
