@@ -1,0 +1,404 @@
+---
+title: "useTransition"
+description: "UI의 일부를 백그라운드에서 렌더링할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useTransition이란?</CardTitle>
+    <CardDescription>
+      일부 상태 업데이트를 긴급하지 않은 전환(Transition)으로 표시할 수 있게 해주는 Hook입니다.
+      이를 통해 UI의 반응성을 유지하면서 대규모 업데이트를 수행할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const [isPending, startTransition] = useTransition()
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 반환값
+
+<Card className="mb-4">
+  <CardContent>
+    정확히 두 개의 값을 반환합니다:
+    1. **isPending**: 진행 중인 transition이 있는지 알려주는 boolean 값
+    2. **startTransition**: 상태 업데이트를 transition으로 표시하는 함수
+  </CardContent>
+</Card>
+
+### startTransition 함수
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 사용</TabsTrigger>
+    <TabsTrigger value="action">액션 사용</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="basic">
+    ```tsx
+    function TabContainer() {
+      const [isPending, startTransition] = useTransition();
+      const [tab, setTab] = useState('about');
+
+      function selectTab(nextTab) {
+        startTransition(() => {
+          setTab(nextTab);
+        });
+      }
+      // ...
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="action">
+    ```tsx
+    // 관례적으로 action이라는 이름 사용
+    function SubmitButton({ submitAction }) {
+      const [isPending, startTransition] = useTransition();
+
+      return (
+        <button
+          disabled={isPending}
+          onClick={() => {
+            startTransition(() => {
+              submitAction();
+            });
+          }}
+        >
+          Submit
+        </button>
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 주요 특징
+
+<Card className="mb-6">
+  <CardContent className="space-y-4">
+    1. **중단 가능한 업데이트**:
+       - transition 업데이트는 긴급한 업데이트에 의해 중단될 수 있음
+       - 사용자 상호작용 차단하지 않음
+
+    2. **백그라운드 처리**:
+       - UI 반응성 유지하면서 무거운 업데이트 수행
+       - 불필요한 로딩 표시기 방지
+
+    3. **자동 일괄 처리**:
+       - 여러 transition 업데이트를 자동으로 일괄 처리
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    1. 컴포넌트의 최상위 레벨에서만 호출 가능
+    2. 텍스트 입력 제어에는 사용할 수 없음
+    3. 타이머나 비동기 콜백 내부의 상태 업데이트는 transition으로 표시되지 않음
+  </AlertDescription>
+</Alert>
+
+## 비차단 업데이트 구현하기
+
+### 수량 업데이트 예제
+
+<Tabs defaultValue="with" className="w-full">
+  <TabsList>
+    <TabsTrigger value="with">transition 사용</TabsTrigger>
+    <TabsTrigger value="without">일반 업데이트</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="with">
+    ```tsx
+    function Checkout() {
+      const [quantity, setQuantity] = useState(1);
+      const [isPending, startTransition] = useTransition();
+
+      function updateQuantity(newQuantity) {
+        startTransition(async () => {
+          // 백그라운드에서 처리
+          const savedQuantity = await updateQuantity(newQuantity);
+          startTransition(() => {
+            setQuantity(savedQuantity);
+          });
+        });
+      }
+
+      return (
+        <div>
+          <Item updateQuantity={updateQuantity} />
+          <Total quantity={quantity} isPending={isPending} />
+        </div>
+      );
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="without">
+    ```tsx
+    function Checkout() {
+      const [quantity, setQuantity] = useState(1);
+      const [isPending, setIsPending] = useState(false);
+
+      async function updateQuantity(newQuantity) {
+        // UI 차단
+        setIsPending(true);
+        const savedQuantity = await updateQuantity(newQuantity);
+        setIsPending(false);
+        setQuantity(savedQuantity);
+      }
+
+      return (
+        <div>
+          <Item 
+            updateQuantity={updateQuantity}
+            disabled={isPending}
+          />
+          <Total quantity={quantity} />
+        </div>
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 컴포넌트에서 action prop 노출하기
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    function TabButton({ action, children, isActive }) {
+      const [isPending, startTransition] = useTransition();
+
+      if (isActive) {
+        return <b>{children}</b>;
+      }
+
+      return (
+        <button
+          onClick={() => {
+            startTransition(() => {
+              action();
+            });
+          }}
+        >
+          {children}
+          {isPending && <Spinner />}
+        </button>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 로딩 상태 표시 제어하기
+
+### Suspense와 함께 사용
+
+```tsx
+function TabContainer() {
+  const [tab, setTab] = useState('about');
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <Suspense fallback={<Spinner />}>
+      <TabButton
+        isActive={tab === 'posts'}
+        action={() => {
+          startTransition(() => {
+            setTab('posts');
+          });
+        }}
+      >
+        {isPending ? '로딩 중...' : '게시물'}
+      </TabButton>
+      
+      {/* 컨텐츠 */}
+      {tab === 'posts' && <PostsTab />}
+    </Suspense>
+  );
+}
+```
+
+<Alert className="mt-6">
+  <AlertTitle>Suspense와의 상호작용</AlertTitle>
+  <AlertDescription>
+    1. transition은 이미 표시된 컨텐츠를 숨기지 않습니다.
+    2. 중첩된 Suspense 경계는 transition의 영향을 받지 않습니다.
+    3. 새로운 컨텐츠가 준비될 때까지 이전 UI를 유지합니다.
+  </AlertDescription>
+</Alert>
+
+## 라우터 구현하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Suspense 지원 라우터 만들기</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    function Router() {
+      const [page, setPage] = useState('/');
+      const [isPending, startTransition] = useTransition();
+
+      function navigate(url) {
+        startTransition(() => {
+          setPage(url);
+        });
+      }
+
+      return (
+        <Layout isPending={isPending}>
+          {/* 페이지 컴포넌트 */}
+        </Layout>
+      );
+    }
+    ```
+
+    라우터에서 transition 사용의 장점:
+    1. 내비게이션이 중단 가능
+    2. 불필요한 로딩 표시 방지
+    3. 사이드 이펙트 완료 대기
+  </CardContent>
+</Card>
+
+## 에러 처리
+
+### ErrorBoundary와 함께 사용
+
+```tsx
+function AddCommentContainer() {
+  return (
+    <ErrorBoundary fallback={<p>⚠️ 오류가 발생했습니다</p>}>
+      <AddCommentButton />
+    </ErrorBoundary>
+  );
+}
+
+function AddCommentButton() {
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <button
+      disabled={isPending}
+      onClick={() => {
+        startTransition(() => {
+          // 에러가 발생하면 ErrorBoundary에서 처리
+          addComment();
+        });
+      }}
+    >
+      댓글 추가
+    </button>
+  );
+}
+```
+
+## 일반적인 문제 해결
+
+<Tabs defaultValue="input" className="w-full">
+  <TabsList>
+    <TabsTrigger value="input">입력 제어</TabsTrigger>
+    <TabsTrigger value="async">비동기 처리</TabsTrigger>
+    <TabsTrigger value="order">순서 보장</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="input">
+    ```tsx
+    // 🔴 입력에 transition을 직접 사용할 수 없음
+    const [text, setText] = useState('');
+    // ...
+    startTransition(() => {
+      setText(e.target.value);
+    });
+
+    // ✅ 대신 두 개의 상태를 사용
+    const [text, setText] = useState('');
+    const [deferredText, setDeferredText] = useState('');
+    // ...
+    setText(e.target.value);
+    startTransition(() => {
+      setDeferredText(e.target.value);
+    });
+    ```
+  </TabsContent>
+  
+  <TabsContent value="async">
+    ```tsx
+    // 🔴 await 이후 상태 업데이트가 transition으로 처리되지 않음
+    startTransition(async () => {
+      await someAsyncFunction();
+      setPage('/about');
+    });
+
+    // ✅ await 이후 다시 startTransition으로 감싸기
+    startTransition(async () => {
+      await someAsyncFunction();
+      startTransition(() => {
+        setPage('/about');
+      });
+    });
+    ```
+  </TabsContent>
+  
+  <TabsContent value="order">
+    ```tsx
+    // 네트워크 요청의 순서가 보장되지 않는 경우
+    startTransition(async () => {
+      const savedQuantity = await updateQuantity(newQuantity);
+      // 이전 요청이 나중에 완료될 수 있음
+      startTransition(() => {
+        setQuantity(savedQuantity);
+      });
+    });
+
+    // 큐잉이나 취소 로직 구현 필요
+    ```
+  </TabsContent>
+</Tabs>
+
+## 모범 사례
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>권장 사항</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    1. **컴포넌트 최상위 레벨에서 사용**
+       ```tsx
+       // ✅ 컴포넌트 최상위 레벨
+       const [isPending, startTransition] = useTransition();
+       ```
+
+    2. **적절한 스코프 유지**
+       ```tsx
+       // ✅ 상태 업데이트를 즉시 실행
+       startTransition(() => {
+         setPage(newPage);
+       });
+       ```
+
+    3. **로딩 상태 적절히 표시**
+       ```tsx
+       {isPending ? <LoadingSpinner /> : <Content />}
+       ```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>대안 확인</AlertTitle>
+  <AlertDescription>
+    1. 간단한 지연이 필요한 경우 useDeferredValue 고려
+    2. 폼 제출은 useActionState 사용 고려
+    3. 서버 통신은 Server Actions 고려
+  </AlertDescription>
+</Alert>

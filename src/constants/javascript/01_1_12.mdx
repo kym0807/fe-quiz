@@ -1,0 +1,272 @@
+---
+title: "JavaScript Typed Arrays"
+description: "JavaScript의 이진 데이터 처리를 위한 Typed Arrays 완벽 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Typed Arrays란?</CardTitle>
+    <CardDescription>
+      메모리 버퍼에서 원시 이진 데이터를 읽고 쓸 수 있게 해주는 배열과 유사한 객체입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Typed Arrays는 일반 배열을 대체하기 위한 것이 아닙니다. 대신 개발자들에게 이진 데이터를 
+    다루기 위한 친숙한 인터페이스를 제공합니다. 이는 오디오/비디오 조작, WebSocket을 통한 
+    원시 데이터 접근 등의 플랫폼 기능을 다룰 때 유용합니다.
+  </CardContent>
+</Card>
+
+## 버퍼와 뷰의 이해
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 구조</CardTitle>
+    <CardDescription>
+      Typed Arrays는 버퍼와 뷰로 구현이 나뉩니다. 이를 통해 최대한의 유연성과 효율성을 제공합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    - **버퍼**: 데이터 청크를 나타내는 객체로, 형식이나 접근 메커니즘이 없습니다.
+    - **뷰**: 버퍼의 내용에 접근하기 위한 컨텍스트를 제공합니다(데이터 타입, 시작 오프셋, 요소 수 등).
+  </CardContent>
+</Card>
+
+## 지원하는 데이터 타입
+
+<Tabs defaultValue="integer" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="integer">정수형</TabsTrigger>
+    <TabsTrigger value="float">실수형</TabsTrigger>
+    <TabsTrigger value="bigint">BigInt</TabsTrigger>
+  </TabsList>
+  <TabsContent value="integer">
+    ```javascript
+    // 8비트 정수
+    const int8 = new Int8Array(4);    // -128 ~ 127
+    const uint8 = new Uint8Array(4);  // 0 ~ 255
+    
+    // 16비트 정수
+    const int16 = new Int16Array(4);  // -32768 ~ 32767
+    const uint16 = new Uint16Array(4); // 0 ~ 65535
+    
+    // 32비트 정수
+    const int32 = new Int32Array(4);   
+    const uint32 = new Uint32Array(4);
+    ```
+  </TabsContent>
+  <TabsContent value="float">
+    ```javascript
+    // 32비트 부동소수점
+    const float32 = new Float32Array(4);
+    
+    // 64비트 부동소수점
+    const float64 = new Float64Array(4);
+    ```
+  </TabsContent>
+  <TabsContent value="bigint">
+    ```javascript
+    // 64비트 정수
+    const bigInt64 = new BigInt64Array(4);
+    const bigUint64 = new BigUint64Array(4);
+    ```
+  </TabsContent>
+</Tabs>
+
+## 버퍼 다루기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>ArrayBuffer와 SharedArrayBuffer</CardTitle>
+    <CardDescription>
+      두 종류의 버퍼와 그 특징을 알아보겠습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // 새로운 버퍼 생성 (16바이트)
+    const buffer = new ArrayBuffer(16);
+    
+    // 버퍼 복사
+    const copied = buffer.slice(0, 8);
+    
+    // 버퍼 크기 확인
+    console.log(buffer.byteLength); // 16
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertTitle>ArrayBuffer vs SharedArrayBuffer</AlertTitle>
+  <AlertDescription>
+    ArrayBuffer는 단일 실행 컨텍스트에서만 소유되는 반면, 
+    SharedArrayBuffer는 여러 실행 컨텍스트에서 동시에 접근할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 뷰(View) 활용하기
+
+<Tabs defaultValue="typed" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="typed">TypedArray 뷰</TabsTrigger>
+    <TabsTrigger value="dataview">DataView</TabsTrigger>
+  </TabsList>
+  <TabsContent value="typed">
+    ```javascript
+    const buffer = new ArrayBuffer(16);
+    
+    // 32비트 정수 뷰 생성
+    const int32View = new Int32Array(buffer);
+    
+    // 데이터 쓰기
+    int32View[0] = 42;
+    
+    // 16비트 정수 뷰로 같은 데이터 읽기
+    const int16View = new Int16Array(buffer);
+    console.log(int16View[0]); // 42
+    ```
+  </TabsContent>
+  <TabsContent value="dataview">
+    ```javascript
+    const buffer = new ArrayBuffer(16);
+    const view = new DataView(buffer);
+    
+    // 다양한 형식으로 데이터 쓰기
+    view.setInt32(0, 42, true); // 리틀 엔디안
+    view.setFloat64(4, 123.45); // 빅 엔디안
+    
+    // 데이터 읽기
+    console.log(view.getInt32(0, true));
+    console.log(view.getFloat64(4));
+    ```
+  </TabsContent>
+</Tabs>
+
+## 실제 활용 사례
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>텍스트 데이터 처리</CardTitle>
+    <CardDescription>
+      버퍼를 사용하여 텍스트 데이터를 처리하는 방법을 알아보겠습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // UTF-8 텍스트 처리
+    const buffer = new ArrayBuffer(8);
+    const uint8 = new Uint8Array(buffer);
+    uint8.set([228, 189, 160, 229, 165, 189]);
+    
+    const text = new TextDecoder().decode(uint8);
+    console.log(text); // "你好"
+    
+    // UTF-16 텍스트 처리
+    const uint16 = new Uint16Array(buffer);
+    uint16.set([0x4f60, 0x597d]);
+    const text2 = String.fromCharCode(...uint16);
+    ```
+  </CardContent>
+</Card>
+
+## 복잡한 데이터 구조 다루기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>여러 뷰의 조합</CardTitle>
+    <CardDescription>
+      하나의 버퍼에 여러 타입의 데이터를 저장하고 접근하는 방법을 알아보겠습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // 24바이트 구조체 예시
+    const buffer = new ArrayBuffer(24);
+    
+    // 각 필드에 대한 뷰 생성
+    const idView = new Uint32Array(buffer, 0, 1);
+    const usernameView = new Uint8Array(buffer, 4, 16);
+    const amountDueView = new Float32Array(buffer, 20, 1);
+    
+    // 데이터 쓰기
+    idView[0] = 12345;
+    amountDueView[0] = 123.45;
+    ```
+  </CardContent>
+</Card>
+
+## 일반 배열과의 변환
+
+<Tabs defaultValue="toNormal" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="toNormal">TypedArray → Array</TabsTrigger>
+    <TabsTrigger value="fromNormal">Array → TypedArray</TabsTrigger>
+  </TabsList>
+  <TabsContent value="toNormal">
+    ```javascript
+    // Array.from() 사용
+    const typedArray = new Uint8Array([1, 2, 3, 4]);
+    const normalArray = Array.from(typedArray);
+    
+    // 전개 구문 사용
+    const anotherArray = [...typedArray];
+    ```
+  </TabsContent>
+  <TabsContent value="fromNormal">
+    ```javascript
+    const normalArray = [1, 2, 3, 4];
+    
+    // 새로운 TypedArray 생성
+    const typedArray = new Uint8Array(normalArray);
+    
+    // 기존 TypedArray에 데이터 설정
+    const anotherTyped = new Uint8Array(4);
+    anotherTyped.set(normalArray);
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert>
+  <AlertTitle>성능 고려사항</AlertTitle>
+  <AlertDescription>
+    Typed Arrays는 일반 배열보다 더 엄격한 메모리 관리를 제공하며, 
+    이진 데이터를 다룰 때 더 나은 성능을 제공할 수 있습니다.
+    하지만 일반적인 데이터 처리에는 표준 배열을 사용하는 것이 더 적합할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## Web API 활용 예시
+
+<Card>
+  <CardContent className="pt-6">
+    ```javascript
+    // FileReader와 함께 사용
+    const fileReader = new FileReader();
+    fileReader.onload = (event) => {
+      const arrayBuffer = event.target.result;
+      const view = new Uint8Array(arrayBuffer);
+      console.log('파일 데이터:', view);
+    };
+    
+    // Canvas 이미지 데이터 처리
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.getImageData(0, 0, 100, 100);
+    const pixels = imageData.data; // Uint8ClampedArray
+    ```
+  </CardContent>
+</Card>
+
+<Alert variant="default" className="mt-6">
+  <AlertTitle>모범 사례</AlertTitle>
+  <AlertDescription>
+    - 이진 데이터를 다룰 때는 적절한 타입의 TypedArray를 선택하세요.
+    - 메모리 효율성을 위해 필요한 크기만큼만 버퍼를 할당하세요.
+    - 여러 뷰가 같은 버퍼를 공유할 때는 데이터 정렬(alignment)에 주의하세요.
+    - SharedArrayBuffer 사용 시 동시성 문제를 고려하세요.
+  </AlertDescription>
+</Alert>

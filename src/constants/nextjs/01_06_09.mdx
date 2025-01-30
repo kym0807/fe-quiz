@@ -1,0 +1,123 @@
+---
+title: "Next.js의 Instrumentation"
+description: "애플리케이션 모니터링과 로깅 도구 통합 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Instrumentation 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Instrumentation이란?</CardTitle>
+    <CardDescription>
+      코드를 사용하여 애플리케이션에 모니터링 및 로깅 도구를 통합하는 프로세스입니다. 
+      이를 통해 애플리케이션의 성능과 동작을 추적하고 프로덕션 환경의 문제를 디버깅할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 기본 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>파일 구조</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="p-4 bg-gray-50 rounded-lg">
+      <p className="font-semibold">파일 위치:</p>
+      <ul className="list-disc list-inside mt-2 space-y-2">
+        <li>프로젝트 루트 디렉토리의 <code>instrumentation.ts|js</code></li>
+        <li>또는 src 폴더를 사용하는 경우 <code>src/instrumentation.ts|js</code></li>
+      </ul>
+    </div>
+    
+    ```tsx
+    // instrumentation.ts
+    import { registerOTel } from '@vercel/otel'
+    
+    export function register() {
+      registerOTel('next-app')
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>instrumentation 파일은 app 또는 pages 디렉토리가 아닌 프로젝트 루트에 위치해야 합니다</li>
+      <li>pageExtensions 설정을 사용하는 경우 파일 이름도 그에 맞게 업데이트해야 합니다</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 부가 효과가 있는 파일 임포트
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>부가 효과 처리</CardTitle>
+    <CardDescription>
+      전역 변수를 정의하는 등의 부가 효과를 위해 파일을 임포트해야 할 때가 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    export async function register() {
+      await import('package-with-side-effect')
+    }
+    ```
+    
+    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+      <h4 className="font-bold">권장사항</h4>
+      <p>파일 상단이 아닌 register 함수 내에서 임포트하는 것을 권장합니다. 이렇게 하면:</p>
+      <ul className="list-disc list-inside mt-2">
+        <li>부가 효과를 한 곳에서 관리할 수 있습니다</li>
+        <li>전역 임포트로 인한 예기치 않은 결과를 방지할 수 있습니다</li>
+      </ul>
+    </div>
+  </CardContent>
+</Card>
+
+## 런타임별 코드 처리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>환경별 코드 임포트</CardTitle>
+    <CardDescription>
+      Next.js는 모든 환경에서 register를 호출하므로, 특정 런타임(Edge 또는 Node.js)에서만 
+      지원되는 코드는 조건부로 임포트해야 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    export async function register() {
+      if (process.env.NEXT_RUNTIME === 'nodejs') {
+        // Node.js 환경에서만 실행될 코드
+        await import('./instrumentation-node')
+      }
+      
+      if (process.env.NEXT_RUNTIME === 'edge') {
+        // Edge 환경에서만 실행될 코드
+        await import('./instrumentation-edge')
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>구현 체크리스트</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>파일 위치가 올바른지 확인</li>
+      <li>register 함수가 내보내져 있는지 확인</li>
+      <li>부가 효과가 있는 임포트는 register 함수 내에서 처리</li>
+      <li>런타임별 코드는 조건부로 임포트</li>
+      <li>pageExtensions 설정과 파일명 일치 여부 확인</li>
+    </ul>
+  </AlertDescription>
+</Alert>

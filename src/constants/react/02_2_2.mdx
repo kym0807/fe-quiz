@@ -1,0 +1,191 @@
+---
+title: "flushSync"
+description: "React의 상태 업데이트를 즉시 동기적으로 처리하도록 강제하는 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6 border-yellow-500">
+  <CardHeader>
+    <CardTitle>⚠️ flushSync 사용 시 주의</CardTitle>
+    <CardDescription>
+      flushSync는 일반적이지 않은 API이며, 앱의 성능을 저하시킬 수 있습니다.
+      마지막 수단으로만 사용해야 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import { flushSync } from 'react-dom';
+
+    flushSync(() => {
+      setSomething(123);
+    });
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+flushSync는 React가 제공된 콜백 내부의 업데이트를 즉시 동기적으로 처리하도록 강제합니다.
+
+```tsx
+import { flushSync } from 'react-dom';
+
+function handleClick() {
+  flushSync(() => {
+    setCounter(c => c + 1);
+  });
+  // 이 시점에서 DOM이 이미 업데이트되어 있음
+}
+```
+
+<Alert className="my-4" variant="destructive">
+  <AlertTitle>성능 영향</AlertTitle>
+  <AlertDescription>
+    flushSync는 React의 일괄 처리(batching) 최적화를 우회하므로, 
+    성능에 큰 영향을 미칠 수 있습니다. 꼭 필요한 경우에만 사용하세요.
+  </AlertDescription>
+</Alert>
+
+## 주요 사용 사례
+
+### 서드파티 라이브러리 통합
+
+```tsx
+function ExternalLibraryIntegration() {
+  const elementRef = useRef(null);
+
+  const updateLibrary = () => {
+    flushSync(() => {
+      setData(newData);
+    });
+    // 이 시점에서 외부 라이브러리 호출 가능
+    externalLib.update(elementRef.current);
+  };
+
+  return <div ref={elementRef}>...</div>;
+}
+```
+
+### 인쇄 기능 구현 예제
+
+```tsx
+function PrintableComponent() {
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    function handleBeforePrint() {
+      flushSync(() => {
+        setIsPrinting(true);
+      });
+    }
+
+    function handleAfterPrint() {
+      setIsPrinting(false);
+    }
+
+    window.addEventListener('beforeprint', handleBeforePrint);
+    window.addEventListener('afterprint', handleAfterPrint);
+    
+    return () => {
+      window.removeEventListener('beforeprint', handleBeforePrint);
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
+
+  return (
+    <div className="p-4">
+      <h1>인쇄 상태: {isPrinting ? '인쇄 중' : '대기 중'}</h1>
+      <button 
+        onClick={() => window.print()}
+        className="px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        인쇄하기
+      </button>
+    </div>
+  );
+}
+```
+
+## 주의사항과 제한사항
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>flushSync 사용 시 고려사항</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h4 className="font-bold">1. 성능 영향</h4>
+        <ul className="list-disc pl-6">
+          <li>동기적 업데이트로 인한 성능 저하</li>
+          <li>React의 최적화 우회</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">2. Suspense 영향</h4>
+        <ul className="list-disc pl-6">
+          <li>Suspense 경계가 폴백 상태를 표시할 수 있음</li>
+          <li>로딩 상태가 예기치 않게 나타날 수 있음</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">3. 부수 효과</h4>
+        <ul className="list-disc pl-6">
+          <li>대기 중인 Effects가 즉시 실행될 수 있음</li>
+          <li>콜백 외부의 업데이트도 함께 처리될 수 있음</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 대안 고려하기
+
+<Tabs defaultValue="alternative" className="w-full">
+  <TabsList>
+    <TabsTrigger value="alternative">대안적 접근</TabsTrigger>
+    <TabsTrigger value="flushsync">flushSync 사용</TabsTrigger>
+  </TabsList>
+  <TabsContent value="alternative">
+    ```tsx
+    // ✅ 좋은 예: React의 자연스러운 업데이트 흐름 활용
+    function GoodExample() {
+      const [value, setValue] = useState(0);
+      
+      useEffect(() => {
+        // 값이 변경된 후 필요한 작업 수행
+        if (value > 0) {
+          updateExternalSystem(value);
+        }
+      }, [value]);
+
+      return <button onClick={() => setValue(v => v + 1)}>업데이트</button>;
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="flushsync">
+    ```tsx
+    // ⚠️ 필요한 경우에만: 즉시 DOM 업데이트가 필수적인 경우
+    function RequiredExample() {
+      const handleCriticalUpdate = () => {
+        flushSync(() => {
+          setValue(newValue);
+        });
+        // DOM 의존적인 작업 수행
+      };
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-4">
+  <AlertTitle>권장사항</AlertTitle>
+  <AlertDescription>
+    1. 먼저 React의 기본 동작으로 문제를 해결할 수 있는지 검토하세요
+    2. useLayoutEffect나 useEffect를 사용할 수 있는지 확인하세요
+    3. 서드파티 라이브러리 통합 시에도 가능한 비동기적 방식을 고려하세요
+  </AlertDescription>
+</Alert>

@@ -1,0 +1,329 @@
+---
+title: "TypeScript 모듈: 기초와 ES 모듈"
+description: "TypeScript의 모듈 시스템 이해와 ES 모듈 활용법"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JavaScript 모듈의 진화</CardTitle>
+    <CardDescription>
+      2015년에 JavaScript 명세에 추가된 ES 모듈은 현재 대부분의 웹 브라우저와 JavaScript 런타임에서 
+      폭넓게 지원되고 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 모듈의 정의
+
+<Card className="my-4 bg-blue-50 dark:bg-blue-950">
+  <CardContent className="pt-6">
+    TypeScript에서는 최상위 레벨에 import나 export가 있는 파일을 모듈로 간주합니다.
+    반대로, 이러한 선언이 없는 파일은 전역 스코프에서 사용 가능한 스크립트로 취급됩니다.
+  </CardContent>
+</Card>
+
+## 비모듈 파일을 모듈로 만들기
+
+```typescript
+// 빈 export로 파일을 모듈로 변환
+export {};
+```
+
+## ES 모듈 문법
+
+### 기본 내보내기 (Default Export)
+
+<Tabs defaultValue="export" className="w-full my-6">
+  <TabsList>
+    <TabsTrigger value="export">내보내기</TabsTrigger>
+    <TabsTrigger value="import">가져오기</TabsTrigger>
+  </TabsList>
+  <TabsContent value="export">
+    ```typescript
+    // hello.ts
+    export default function helloWorld() {
+      console.log("Hello, world!");
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="import">
+    ```typescript
+    import helloWorld from "./hello.js";
+    helloWorld();
+    ```
+  </TabsContent>
+</Tabs>
+
+### 명명된 내보내기 (Named Exports)
+
+```typescript
+// maths.ts
+export const pi = 3.14;
+export let squareTwo = 1.41;
+export class RandomNumberGenerator {}
+
+export function absolute(num: number) {
+  if (num < 0) return num * -1;
+  return num;
+}
+```
+
+### 가져오기 구문
+
+```typescript
+// 명명된 가져오기
+import { pi, phi, absolute } from "./maths.js";
+
+// 이름 바꾸기
+import { pi as π } from "./maths.js";
+
+// 전체 가져오기
+import * as math from "./maths.js";
+
+// 부수 효과만을 위한 가져오기
+import "./maths.js";
+```
+
+## TypeScript 전용 모듈 문법
+
+<Card className="my-4">
+  <CardContent className="pt-6">
+    TypeScript는 타입을 위한 특별한 가져오기 구문을 제공합니다.
+  </CardContent>
+</Card>
+
+```typescript
+// 타입 전용 가져오기
+import type { Cat, Dog } from "./animal.js";
+
+// 인라인 타입 가져오기
+import { createCatName, type Cat, type Dog } from "./animal.js";
+```
+
+## CommonJS 문법
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>npm의 표준 포맷</CardTitle>
+    <CardDescription>
+      npm의 대부분의 모듈이 CommonJS 형식으로 제공됩니다. ES 모듈을 사용하더라도 
+      CommonJS에 대한 이해는 디버깅에 도움이 됩니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+### 내보내기 (Exporting)
+
+```typescript
+function absolute(num: number) {
+  if (num < 0) return num * -1;
+  return num;
+}
+
+module.exports = {
+  pi: 3.14,
+  squareTwo: 1.41,
+  phi: 1.61,
+  absolute,
+};
+```
+
+### 가져오기 (Importing)
+
+<Tabs defaultValue="basic" className="w-full my-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본</TabsTrigger>
+    <TabsTrigger value="destructure">구조 분해</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```typescript
+    const maths = require("./maths");
+    console.log(maths.pi);
+    ```
+  </TabsContent>
+  <TabsContent value="destructure">
+    ```typescript
+    const { squareTwo } = require("./maths");
+    console.log(squareTwo);
+    ```
+  </TabsContent>
+</Tabs>
+
+## ES 모듈과 CommonJS 상호운용성
+
+<Card className="my-4 bg-yellow-50 dark:bg-yellow-950">
+  <CardContent className="pt-6">
+    CommonJS와 ES 모듈 간에는 기본 가져오기와 모듈 네임스페이스 객체 가져오기에 
+    차이가 있습니다. esModuleInterop 컴파일러 플래그로 이러한 차이를 해소할 수 있습니다.
+  </CardContent>
+</Card>
+
+## 모듈 해석 옵션
+
+### 해석 전략
+
+```typescript
+{
+  "compilerOptions": {
+    "moduleResolution": "node", // 또는 "classic"
+    "baseUrl": "./src",
+    "paths": {
+      "@utils/*": ["utils/*"]
+    },
+    "rootDirs": ["src", "tests"]
+  }
+}
+```
+
+## 모듈 출력 옵션
+
+<Card className="my-4">
+  <CardContent className="space-y-2 pt-6">
+    TypeScript의 출력에 영향을 미치는 두 가지 주요 옵션:
+    - target: JS 기능의 다운레벨링 결정
+    - module: 모듈 간 상호작용 코드 결정
+  </CardContent>
+</Card>
+
+### 출력 예시
+
+```typescript
+// 원본 코드
+import { valueOfPi } from "./constants.js";
+export const twoPi = valueOfPi * 2;
+
+// ES2020
+import { valueOfPi } from "./constants.js";
+export const twoPi = valueOfPi * 2;
+
+// CommonJS
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.twoPi = void 0;
+const constants_js_1 = require("./constants.js");
+exports.twoPi = constants_js_1.valueOfPi * 2;
+```
+
+## UMD 모듈 출력
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Universal Module Definition</CardTitle>
+    <CardDescription>
+      UMD 형식은 브라우저와 Node.js 환경 모두에서 동작하는 모듈을 만들 수 있게 해줍니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+```typescript
+// UMD 출력 예시
+(function (factory) {
+    if (typeof module === "object" && typeof module.exports === "object") {
+        var v = factory(require, exports);
+        if (v !== undefined) module.exports = v;
+    }
+    else if (typeof define === "function" && define.amd) {
+        define(["require", "exports", "./constants.js"], factory);
+    }
+})(function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.twoPi = void 0;
+    const constants_js_1 = require("./constants.js");
+    exports.twoPi = constants_js_1.valueOfPi * 2;
+});
+```
+
+## 모듈 설정 옵션
+
+<Tabs defaultValue="target" className="w-full my-6">
+  <TabsList>
+    <TabsTrigger value="target">Target 옵션</TabsTrigger>
+    <TabsTrigger value="module">Module 옵션</TabsTrigger>
+  </TabsList>
+  <TabsContent value="target">
+    <Card>
+      <CardContent className="pt-6">
+        - ES3
+        - ES5
+        - ES2015/ES6
+        - ES2020
+        - ESNext
+      </CardContent>
+    </Card>
+  </TabsContent>
+  <TabsContent value="module">
+    <Card>
+      <CardContent className="pt-6">
+        - None
+        - CommonJS
+        - AMD
+        - UMD
+        - ES2015/ES6
+        - ES2020
+        - ESNext
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## TypeScript 네임스페이스
+
+<Card className="my-4 bg-yellow-50 dark:bg-yellow-950">
+  <CardContent className="pt-6">
+    네임스페이스는 ES 모듈 표준 이전에 만들어진 TypeScript만의 모듈 형식입니다.
+    현재는 복잡한 정의 파일 생성에 주로 사용됩니다.
+  </CardContent>
+</Card>
+
+```typescript
+namespace Validation {
+    export interface StringValidator {
+        isAcceptable(s: string): boolean;
+    }
+    
+    export class LettersOnlyValidator implements StringValidator {
+        isAcceptable(s: string) {
+            return /^[A-Za-z]+$/.test(s);
+        }
+    }
+}
+```
+
+## 모범 사례
+
+<Card className="my-4">
+  <CardContent className="space-y-2 pt-6">
+    1. ES 모듈 사용을 권장
+    2. 타입 가져오기는 `import type` 사용
+    3. 경로 별칭(path alias) 활용
+    4. 순환 의존성 피하기
+    5. 부수 효과가 있는 가져오기는 명시적으로 표시
+  </CardContent>
+</Card>
+
+```typescript
+// ✅ 권장되는 방식
+import type { UserType } from './types';
+import { createUser } from './utils';
+
+// 경로 별칭 사용
+import { Logger } from '@/services/logger';
+
+// 부수 효과가 있는 가져오기
+import './polyfills';
+```
+
+## 정리
+
+<Card className="my-4 bg-blue-50 dark:bg-blue-950">
+  <CardContent className="space-y-2 pt-6">
+    - ES 모듈은 현대 JavaScript의 표준 모듈 시스템입니다
+    - TypeScript는 다양한 모듈 시스템을 지원합니다
+    - CommonJS와의 상호운용성을 위한 도구를 제공합니다
+    - 네임스페이스는 특수한 경우에만 사용을 고려하세요
+  </CardContent>
+</Card>

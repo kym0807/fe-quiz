@@ -1,0 +1,266 @@
+---
+title: "Fastify 로깅"
+description: "Fastify의 로깅 시스템 설정과 사용법에 대한 상세 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>로깅 활성화하기</CardTitle>
+    <CardDescription>
+      Fastify의 기본 로깅 설정과 환경별 설정 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Fastify는 기본적으로 로깅이 비활성화되어 있습니다. 로깅을 활성화하는 방법은 매우 간단합니다:
+
+    ```ts
+    const fastify = require('fastify')({
+      logger: true
+    })
+    ```
+
+    개발 환경과 프로덕션 환경에서 각각 다른 로깅 설정이 필요한 경우:
+
+    ```ts
+    const envToLogger = {
+      development: {
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            translateTime: 'HH:MM:ss Z',
+            ignore: 'pid,hostname',
+          },
+        },
+      },
+      production: true,
+      test: false,
+    }
+
+    const fastify = require('fastify')({
+      logger: envToLogger[environment] ?? true
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    성능상의 이유로 `pino-pretty`는 기본으로 포함되어 있지 않습니다. 개발 의존성으로 별도 설치가 필요합니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 사용법</CardTitle>
+    <CardDescription>
+      라우트 핸들러 내부와 외부에서 로거를 사용하는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    라우트 핸들러 내부에서 사용하기:
+    ```ts
+    fastify.get('/', options, function (request, reply) {
+      request.log.info('현재 요청에 대한 정보를 기록합니다')
+      reply.send({ hello: 'world' })
+    })
+    ```
+
+    라우트 핸들러 외부에서 사용하기:
+    ```ts
+    fastify.log.info('중요한 이벤트가 발생했습니다!');
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>고급 설정</CardTitle>
+    <CardDescription>
+      파일 저장, 커스텀 스트림, 시리얼라이저 설정 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    특정 파일에 로그 저장하기:
+    ```ts
+    const fastify = require('fastify')({
+      logger: {
+        level: 'info',
+        file: '/path/to/file' // pino.destination() 사용
+      }
+    })
+    ```
+
+    커스텀 스트림 사용하기:
+    ```ts
+    const split = require('split2')
+    const stream = split(JSON.parse)
+
+    const fastify = require('fastify')({
+      logger: {
+        level: 'info',
+        stream: stream
+      }
+    })
+    ```
+
+    커스텀 시리얼라이저 설정:
+    ```ts
+    const fastify = require('fastify')({
+      logger: {
+        serializers: {
+          req (request) {
+            return { url: request.url }
+          }
+        }
+      }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>요청/응답 로깅</CardTitle>
+    <CardDescription>
+      HTTP 요청과 응답 데이터를 안전하게 로깅하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```ts
+    const fastify = require('fastify')({
+      logger: {
+        transport: {
+          target: 'pino-pretty'
+        },
+        serializers: {
+          res (reply) {
+            return {
+              statusCode: reply.statusCode
+            }
+          },
+          req (request) {
+            return {
+              method: request.method,
+              url: request.url,
+              path: request.routeOptions.url,
+              parameters: request.params,
+            };
+          }
+        }
+      }
+    });
+    ```
+
+    <Alert variant="warning" className="my-4">
+      <AlertTitle>보안 주의사항</AlertTitle>
+      <AlertDescription>
+        요청 헤더를 로깅할 때는 GDPR 등 개인정보보호법을 고려해야 합니다. 
+        인증 정보가 노출될 수 있으므로 redact 옵션을 사용하여 민감한 필드를 제거하세요.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>요청 본문 로깅</CardTitle>
+    <CardDescription>
+      요청 본문(body)을 안전하게 로깅하는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    요청 본문은 시리얼라이저에서 직접 접근할 수 없습니다. 대신 preHandler 훅을 사용합니다:
+
+    ```ts
+    app.addHook('preHandler', function (req, reply, done) {
+      if (req.body) {
+        req.log.info({ body: req.body }, '파싱된 요청 본문')
+      }
+      done()
+    })
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>주의사항</AlertTitle>
+      <AlertDescription>
+        시리얼라이저에서 예외가 발생하면 Node 프로세스가 종료될 수 있습니다.
+        항상 안전한 시리얼라이저 구현을 확인하세요.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>커스텀 로거 사용</CardTitle>
+    <CardDescription>
+      Pino 이외의 커스텀 로거를 사용하는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    자체 로거 인스턴스를 사용할 수 있습니다:
+
+    ```ts
+    const log = require('pino')({ level: 'info' })
+    const fastify = require('fastify')({ loggerInstance: log })
+
+    log.info('요청 정보가 포함되지 않은 로그')
+
+    fastify.get('/', function (request, reply) {
+      request.log.info('요청 정보가 포함된 로그')
+      reply.send({ hello: 'world' })
+    })
+    ```
+
+    단, 커스텀 로거는 Pino 인터페이스를 준수해야 하며 다음 메서드를 포함해야 합니다:
+    - info, error, debug, fatal, warn, trace, silent
+    - child
+    - level (문자열 프로퍼티)
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>로그 데이터 보호</CardTitle>
+    <CardDescription>
+      민감한 정보를 로그에서 제외하는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Pino의 redact 기능을 사용하여 민감한 데이터를 숨길 수 있습니다:
+
+    ```ts
+    const fastify = Fastify({
+      logger: {
+        stream: stream,
+        redact: ['req.headers.authorization'],
+        level: 'info',
+        serializers: {
+          req (request) {
+            return {
+              method: request.method,
+              url: request.url,
+              headers: request.headers,
+              host: request.host,
+              remoteAddress: request.ip,
+              remotePort: request.socket.remotePort
+            }
+          }
+        }
+      }
+    })
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>상세 정보</AlertTitle>
+      <AlertDescription>
+        더 자세한 redaction 설정은 Pino 공식 문서의 redaction 섹션을 참고하세요.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>

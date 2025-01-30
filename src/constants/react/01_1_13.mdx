@@ -1,0 +1,486 @@
+---
+title: "useReducer"
+description: "컴포넌트에 리듀서를 추가할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useReducer란?</CardTitle>
+    <CardDescription>
+      복잡한 상태 로직을 리듀서 함수로 분리하여 관리할 수 있게 해주는 React Hook입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const [state, dispatch] = useReducer(reducer, initialArg, init?)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **reducer**: 상태 업데이트 방법을 지정하는 리듀서 함수
+    - **initialArg**: 초기 상태를 계산하기 위한 값
+    - **init?**: (선택적) 초기 상태를 반환하는 초기화 함수
+  </CardContent>
+</Card>
+
+### 반환값
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    1. **state**: 현재 상태 값
+    2. **dispatch**: 상태를 업데이트하고 리렌더링을 트리거하는 함수
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+### 리듀서 추가하기
+
+```tsx
+import { useReducer } from 'react';
+
+// 리듀서 함수 정의
+function reducer(state, action) {
+  switch (action.type) {
+    case 'incremented_age': {
+      return {
+        ...state,
+        age: state.age + 1
+      };
+    }
+    case 'changed_name': {
+      return {
+        ...state,
+        name: action.nextName
+      };
+    }
+    default: {
+      throw Error('Unknown action: ' + action.type);
+    }
+  }
+}
+
+function MyComponent() {
+  const [state, dispatch] = useReducer(reducer, { age: 42 });
+  
+  return (
+    <button onClick={() => {
+      dispatch({ type: 'incremented_age' });
+    }}>
+      나이 증가
+    </button>
+  );
+}
+```
+
+## 리듀서 작성 가이드
+
+<Tabs defaultValue="structure" className="w-full">
+  <TabsList>
+    <TabsTrigger value="structure">기본 구조</TabsTrigger>
+    <TabsTrigger value="actions">액션 설계</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="structure">
+    ```tsx
+    function reducer(state, action) {
+      switch (action.type) {
+        case 'some_action': {
+          // 항상 새로운 상태 객체를 반환
+          return {
+            ...state,
+            // 업데이트된 필드
+          };
+        }
+        // 다른 케이스들...
+        default: {
+          throw Error('Unknown action: ' + action.type);
+        }
+      }
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="actions">
+    ```tsx
+    // 액션 객체 예시
+    dispatch({
+      type: 'changed_name',     // 수행할 작업 식별
+      nextName: '새로운 이름'    // 필요한 추가 데이터
+    });
+
+    dispatch({
+      type: 'item_added',
+      item: {
+        id: nextId++,
+        text: text
+      }
+    });
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6" variant="destructive">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    1. 상태는 읽기 전용입니다. 객체나 배열을 직접 수정하지 마세요.
+    2. 리듀서 함수는 순수 함수여야 합니다.
+    3. 각 케이스에서 항상 새로운 상태 객체를 반환해야 합니다.
+  </AlertDescription>
+</Alert>
+
+## 일반적인 사용 예제
+
+### 폼 상태 관리
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    function formReducer(state, action) {
+      switch (action.type) {
+        case 'changed_name': {
+          return {
+            ...state,
+            name: action.nextName
+          };
+        }
+        case 'changed_age': {
+          return {
+            ...state,
+            age: action.nextAge
+          };
+        }
+      }
+    }
+
+    function Form() {
+      const [state, dispatch] = useReducer(formReducer, {
+        name: '',
+        age: 0
+      });
+
+      return (
+        <>
+          <input
+            value={state.name}
+            onChange={e => {
+              dispatch({
+                type: 'changed_name',
+                nextName: e.target.value
+              });
+            }}
+          />
+          <button onClick={() => {
+            dispatch({
+              type: 'changed_age',
+              nextAge: state.age + 1
+            });
+          }}>
+            나이 증가
+          </button>
+        </>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+### 할 일 목록 관리
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 구현</TabsTrigger>
+    <TabsTrigger value="immer">Immer 사용</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="basic">
+    ```tsx
+    function todosReducer(tasks, action) {
+      switch (action.type) {
+        case 'added': {
+          return [...tasks, {
+            id: action.id,
+            text: action.text,
+            done: false
+          }];
+        }
+        case 'deleted': {
+          return tasks.filter(t => t.id !== action.id);
+        }
+        case 'toggled': {
+          return tasks.map(t => {
+            if (t.id === action.id) {
+              return { ...t, done: !t.done };
+            }
+            return t;
+          });
+        }
+      }
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="immer">
+    ```tsx
+    import { useImmerReducer } from 'use-immer';
+
+    function todosReducer(draft, action) {
+      switch (action.type) {
+        case 'added': {
+          draft.push({
+            id: action.id,
+            text: action.text,
+            done: false
+          });
+          break;
+        }
+        case 'toggled': {
+          const todo = draft.find(t => t.id === action.id);
+          todo.done = !todo.done;
+          break;
+        }
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 초기 상태 최적화
+
+### 초기화 함수 사용
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>초기 상태 계산 최적화</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // ✅ 초기화 함수를 사용한 방식
+    function createInitialTodos(username) {
+      return [
+        { text: `${username}의 할 일 1`, completed: false },
+        { text: `${username}의 할 일 2`, completed: false }
+      ];
+    }
+
+    function TodoList({ username }) {
+      const [todos, dispatch] = useReducer(
+        todosReducer,
+        username,              // 초기화 함수에 전달될 인자
+        createInitialTodos     // 초기화 함수
+      );
+      // ...
+    }
+
+    // 🔴 피해야 할 방식: 매 렌더링마다 초기 상태 재생성
+    const [todos, dispatch] = useReducer(
+      todosReducer,
+      createInitialTodos(username) // 매 렌더링마다 호출됨
+    );
+    ```
+  </CardContent>
+</Card>
+
+### 게으른 초기화
+
+```tsx
+function TodoList({ username }) {
+  const [state, dispatch] = useReducer(reducer, null, () => {
+    // localStorage 접근 같은 비용이 큰 작업은
+    // 초기화 함수 내부에서 수행
+    const savedTodos = loadFromLocalStorage('todos');
+    return savedTodos ?? createInitialTodos(username);
+  });
+  // ...
+}
+```
+
+<Alert className="mt-6">
+  <AlertTitle>성능 팁</AlertTitle>
+  <AlertDescription>
+    1. 초기화 로직이 복잡하거나 비용이 큰 경우 초기화 함수를 사용하세요.
+    2. 초기화 함수는 컴포넌트가 처음 마운트될 때만 실행됩니다.
+    3. 초기화 함수에는 순수하지 않은 연산(예: localStorage 접근)도 포함될 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 일반적인 문제 해결
+
+### 상태 업데이트가 반영되지 않는 경우
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>디스패치 후 이전 상태 값이 출력되는 경우</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // 🔴 잘못된 예: dispatch는 즉시 상태를 변경하지 않음
+    function handleClick() {
+      dispatch({ type: 'incremented_age' });
+      console.log(state.age); // 여전히 이전 값
+    }
+
+    // ✅ 다음 상태 예측이 필요한 경우
+    function handleClick() {
+      const action = { type: 'incremented_age' };
+      dispatch(action);
+      // 리듀서를 직접 호출하여 다음 상태 계산
+      const nextState = reducer(state, action);
+      console.log(nextState.age);
+    }
+    ```
+  </CardContent>
+</Card>
+
+### 화면이 업데이트되지 않는 경우
+
+<Tabs defaultValue="problem" className="w-full">
+  <TabsList>
+    <TabsTrigger value="problem">문제</TabsTrigger>
+    <TabsTrigger value="solution">해결</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="problem">
+    ```tsx
+    function reducer(state, action) {
+      switch (action.type) {
+        case 'added_todo': {
+          // 🔴 잘못된 예: 상태 직접 변경
+          state.todos.push(action.todo);
+          return state;
+        }
+      }
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="solution">
+    ```tsx
+    function reducer(state, action) {
+      switch (action.type) {
+        case 'added_todo': {
+          // ✅ 새로운 객체 반환
+          return {
+            ...state,
+            todos: [...state.todos, action.todo]
+          };
+        }
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+### 상태의 일부가 undefined가 되는 경우
+
+```tsx
+// 🔴 잘못된 예: 기존 필드 복사 누락
+function reducer(state, action) {
+  switch (action.type) {
+    case 'incremented_age': {
+      return {
+        age: state.age + 1 // name 필드가 사라짐
+      };
+    }
+  }
+}
+
+// ✅ 올바른 예: 기존 상태 복사 후 업데이트
+function reducer(state, action) {
+  switch (action.type) {
+    case 'incremented_age': {
+      return {
+        ...state,
+        age: state.age + 1
+      };
+    }
+  }
+}
+```
+
+<Alert className="mt-6 mb-6" variant="destructive">
+  <AlertTitle>Too many re-renders 오류</AlertTitle>
+  <AlertDescription>
+    렌더링 중에 dispatch를 직접 호출하면 무한 루프가 발생할 수 있습니다:
+    ```tsx
+    // 🔴 잘못된 예: 렌더링 중 직접 호출
+    <button onClick={handleClick()}>클릭</button>
+
+    // ✅ 올바른 예: 이벤트 핸들러로 전달
+    <button onClick={handleClick}>클릭</button>
+    ```
+  </AlertDescription>
+</Alert>
+
+## 개발 모드에서의 동작
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>리듀서가 두 번 실행되는 경우</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Strict Mode에서는 리듀서와 초기화 함수가 두 번 호출됩니다:
+    
+    1. 순수 함수인지 확인하기 위한 개발 모드 전용 동작
+    2. 프로덕션에서는 한 번만 실행됨
+    3. 리듀서가 순수하다면 동작에 영향을 주지 않음
+
+    ```tsx
+    // ✅ 순수한 리듀서 함수
+    function reducer(state, action) {
+      switch (action.type) {
+        case 'added_todo': {
+          return {
+            ...state,
+            todos: [...state.todos, action.todo]
+          };
+        }
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 모범 사례
+
+<Card className="mt-6">
+  <CardContent className="space-y-4">
+    1. **액션 타입 상수화**:
+       ```tsx
+       const TODO_ACTIONS = {
+         ADD: 'todo/add',
+         TOGGLE: 'todo/toggle',
+         DELETE: 'todo/delete'
+       };
+       ```
+
+    2. **액션 생성자 함수 사용**:
+       ```tsx
+       function addTodo(text) {
+         return {
+           type: TODO_ACTIONS.ADD,
+           todo: { id: nextId++, text, completed: false }
+         };
+       }
+       ```
+
+    3. **switch 문에서 블록 스코프 사용**:
+       ```tsx
+       case 'some_action': {
+         // 블록 스코프로 변수 충돌 방지
+         const newValue = calculate();
+         return { ...state, value: newValue };
+       }
+       ```
+  </CardContent>
+</Card>

@@ -1,0 +1,127 @@
+---
+title: "Next.js의 이미지 최적화 (계속)"
+description: "이미지 크기 조정과 스타일링 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+## 우선순위와 성능
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>LCP(Largest Contentful Paint) 최적화</CardTitle>
+    <CardDescription>
+      페이지의 주요 이미지에는 priority 속성을 추가하여 로딩 우선순위를 높일 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import Image from 'next/image'
+    import profilePic from '../public/me.png'
+    
+    export default function Page() {
+      return <Image src={profilePic} alt="작성자 사진" priority />
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 이미지 크기 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>레이아웃 시프트 방지를 위한 크기 설정</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">자동 크기 설정</h4>
+        <p>static import를 사용하면 자동으로 크기가 설정됩니다.</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">수동 크기 설정</h4>
+        <p>width와 height 속성을 직접 지정하여 종횡비를 결정할 수 있습니다.</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">fill 사용</h4>
+        <p>부모 요소의 크기에 맞춰 이미지가 확장됩니다.</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 반응형 이미지 예제
+
+<Tabs defaultValue="responsive" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="responsive">반응형</TabsTrigger>
+    <TabsTrigger value="fill">컨테이너 채우기</TabsTrigger>
+    <TabsTrigger value="background">배경 이미지</TabsTrigger>
+  </TabsList>
+  <TabsContent value="responsive">
+    ```tsx
+    export default function Responsive() {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Image
+            alt="Mountains"
+            src={mountains}
+            sizes="100vw"
+            style={{
+              width: '100%',
+              height: 'auto',
+            }}
+          />
+        </div>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="fill">
+    ```tsx
+    export default function Fill() {
+      return (
+        <div style={{ position: 'relative', height: '400px' }}>
+          <Image
+            alt="Mountains"
+            src={mountains}
+            fill
+            sizes="(min-width: 808px) 50vw, 100vw"
+            style={{ objectFit: 'cover' }}
+          />
+        </div>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="background">
+    ```tsx
+    export default function Background() {
+      return (
+        <Image
+          alt="Mountains"
+          src={mountains}
+          placeholder="blur"
+          quality={100}
+          fill
+          sizes="100vw"
+          style={{ objectFit: 'cover' }}
+        />
+      )
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert>
+  <AlertTitle>스타일링 주의사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>className 또는 style prop을 사용하세요.</li>
+      <li>fill 사용 시 부모 요소에 position: relative가 필요합니다.</li>
+      <li>fill 사용 시 부모 요소에 display: block이 필요합니다.</li>
+    </ul>
+  </AlertDescription>
+</Alert>

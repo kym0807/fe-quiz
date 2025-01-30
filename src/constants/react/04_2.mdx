@@ -1,0 +1,215 @@
+---
+title: "React 서버 함수"
+description: "React 서버 컴포넌트에서 사용되는 서버 함수에 대해 알아봅니다"
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>서버 함수란?</CardTitle>
+    <CardDescription>
+      클라이언트 컴포넌트에서 서버에서 실행되는 비동기 함수를 호출할 수 있게 해주는 기능입니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+<Alert className="mb-6">
+  <AlertDescription>
+    2024년 9월까지 모든 서버 함수를 "서버 액션"이라고 불렀습니다. action prop에 전달되거나 
+    action 내부에서 호출되는 서버 함수는 서버 액션이지만, 모든 서버 함수가 서버 액션인 것은 아닙니다.
+  </AlertDescription>
+</Alert>
+
+## 서버 함수 생성하기
+
+<Tabs defaultValue="server-component" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="server-component">서버 컴포넌트에서 생성</TabsTrigger>
+    <TabsTrigger value="client-import">클라이언트에서 임포트</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="server-component">
+    <Card>
+      <CardContent>
+        ```jsx
+        // 서버 컴포넌트
+        import Button from './Button';
+
+        function EmptyNote() {
+          async function createNoteAction() {
+            'use server'; // 서버 함수 선언
+            
+            await db.notes.create();
+          }
+
+          return <Button onClick={createNoteAction} />;
+        }
+
+        // 클라이언트 컴포넌트
+        "use client";
+
+        export default function Button({onClick}) { 
+          console.log(onClick); 
+          // {$$typeof: Symbol.for("react.server.reference"), $$id: 'createNoteAction'}
+          return <button onClick={() => onClick()}>빈 노트 생성</button>
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="client-import">
+    <Card>
+      <CardContent>
+        ```jsx
+        // actions.js
+        "use server";
+
+        export async function createNote() {
+          await db.notes.create();
+        }
+
+        // 클라이언트 컴포넌트
+        "use client";
+        import {createNote} from './actions';
+
+        function EmptyNote() {
+          return <button onClick={() => createNote()} />
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 서버 함수와 폼
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>폼 액션으로 서버 함수 사용하기</CardTitle>
+    <CardDescription>
+      React 19의 새로운 Form 기능과 함께 사용할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```jsx
+    "use server";
+    export async function updateName(name) {
+      if (!name) {
+        return {error: '이름이 필요합니다'};
+      }
+      await db.users.updateName(name);
+    }
+
+    // 클라이언트 컴포넌트
+    "use client";
+    import {updateName} from './actions';
+
+    function UpdateName() {
+      return (
+        <form action={updateName}>
+          <input type="text" name="name" />
+        </form>
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+## useActionState 활용하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>상태 관리와 점진적 개선</CardTitle>
+    <CardDescription>
+      서버 함수의 대기 상태와 응답을 관리하고, 점진적 개선을 지원합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```jsx
+    "use client";
+    import {updateName} from './actions';
+
+    function UpdateName() {
+      const [state, submitAction, isPending] = useActionState(
+        updateName, 
+        {error: null},
+        '/name/update' // 점진적 개선을 위한 폴백 URL
+      );
+
+      return (
+        <form action={submitAction}>
+          <input 
+            type="text" 
+            name="name" 
+            disabled={isPending}
+          />
+          {state.error && (
+            <span className="text-red-500">
+              오류: {state.error}
+            </span>
+          )}
+        </form>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertDescription>
+    useActionState를 사용하면 하이드레이션이 완료되기 전에도 폼 제출이 자동으로 재실행됩니다.
+    이를 통해 사용자는 앱이 하이드레이션되기 전에도 상호작용할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 서버 함수와 트랜지션
+
+<Card className="mb-6">
+  <CardContent>
+    ```jsx
+    "use client";
+    function UpdateName() {
+      const [name, setName] = useState('');
+      const [error, setError] = useState(null);
+      const [isPending, startTransition] = useTransition();
+
+      const submitAction = async () => {
+        startTransition(async () => {
+          const {error} = await updateName(name);
+          if (error) {
+            setError(error);
+          } else {
+            setName('');
+          }
+        })
+      }
+      
+      return (
+        <form action={submitAction}>
+          <input 
+            type="text" 
+            name="name" 
+            disabled={isPending}
+          />
+          {error && (
+            <span className="text-red-500">
+              실패: {error}
+            </span>
+          )}
+        </form>
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6 bg-blue-50">
+  <AlertDescription>
+    서버 함수를 클라이언트의 Action으로 감싸면 useTransition을 통해 서버 함수의 대기 상태에 
+    접근할 수 있습니다.
+  </AlertDescription>
+</Alert>

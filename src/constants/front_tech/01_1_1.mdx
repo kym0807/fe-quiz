@@ -1,0 +1,194 @@
+---
+title: "Vite 설정 가이드"
+description: "Vite의 설정 파일 작성과 활용에 대한 포괄적인 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 설정</CardTitle>
+    <CardDescription>
+      Vite의 기본적인 설정 방법과 설정 파일 생성에 대해 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    vite 명령어를 실행하면 프로젝트 루트에서 자동으로 `vite.config.js` 파일을 찾습니다. 
+    가장 기본적인 설정 파일은 다음과 같습니다:
+
+    ```js
+    // vite.config.js
+    export default {
+      // 설정 옵션들
+    }
+    ```
+    
+    프로젝트에서 Node ESM(`package.json`의 `type: "module"`)을 사용하지 않더라도, 
+    설정 파일에서 ES 모듈 문법을 사용할 수 있습니다.
+
+    다른 설정 파일을 사용하고 싶다면 `--config` CLI 옵션을 사용할 수 있습니다:
+    ```bash
+    vite --config my-config.js
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>타입스크립트 지원</CardTitle>
+    <CardDescription>
+      Vite는 TypeScript를 기본적으로 지원하며, IDE의 자동완성 기능을 활용할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    JSDoc을 사용한 타입 힌트:
+    ```js
+    /** @type {import('vite').UserConfig} */
+    export default {
+      // ...
+    }
+    ```
+
+    `defineConfig` 헬퍼를 사용하면 JSDoc 없이도 자동완성이 가능합니다:
+    ```js
+    import { defineConfig } from 'vite'
+
+    export default defineConfig({
+      // ...
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>TypeScript 설정 파일</CardTitle>
+    <CardDescription>
+      Vite는 TypeScript 설정 파일도 지원합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    `vite.config.ts` 파일을 사용할 때는 두 가지 방법이 있습니다:
+
+    1. `defineConfig` 헬퍼 함수 사용:
+    ```ts
+    import { defineConfig } from 'vite'
+
+    export default defineConfig({
+      // 설정 내용
+    })
+    ```
+
+    2. `satisfies` 연산자 사용:
+    ```ts
+    import type { UserConfig } from 'vite'
+
+    export default {
+      // 설정 내용
+    } satisfies UserConfig
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>조건부 설정</CardTitle>
+    <CardDescription>
+      명령어, 모드, SSR 빌드 여부에 따라 다른 설정을 적용할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    함수를 사용하여 상황에 따른 설정을 제공할 수 있습니다:
+
+    ```js
+    export default defineConfig(({ command, mode, isSsrBuild, isPreview }) => {
+      if (command === 'serve') {
+        return {
+          // 개발 환경 설정
+        }
+      } else {
+        // command === 'build'
+        return {
+          // 프로덕션 빌드 설정
+        }
+      }
+    })
+    ```
+
+    주요 포인트:
+    - `command`는 개발 시 'serve'(`vite`, `vite dev`, `vite serve`), 프로덕션 빌드 시 'build'(`vite build`)
+    - `isSsrBuild`와 `isPreview`는 빌드와 서브 명령의 종류를 구분하는 추가 플래그
+    - 일부 도구에서는 이러한 플래그가 `undefined`일 수 있으므로, `true`/`false`와 명시적 비교 권장
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>비동기 설정</CardTitle>
+    <CardDescription>
+      비동기 함수를 사용하여 동적으로 설정을 생성할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    async/await를 사용한 설정 예시:
+    ```js
+    export default defineConfig(async ({ command, mode }) => {
+      const data = await asyncFunction()
+      return {
+        // Vite 설정
+      }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>환경 변수 활용</CardTitle>
+    <CardDescription>
+      Vite 설정에서 환경 변수를 활용하는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Vite는 기본적으로 `.env` 파일을 자동으로 로드하지 않습니다. 이는 `root`와 `envDir` 같은 옵션이 
+    환경 변수 로딩에 영향을 미치기 때문입니다. 대신 `loadEnv` 헬퍼를 사용할 수 있습니다:
+
+    ```js
+    import { defineConfig, loadEnv } from 'vite'
+
+    export default defineConfig(({ mode }) => {
+      // 현재 작업 디렉토리의 env 파일을 mode에 따라 로드
+      // 세 번째 매개변수를 ''로 설정하면 'VITE_' 접두사와 관계없이 
+      // 모든 환경 변수를 로드
+      const env = loadEnv(mode, process.cwd(), '')
+
+      return {
+        define: {
+          __APP_ENV__: JSON.stringify(env.APP_ENV),
+        },
+      }
+    })
+    ```
+
+    이 방식을 통해:
+    - 특정 모드에 따른 환경 변수 로드
+    - 전역 환경 변수 정의
+    - 런타임에서 환경 변수 사용 가능
+  </CardContent>
+</Card>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>설정 파일 작성 시 주의사항</CardTitle>
+    <CardDescription>
+      효율적인 Vite 설정을 위한 권장사항들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    1. 가능한 한 `defineConfig`를 사용하여 타입 안정성 확보
+    2. 환경별 설정은 조건부 설정을 활용
+    3. 환경 변수는 `loadEnv`를 통해 명시적으로 로드
+    4. TypeScript를 사용할 경우 `vite.config.ts` 활용 권장
+  </CardContent>
+</Card>

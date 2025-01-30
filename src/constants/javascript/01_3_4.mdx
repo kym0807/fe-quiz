@@ -1,0 +1,273 @@
+---
+title: "JavaScript 이벤트 루프"
+description: "JavaScript의 이벤트 루프와 런타임 모델에 대한 깊은 이해"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>이벤트 루프란?</CardTitle>
+    <CardDescription>
+      JavaScript의 코드 실행, 이벤트 수집, 하위 작업 처리를 담당하는 핵심 메커니즘
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    JavaScript의 이벤트 루프는 C나 Java와는 다른 특별한 런타임 모델을 가지고 있습니다.
+    최신 JavaScript 엔진들은 이런 동작 방식을 최적화하여 구현하고 있습니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>런타임의 핵심 구성 요소</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="stack" className="w-full">
+      <TabsList>
+        <TabsTrigger value="stack">스택</TabsTrigger>
+        <TabsTrigger value="heap">힙</TabsTrigger>
+        <TabsTrigger value="queue">큐</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="stack">
+        <div className="space-y-4">
+          <p>함수 호출은 프레임 스택을 형성합니다. 예를 들어:</p>
+          ```js
+          function foo(b) {
+            const a = 10;
+            return a + b + 11;
+          }
+
+          function bar(x) {
+            const y = 3;
+            return foo(x * y);
+          }
+
+          const baz = bar(7); // baz에 42가 할당됨
+          ```
+          
+          <Alert>
+            <AlertTitle>실행 순서</AlertTitle>
+            <AlertDescription>
+              1. bar 호출 시 첫 프레임 생성 (bar의 인자와 지역 변수 참조 포함)
+              2. foo 호출 시 두 번째 프레임이 첫 프레임 위에 추가
+              3. foo 반환 시 최상위 프레임 제거
+              4. bar 반환 시 스택이 비워짐
+            </AlertDescription>
+          </Alert>
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="heap">
+        <p>
+          객체들은 힙이라고 불리는 큰 메모리 영역에 할당됩니다. 
+          힙은 대부분 구조화되지 않은 메모리 영역을 의미합니다.
+        </p>
+      </TabsContent>
+      
+      <TabsContent value="queue">
+        <div className="space-y-4">
+          <p>
+            JavaScript 런타임은 처리할 메시지들의 목록인 메시지 큐를 사용합니다.
+            각 메시지는 해당 메시지를 처리할 함수와 연결되어 있습니다.
+          </p>
+          
+          <Alert>
+            <AlertDescription>
+              이벤트 루프는 큐에서 가장 오래된 메시지부터 처리하기 시작하며,
+              각 메시지는 스택이 다시 비워질 때까지 처리됩니다.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>이벤트 루프의 동작 방식</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        이벤트 루프라는 이름은 아래와 같은 일반적인 구현 방식에서 유래했습니다:
+      </p>
+      
+      ```js
+      while (queue.waitForMessage()) {
+        queue.processNextMessage();
+      }
+      ```
+      
+      <p>
+        여기서 `queue.waitForMessage()`는 새로운 메시지가 도착할 때까지 
+        동기적으로 대기합니다.
+      </p>
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>실행 완료 보장 (Run-to-completion)</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        한 메시지의 처리는 다른 메시지가 처리되기 전에 완전히 완료됩니다.
+        이는 함수가 실행되는 동안 중단되지 않고 완전히 실행됨을 보장합니다.
+      </p>
+      
+      <Alert>
+        <AlertTitle>장단점</AlertTitle>
+        <AlertDescription>
+          <div className="space-y-2">
+            <p>장점: 코드의 실행 순서를 예측하기 쉽고 데이터 조작이 안전합니다.</p>
+            <p>
+              단점: 메시지 처리가 너무 오래 걸리면 사용자 상호작용(클릭, 스크롤 등)이 
+              차단될 수 있습니다.
+            </p>
+          </div>
+        </AlertDescription>
+      </Alert>
+      
+      <p>
+        브라우저는 "스크립트 실행 시간이 너무 깁니다" 다이얼로그로 
+        이 문제를 완화합니다. 메시지 처리는 짧게 유지하고, 
+        가능하다면 하나의 긴 메시지를 여러 개의 작은 메시지로 나누는 것이 좋습니다.
+      </p>
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>메시지 추가</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        웹 브라우저에서 메시지는 주로 이벤트가 발생하고 해당 이벤트에 리스너가 
+        연결되어 있을 때 추가됩니다. 리스너가 없다면 이벤트는 무시됩니다.
+      </p>
+      
+      <Alert>
+        <AlertTitle>setTimeout의 동작 방식</AlertTitle>
+        <AlertDescription>
+          `setTimeout`의 시간값은 메시지가 큐에 추가되는 최소 지연 시간을 나타냅니다.
+          실제 실행 시간은 큐의 다른 메시지들에 따라 달라질 수 있습니다.
+        </AlertDescription>
+      </Alert>
+      
+      ```js
+      const seconds = new Date().getTime() / 1000;
+
+      setTimeout(() => {
+        // "2"가 출력됨 - 콜백이 500ms 후 즉시 실행되지 않음
+        console.log(`${new Date().getTime() / 1000 - seconds}초 후 실행`);
+      }, 500);
+
+      while (true) {
+        if (new Date().getTime() / 1000 - seconds >= 2) {
+          console.log("2초 동안 루프 실행");
+          break;
+        }
+      }
+      ```
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>제로 딜레이의 이해</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        `setTimeout`을 0ms 지연으로 호출하더라도 콜백이 즉시 실행되지는 않습니다.
+        실행 시점은 큐에서 대기 중인 작업의 수에 따라 달라집니다.
+      </p>
+
+      ```js
+      (() => {
+        console.log("시작");
+
+        setTimeout(() => {
+          console.log("콜백 1: 콜백의 메시지");
+        }); // 기본값 0
+
+        console.log("일반 메시지");
+
+        setTimeout(() => {
+          console.log("콜백 2: 콜백의 메시지");
+        }, 0);
+
+        console.log("종료");
+      })();
+
+      // 출력 순서:
+      // "시작"
+      // "일반 메시지"
+      // "종료"
+      // "콜백 1: 콜백의 메시지"
+      // "콜백 2: 콜백의 메시지"
+      ```
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>런타임 간 통신</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        웹 워커나 cross-origin iframe은 각각 독립적인 스택, 힙, 메시지 큐를 가집니다.
+        서로 다른 런타임은 `postMessage` 메서드를 통해서만 통신할 수 있습니다.
+      </p>
+      
+      <Alert>
+        <AlertTitle>메시지 이벤트</AlertTitle>
+        <AlertDescription>
+          한 런타임이 message 이벤트를 수신하고 있을 때만 
+          다른 런타임이 메시지를 추가할 수 있습니다.
+        </AlertDescription>
+      </Alert>
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>논블로킹 특성</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        이벤트 루프 모델의 가장 흥미로운 특징은 JavaScript가 다른 언어들과 달리
+        절대 블로킹되지 않는다는 것입니다.
+      </p>
+      
+      <p>
+        I/O 처리는 주로 이벤트와 콜백을 통해 수행되므로, 
+        IndexedDB 쿼리나 fetch 요청의 응답을 기다리는 동안에도
+        사용자 입력과 같은 다른 작업을 처리할 수 있습니다.
+      </p>
+
+      <Alert>
+        <AlertTitle>레거시 예외</AlertTitle>
+        <AlertDescription>
+          alert이나 동기식 XHR과 같은 예외가 있지만,
+          이러한 기능들의 사용은 권장되지 않습니다.
+          (예외의 예외도 존재하지만, 대부분 구현상의 버그입니다)
+        </AlertDescription>
+      </Alert>
+    </div>
+  </CardContent>
+</Card>

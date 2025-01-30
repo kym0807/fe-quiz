@@ -1,0 +1,171 @@
+---
+title: "JavaScript 메타 프로그래밍"
+description: "JavaScript의 메타 레벨 프로그래밍을 위한 Proxy와 Reflect 객체에 대한 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>메타 프로그래밍이란?</CardTitle>
+    <CardDescription>
+      Proxy와 Reflect 객체를 사용하여 JavaScript의 기본 작동 방식을 확장하고 커스터마이즈하는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    이 두 객체를 통해 속성 조회, 할당, 열거, 함수 호출 등과 같은 JavaScript의 기본 작동을 확장하고 
+    커스터마이즈할 수 있습니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Proxy 객체 활용하기</CardTitle>
+    <CardDescription>
+      Proxy를 사용하여 객체의 기본 동작을 가로채고 수정하는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    const handler = {
+      get(target, name) {
+        return name in target ? target[name] : 42;
+      },
+    };
+
+    const p = new Proxy({}, handler);
+    p.a = 1;
+    console.log(p.a, p.b); // 1, 42
+    ```
+
+    위 예제에서는 정의되지 않은 속성에 접근할 때 undefined 대신 42를 반환하도록 
+    커스터마이즈했습니다.
+  </CardContent>
+</Card>
+
+<Tabs defaultValue="terms" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="terms">주요 용어</TabsTrigger>
+  </TabsList>
+  <TabsContent value="terms">
+    <Card>
+      <CardContent className="mt-4 space-y-4">
+        - **handler**: 트랩을 포함하는 객체입니다.
+        
+        - **traps**: 속성 접근을 제공하는 메서드들입니다. (운영체제의 트랩 개념과 유사)
+        
+        - **target**: Proxy가 가상화하는 객체입니다. 주로 Proxy의 저장소 백엔드로 사용됩니다.
+        
+        - **invariants**: 커스텀 동작을 구현할 때도 변하지 않아야 하는 규칙들입니다. 
+        이를 위반하면 TypeError가 발생합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Handler와 Trap</CardTitle>
+    <CardDescription>
+      Proxy에서 사용 가능한 주요 트랩들을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="prototype" className="mb-6">
+      <TabsList>
+        <TabsTrigger value="prototype">프로토타입</TabsTrigger>
+        <TabsTrigger value="property">속성</TabsTrigger>
+        <TabsTrigger value="function">함수</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="prototype">
+        <div className="space-y-4">
+          - **getPrototypeOf**: Object.getPrototypeOf(), instanceof 등의 프로토타입 관련 작업을 가로챕니다.
+          
+          - **setPrototypeOf**: Object.setPrototypeOf() 작업을 가로챕니다.
+          
+          - **isExtensible**: Object.isExtensible() 작업을 가로챕니다.
+          
+          - **preventExtensions**: Object.preventExtensions() 작업을 가로챕니다.
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="property">
+        <div className="space-y-4">
+          - **get**: proxy[foo] 또는 proxy.bar 같은 속성 접근을 가로챕니다.
+          
+          - **set**: proxy[foo] = bar 같은 속성 할당을 가로챕니다.
+          
+          - **has**: foo in proxy 같은 속성 존재 여부 확인을 가로챕니다.
+          
+          - **deleteProperty**: delete proxy[foo] 같은 속성 삭제를 가로챕니다.
+        </div>
+      </TabsContent>
+      
+      <TabsContent value="function">
+        <div className="space-y-4">
+          - **apply**: proxy(...args) 같은 함수 호출을 가로챕니다.
+          
+          - **construct**: new proxy(...args) 같은 생성자 호출을 가로챕니다.
+        </div>
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>취소 가능한 Proxy</CardTitle>
+    <CardDescription>
+      Proxy.revocable()을 사용하여 나중에 비활성화할 수 있는 Proxy를 만드는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    const revocable = Proxy.revocable({}, {
+      get(target, name) {
+        return `[[${name}]]`;
+      },
+    });
+    
+    const proxy = revocable.proxy;
+    console.log(proxy.foo); // "[[foo]]"
+    
+    revocable.revoke(); // proxy 비활성화
+    
+    // 이후의 모든 작업은 TypeError 발생
+    console.log(proxy.foo); // TypeError
+    ```
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>Reflect 객체 활용하기</CardTitle>
+    <CardDescription>
+      가로챌 수 있는 JavaScript 작업들을 위한 내장 객체인 Reflect의 활용법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // 함수 호출 예시
+    Reflect.apply(Math.floor, undefined, [1.75]); // 1
+    
+    // 문자열 조작 예시
+    Reflect.apply(String.fromCharCode, undefined, [104, 101, 108, 108, 111]); // "hello"
+    ```
+
+    <div className="mt-4">
+      Reflect를 사용하면 속성 정의 성공 여부를 더 쉽게 확인할 수 있습니다:
+      
+      ```js
+      if (Reflect.defineProperty(target, property, attributes)) {
+        // 성공
+      } else {
+        // 실패
+      }
+      ```
+    </div>
+  </CardContent>
+</Card>

@@ -1,0 +1,577 @@
+---
+title: "WebSocket API 가이드"
+description: "브라우저와 서버 간의 양방향 실시간 통신을 구현하기 위한 WebSocket API의 완벽 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# WebSocket API 가이드
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>WebSocket이란?</CardTitle>
+    <CardDescription>
+      WebSocket API를 사용하면 브라우저와 서버 간에 양방향 실시간 통신 세션을 열 수 있습니다. 
+      서버에 지속적으로 요청을 보내지 않고도(폴링 없이) 메시지를 주고받을 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    WebSocket API는 두 가지 방식의 연결 메커니즘을 제공합니다:
+    
+    1. **WebSocket 인터페이스**: 안정적이고 브라우저/서버 지원이 우수합니다.
+    2. **WebSocketStream 인터페이스**: Promise 기반의 대안으로, 스트림 백프레셔를 자동으로 처리합니다.
+  </CardContent>
+</Card>
+
+## 주요 인터페이스
+
+<Card className="mb-4">
+  <CardContent className="pt-6">
+    <div className="grid gap-4">
+      <div>
+        <h3 className="font-medium">WebSocket</h3>
+        <p className="text-sm text-gray-600">서버와의 연결 생성 및 데이터 송수신을 위한 기본 인터페이스</p>
+      </div>
+      <div>
+        <h3 className="font-medium">WebSocketStream</h3>
+        <p className="text-sm text-gray-600">스트림 API를 활용한 Promise 기반 인터페이스 (실험적 기능)</p>
+      </div>
+      <div>
+        <h3 className="font-medium">관련 이벤트</h3>
+        <p className="text-sm text-gray-600">
+          - CloseEvent: 연결 종료 시 발생하는 이벤트
+          - MessageEvent: 메시지 수신 시 발생하는 이벤트
+        </p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## WebSocket vs WebTransport
+
+<Alert>
+  <AlertTitle>미래의 변화</AlertTitle>
+  <AlertDescription>
+    WebTransport API가 많은 경우에 WebSocket API를 대체할 것으로 예상됩니다. 
+    WebTransport는 단방향 스트림, 순서 없는 전송, 데이터그램을 통한 신뢰할 수 없는 데이터 전송 등 
+    더 다양한 기능을 제공하지만, 사용이 더 복잡하고 브라우저 지원이 제한적입니다.
+  </AlertDescription>
+</Alert>
+
+## 사용 시나리오
+
+<Tabs defaultValue="basic" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본 사용</TabsTrigger>
+    <TabsTrigger value="advanced">고급 기능</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    - 실시간 채팅 애플리케이션
+    - 라이브 피드 업데이트
+    - 실시간 알림 시스템
+    - 협업 도구
+  </TabsContent>
+  <TabsContent value="advanced">
+    - 게임 멀티플레이어
+    - 실시간 데이터 시각화
+    - IoT 디바이스 모니터링
+    - 금융 시장 데이터 스트리밍
+  </TabsContent>
+</Tabs>
+
+## HTTP 헤더
+
+WebSocket 연결 시 사용되는 주요 HTTP 헤더들:
+
+<Card className="mb-6">
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-medium">Sec-WebSocket-Key</h3>
+        <p className="text-sm text-gray-600">클라이언트가 생성한 난수값으로, WebSocket 연결 의도를 확인하는데 사용</p>
+      </div>
+      <div>
+        <h3 className="font-medium">Sec-WebSocket-Accept</h3>
+        <p className="text-sm text-gray-600">서버가 WebSocket 연결 승인을 나타내는 응답 헤더</p>
+      </div>
+      <div>
+        <h3 className="font-medium">Sec-WebSocket-Protocol</h3>
+        <p className="text-sm text-gray-600">클라이언트와 서버 간에 사용할 하위 프로토콜을 협상</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+# WebSocket 클라이언트 구현 가이드
+
+## WebSocket 객체 생성
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>연결 생성하기</CardTitle>
+    <CardDescription>
+      WebSocket 프로토콜을 사용하여 통신하려면 먼저 WebSocket 객체를 생성해야 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    const socket = new WebSocket(url, protocols);
+    ```
+
+    **매개변수:**
+    - `url`: WebSocket 서버의 URL (ws://, wss://, http://, https://)
+    - `protocols`: (선택) 사용할 하위 프로토콜 문자열 또는 배열
+  </CardContent>
+</Card>
+
+## 데이터 통신
+
+<Tabs defaultValue="send" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="send">데이터 전송</TabsTrigger>
+    <TabsTrigger value="receive">데이터 수신</TabsTrigger>
+  </TabsList>
+  <TabsContent value="send">
+    ```javascript
+    // 문자열 전송
+    socket.send("안녕하세요!");
+
+    // JSON 객체 전송
+    const data = {
+      type: "message",
+      content: "안녕하세요",
+      timestamp: Date.now()
+    };
+    socket.send(JSON.stringify(data));
+
+    // 바이너리 데이터 전송
+    const buffer = new ArrayBuffer(8);
+    socket.send(buffer);
+    ```
+  </TabsContent>
+  <TabsContent value="receive">
+    ```javascript
+    // 메시지 수신 처리
+    socket.addEventListener("message", (event) => {
+      // 텍스트 데이터
+      if (typeof event.data === "string") {
+        console.log("텍스트 메시지:", event.data);
+      }
+      // JSON 데이터
+      try {
+        const jsonData = JSON.parse(event.data);
+        console.log("JSON 데이터:", jsonData);
+      } catch (e) {
+        // JSON이 아닌 경우 처리
+      }
+    });
+    ```
+  </TabsContent>
+</Tabs>
+
+## 이벤트 처리
+
+<Card className="mb-6">
+  <CardContent>
+    ```javascript
+    // 연결 성공
+    socket.addEventListener("open", (event) => {
+      console.log("WebSocket 연결이 열렸습니다");
+    });
+
+    // 메시지 수신
+    socket.addEventListener("message", (event) => {
+      console.log("새로운 메시지:", event.data);
+    });
+
+    // 에러 발생
+    socket.addEventListener("error", (event) => {
+      console.error("WebSocket 에러:", event);
+    });
+
+    // 연결 종료
+    socket.addEventListener("close", (event) => {
+      console.log(
+        `연결이 종료됨. 코드: ${event.code}, 이유: ${event.reason}`
+      );
+    });
+    ```
+  </CardContent>
+</Card>
+
+## JSON 기반 통신 예제
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>채팅 애플리케이션 예제</CardTitle>
+    <CardDescription>
+      JSON을 사용한 실제 채팅 애플리케이션 구현 예시
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    function sendChatMessage(text) {
+      const message = {
+        type: "chat",
+        text: text,
+        timestamp: Date.now(),
+        userId: currentUserId
+      };
+      
+      socket.send(JSON.stringify(message));
+    }
+
+    // 메시지 수신 및 처리
+    socket.addEventListener("message", (event) => {
+      const msg = JSON.parse(event.data);
+      
+      switch (msg.type) {
+        case "chat":
+          displayMessage(msg);
+          break;
+        case "user_join":
+          notifyUserJoined(msg.userId);
+          break;
+        case "user_leave":
+          notifyUserLeft(msg.userId);
+          break;
+      }
+    });
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>보안 주의사항</AlertTitle>
+  <AlertDescription>
+    프로덕션 환경에서는 반드시 wss:// (WebSocket Secure) 프로토콜을 사용하세요. 
+    암호화되지 않은 ws:// 연결은 중간자 공격에 취약할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+# WebSocket 서버 구현 가이드
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>WebSocket 서버란?</CardTitle>
+    <CardDescription>
+      WebSocket 프로토콜을 따르는 TCP 서버로, 클라이언트와의 지속적인 양방향 통신을 담당합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    WebSocket 서버는 모든 서버 사이드 프로그래밍 언어(C++, Python, PHP, Node.js 등)로 구현할 수 있으며, 
+    Berkeley 소켓을 지원하는 모든 플랫폼에서 동작합니다.
+  </CardContent>
+</Card>
+
+## 핸드셰이크 프로세스
+
+<Tabs defaultValue="client" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="client">클라이언트 요청</TabsTrigger>
+    <TabsTrigger value="server">서버 응답</TabsTrigger>
+  </TabsList>
+  <TabsContent value="client">
+    ```http
+    GET /chat HTTP/1.1
+    Host: example.com:8000
+    Upgrade: websocket
+    Connection: Upgrade
+    Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+    Sec-WebSocket-Version: 13
+    ```
+  </TabsContent>
+  <TabsContent value="server">
+    ```http
+    HTTP/1.1 101 Switching Protocols
+    Upgrade: websocket
+    Connection: Upgrade
+    Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+    ```
+  </TabsContent>
+</Tabs>
+
+## 데이터 프레임 해석
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>프레임 구조 이해하기</CardTitle>
+    <CardDescription>
+      WebSocket 프레임의 각 비트와 바이트가 의미하는 바를 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 첫 번째 바이트 구성
+    - **FIN (1 bit)**: 마지막 메시지 조각인지 표시
+    - **RSV1-3 (3 bits)**: 확장을 위해 예약됨
+    - **Opcode (4 bits)**: 프레임 타입 지정
+      - 0x0: 연속 프레임
+      - 0x1: 텍스트 프레임
+      - 0x2: 바이너리 프레임
+      - 0x8: 연결 종료
+      - 0x9: Ping
+      - 0xA: Pong
+
+    ### 두 번째 바이트
+    - **MASK (1 bit)**: 페이로드 마스킹 여부
+    - **Payload Length (7 bits)**: 페이로드 길이
+  </CardContent>
+</Card>
+
+## 페이로드 길이 해석
+
+<Card className="mb-6">
+  <CardContent>
+    1. 0-125: 실제 페이로드 길이
+    2. 126: 다음 2바이트가 16비트 길이
+    3. 127: 다음 8바이트가 64비트 길이
+
+    ```javascript
+    function decodePayloadLength(buffer) {
+      const firstLength = buffer[1] & 0x7F;
+      if (firstLength <= 125) {
+        return firstLength;
+      } else if (firstLength === 126) {
+        return (buffer[2] << 8) | buffer[3];
+      } else {
+        // 64비트 길이 처리
+        let length = 0;
+        for (let i = 0; i < 8; i++) {
+          length = (length << 8) | buffer[i + 2];
+        }
+        return length;
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 메시지 프래그멘테이션
+
+<Tabs defaultValue="concept" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="concept">개념</TabsTrigger>
+    <TabsTrigger value="example">예제</TabsTrigger>
+  </TabsList>
+  <TabsContent value="concept">
+    - 큰 메시지를 여러 프레임으로 나누어 전송
+    - 첫 프레임: 타입 지정 (0x1 또는 0x2)
+    - 중간 프레임: 연속 프레임 (0x0)
+    - 마지막 프레임: FIN=1로 표시
+  </TabsContent>
+  <TabsContent value="example">
+    ```javascript
+    // 메시지 프래그멘테이션 예시
+    const frames = [
+      { fin: 0, opcode: 0x1, payload: "첫 번째" },
+      { fin: 0, opcode: 0x0, payload: "두 번째" },
+      { fin: 1, opcode: 0x0, payload: "마지막" }
+    ];
+    ```
+  </TabsContent>
+</Tabs>
+
+## Ping/Pong 메커니즘
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>연결 유지 확인</CardTitle>
+    <CardDescription>
+      WebSocket 연결의 상태를 주기적으로 확인하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // 서버 측 구현 예시
+    function sendPing(socket) {
+      const pingFrame = createFrame({
+        fin: 1,
+        opcode: 0x9,
+        payload: new Date().toISOString()
+      });
+      socket.send(pingFrame);
+    }
+
+    // 클라이언트 응답 처리
+    socket.on('pong', (data) => {
+      console.log('Pong received:', data);
+      updateLastActiveTime();
+    });
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>모범 사례</AlertTitle>
+  <AlertDescription>
+    - 연결당 하나의 미응답 Ping만 허용
+    - 적절한 타임아웃 설정으로 좀비 연결 방지
+    - 과도한 Ping 사용 자제 (네트워크 부하 고려)
+  </AlertDescription>
+</Alert>
+
+## 보안 고려사항
+
+<Card className="mb-6">
+  <CardContent className="space-y-4">
+    <div>
+      <h3 className="font-medium">Origin 검증</h3>
+      <p className="text-sm text-gray-600">
+        모든 WebSocket 요청의 Origin 헤더를 검증하여 CSRF 공격 방지
+      </p>
+    </div>
+    <div>
+      <h3 className="font-medium">데이터 유효성 검사</h3>
+      <p className="text-sm text-gray-600">
+        수신된 모든 데이터의 형식과 내용을 엄격하게 검증
+      </p>
+    </div>
+    <div>
+      <h3 className="font-medium">리소스 제한</h3>
+      <p className="text-sm text-gray-600">
+        연결 수, 메시지 크기, 전송 빈도에 적절한 제한 설정
+      </p>
+    </div>
+  </CardContent>
+</Card>
+
+# WebSocket 확장과 하위 프로토콜
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>확장과 하위 프로토콜의 차이</CardTitle>
+    <CardDescription>
+      확장은 WebSocket 프레임을 수정하고 페이로드를 변환하는 반면, 
+      하위 프로토콜은 페이로드의 구조를 정의합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 확장(Extension)
+    - 압축과 같은 일반적인 기능 제공
+    - 데이터 전송 방식을 수정
+    - 선택적 사용 가능
+    
+    ### 하위 프로토콜(Subprotocol)
+    - 특정 애플리케이션을 위한 메시지 형식 정의
+    - 데이터 구조만 정의하고 내용은 수정하지 않음
+    - 연결 시 반드시 하나를 선택해야 함
+  </CardContent>
+</Card>
+
+## 하위 프로토콜 구현
+
+<Tabs defaultValue="client" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="client">클라이언트 요청</TabsTrigger>
+    <TabsTrigger value="server">서버 응답</TabsTrigger>
+  </TabsList>
+  <TabsContent value="client">
+    ```javascript
+    const socket = new WebSocket('wss://example.com/chat', [
+      'chat.example.com',
+      'game.example.com'
+    ]);
+
+    socket.addEventListener('open', () => {
+      console.log('선택된 프로토콜:', socket.protocol);
+    });
+    ```
+  </TabsContent>
+  <TabsContent value="server">
+    ```javascript
+    // 서버는 클라이언트가 제안한 프로토콜 중 하나만 선택해야 함
+    if (supportedProtocols.includes(clientProtocol)) {
+      headers['Sec-WebSocket-Protocol'] = clientProtocol;
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 하위 프로토콜 예제
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>채팅 프로토콜 예제</CardTitle>
+    <CardDescription>
+      chat.example.com 하위 프로토콜 구현 예시
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // 메시지 형식 정의
+    const messageTypes = {
+      CHAT: 'chat',
+      JOIN: 'join',
+      LEAVE: 'leave',
+      TYPING: 'typing'
+    };
+
+    // 메시지 생성
+    function createMessage(type, content) {
+      return JSON.stringify({
+        type,
+        content,
+        timestamp: Date.now(),
+        userId: currentUser.id
+      });
+    }
+
+    // 메시지 처리
+    socket.addEventListener('message', (event) => {
+      const message = JSON.parse(event.data);
+      
+      switch (message.type) {
+        case messageTypes.CHAT:
+          displayChatMessage(message);
+          break;
+        case messageTypes.JOIN:
+          handleUserJoin(message);
+          break;
+        case messageTypes.LEAVE:
+          handleUserLeave(message);
+          break;
+        case messageTypes.TYPING:
+          showTypingIndicator(message);
+          break;
+      }
+    });
+    ```
+  </CardContent>
+</Card>
+
+## 모범 사례
+
+<Alert>
+  <AlertTitle>하위 프로토콜 명명 규칙</AlertTitle>
+  <AlertDescription>
+    하위 프로토콜 이름은 충돌 방지를 위해 도메인 이름을 포함하는 것이 좋습니다.
+    예: `chat.example.com`, `game.example.com`
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-medium">버전 관리</h3>
+        <p className="text-sm text-gray-600">
+          프로토콜 버전을 이름에 포함: `chat.example.com.v1`
+        </p>
+      </div>
+      <div>
+        <h3 className="font-medium">문서화</h3>
+        <p className="text-sm text-gray-600">
+          모든 메시지 타입과 포맷을 명확하게 문서화
+        </p>
+      </div>
+      <div>
+        <h3 className="font-medium">에러 처리</h3>
+        <p className="text-sm text-gray-600">
+          프로토콜 규칙 위반 시 명확한 에러 메시지 전송
+        </p>
+      </div>
+    </div>
+  </CardContent>
+</Card>

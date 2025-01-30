@@ -1,0 +1,179 @@
+---
+title: "React 훅 사용 규칙"
+description: "React 훅의 핵심 규칙과 올바른 사용법에 대해 알아봅니다"
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>훅(Hooks)이란?</CardTitle>
+    <CardDescription>
+      훅은 JavaScript 함수로 정의되지만, 특별한 종류의 재사용 가능한 UI 로직을 나타냅니다.
+      React에서는 'use'로 시작하는 함수를 훅이라고 부릅니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 핵심 규칙 1: 최상위에서만 훅을 호출하세요
+
+<Alert className="mb-6">
+  <AlertDescription>
+    반복문, 조건문, 중첩 함수, try/catch/finally 블록 내부에서 훅을 호출하지 마세요.
+    대신 React 함수의 최상위 레벨에서 항상 훅을 사용하세요.
+  </AlertDescription>
+</Alert>
+
+### 올바른 훅 호출 위치
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```jsx
+    function Counter() {
+      // ✅ 좋은 예: 함수 컴포넌트의 최상위 레벨
+      const [count, setCount] = useState(0);
+      // ...
+    }
+
+    function useWindowWidth() {
+      // ✅ 좋은 예: 커스텀 훅의 최상위 레벨
+      const [width, setWidth] = useState(window.innerWidth);
+      // ...
+    }
+    ```
+  </CardContent>
+</Card>
+
+### 잘못된 훅 사용 예시
+
+<Tabs defaultValue="conditional" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="conditional">조건문/반복문</TabsTrigger>
+    <TabsTrigger value="handlers">이벤트 핸들러</TabsTrigger>
+    <TabsTrigger value="other">기타 제한사항</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="conditional">
+    <Card>
+      <CardContent>
+        ```jsx
+        function Bad({ cond }) {
+          if (cond) {
+            // 🔴 나쁜 예: 조건문 내부
+            const theme = useContext(ThemeContext);
+          }
+          
+          for (let i = 0; i < 10; i++) {
+            // 🔴 나쁜 예: 반복문 내부
+            const theme = useContext(ThemeContext);
+          }
+          
+          if (cond) {
+            return;
+          }
+          // 🔴 나쁜 예: 조건부 반환 이후
+          const theme = useContext(ThemeContext);
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="handlers">
+    <Card>
+      <CardContent>
+        ```jsx
+        function Bad() {
+          function handleClick() {
+            // 🔴 나쁜 예: 이벤트 핸들러 내부
+            const theme = useContext(ThemeContext);
+          }
+          
+          const style = useMemo(() => {
+            // 🔴 나쁜 예: useMemo 내부
+            const theme = useContext(ThemeContext);
+            return createStyle(theme);
+          });
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="other">
+    <Card>
+      <CardContent>
+        ```jsx
+        // 🔴 나쁜 예: 클래스 컴포넌트 내부
+        class Bad extends React.Component {
+          render() {
+            useEffect(() => {})
+          }
+        }
+
+        function Bad() {
+          try {
+            // 🔴 나쁜 예: try/catch 블록 내부
+            const [x, setX] = useState(0);
+          } catch {
+            const [x, setX] = useState(1);
+          }
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 핵심 규칙 2: React 함수에서만 훅을 호출하세요
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>훅을 호출할 수 있는 곳</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="flex items-start">
+        <span className="text-green-600 mr-2">✅</span>
+        <span>React 함수 컴포넌트 내부</span>
+      </div>
+      <div className="flex items-start">
+        <span className="text-green-600 mr-2">✅</span>
+        <span>커스텀 훅 내부</span>
+      </div>
+      
+      ```jsx
+      // ✅ 좋은 예: 함수 컴포넌트
+      function FriendList() {
+        const [onlineStatus, setOnlineStatus] = useOnlineStatus();
+      }
+
+      // 🔴 나쁜 예: 일반 함수
+      function setOnlineStatus() {
+        const [onlineStatus, setOnlineStatus] = useOnlineStatus();
+      }
+      ```
+    </div>
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertDescription>
+    이 규칙을 따르면 컴포넌트의 모든 상태 관련 로직을 소스 코드에서 명확하게 확인할 수 있습니다.
+    eslint-plugin-react-hooks 플러그인을 사용하면 이러한 실수를 자동으로 잡아낼 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mt-6 bg-blue-50">
+  <CardContent className="pt-6">
+    <div className="flex items-start">
+      <span className="text-blue-600 font-semibold mr-2">참고:</span>
+      <span>
+        커스텀 훅은 다른 훅을 호출할 수 있습니다(이것이 커스텀 훅의 핵심 목적입니다).
+        이는 커스텀 훅도 함수 컴포넌트가 렌더링되는 동안에만 호출되어야 하기 때문에 가능합니다.
+      </span>
+    </div>
+  </CardContent>
+</Card>

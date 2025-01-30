@@ -1,0 +1,234 @@
+---
+title: "Next.js 리다이렉트"
+description: "Next.js에서 사용할 수 있는 다양한 리다이렉트 방법과 대규모 리다이렉트 관리 방법을 알아봅니다"
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>리다이렉트 방법 개요</CardTitle>
+  </CardHeader>
+  <CardContent>
+    | API | 용도 | 사용 위치 | 상태 코드 |
+    |-----|------|-----------|-----------|
+    | `redirect` | 이벤트나 뮤테이션 후 리다이렉트 | 서버 컴포넌트, 서버 액션, 라우트 핸들러 | 307 (임시) 또는 303 (서버 액션) |
+    | `permanentRedirect` | 영구 리다이렉트 | 서버 컴포넌트, 서버 액션, 라우트 핸들러 | 308 (영구) |
+    | `useRouter` | 클라이언트 사이드 네비게이션 | 클라이언트 컴포넌트의 이벤트 핸들러 | N/A |
+    | `next.config.js의 redirects` | 경로 기반 리다이렉트 | next.config.js 파일 | 307 또는 308 |
+    | `NextResponse.redirect` | 조건부 리다이렉트 | 미들웨어 | 모든 코드 |
+  </CardContent>
+</Card>
+
+## 리다이렉트 함수들
+
+<Tabs defaultValue="redirect" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="redirect">redirect</TabsTrigger>
+    <TabsTrigger value="permanent">permanentRedirect</TabsTrigger>
+    <TabsTrigger value="router">useRouter</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="redirect">
+    <Card>
+      <CardContent>
+        ```tsx
+        'use server'
+        
+        import { redirect } from 'next/navigation'
+        import { revalidatePath } from 'next/cache'
+        
+        export async function createPost(id: string) {
+          try {
+            // 데이터베이스 호출
+          } catch (error) {
+            // 에러 처리
+          }
+          
+          revalidatePath('/posts') // 캐시된 포스트 업데이트
+          redirect(`/post/${id}`) // 새 포스트 페이지로 이동
+        }
+        ```
+        <Alert className="mt-4">
+          <AlertDescription>
+            redirect는 기본적으로 307(임시 리다이렉트) 상태 코드를 반환합니다.
+            서버 액션에서 사용될 때는 POST 요청의 결과로 성공 페이지로 리다이렉트하는 것이
+            일반적이므로 303을 반환합니다.
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="permanent">
+    <Card>
+      <CardContent>
+        ```tsx
+        'use server'
+        
+        import { permanentRedirect } from 'next/navigation'
+        
+        export async function updateUsername(username: string) {
+          try {
+            // 데이터베이스 업데이트
+          } catch (error) {
+            // 에러 처리
+          }
+          
+          permanentRedirect(`/profile/${username}`)
+        }
+        ```
+        308(영구 리다이렉트) 상태 코드를 반환하며, 사용자 프로필 URL과 같이 
+        영구적으로 변경된 URL을 처리할 때 사용합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="router">
+    <Card>
+      <CardContent>
+        ```tsx
+        'use client'
+        
+        import { useRouter } from 'next/navigation'
+        
+        export default function Page() {
+          const router = useRouter()
+          
+          return (
+            <button 
+              onClick={() => router.push('/dashboard')}
+            >
+              대시보드로 이동
+            </button>
+          )
+        }
+        ```
+        클라이언트 컴포넌트의 이벤트 핸들러에서 프로그래밍 방식으로 
+        네비게이션해야 할 때 사용합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 설정 기반 리다이렉트
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>next.config.js의 redirects</CardTitle>
+    <CardDescription>
+      URL 구조 변경이나 미리 알려진 리다이렉트 목록을 처리할 때 사용합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```ts
+    import type { NextConfig } from 'next'
+    
+    const nextConfig: NextConfig = {
+      async redirects() {
+        return [
+          // 기본 리다이렉트
+          {
+            source: '/about',
+            destination: '/',
+            permanent: true,
+          },
+          // 와일드카드 경로 매칭
+          {
+            source: '/blog/:slug',
+            destination: '/news/:slug',
+            permanent: true,
+          },
+        ]
+      },
+    }
+    
+    export default nextConfig
+    ```
+  </CardContent>
+</Card>
+
+## 미들웨어에서의 리다이렉트
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    import { NextResponse, NextRequest } from 'next/server'
+    import { authenticate } from 'auth-provider'
+    
+    export function middleware(request: NextRequest) {
+      const isAuthenticated = authenticate(request)
+      
+      if (isAuthenticated) {
+        return NextResponse.next()
+      }
+      
+      // 인증되지 않은 사용자를 로그인 페이지로 리다이렉트
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    
+    export const config = {
+      matcher: '/dashboard/:path*',
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 대규모 리다이렉트 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>효율적인 리다이렉트 처리</CardTitle>
+    <CardDescription>
+      1000개 이상의 리다이렉트를 관리할 때는 미들웨어를 사용한 커스텀 솔루션을 고려해야 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```ts
+    // middleware.ts
+    import { ScalableBloomFilter } from 'bloom-filters'
+    import GeneratedBloomFilter from './redirects/bloom-filter.json'
+    
+    const bloomFilter = ScalableBloomFilter.fromJSON(
+      GeneratedBloomFilter as any
+    )
+    
+    export async function middleware(request: NextRequest) {
+      const pathname = request.nextUrl.pathname
+      
+      if (bloomFilter.has(pathname)) {
+        const api = new URL(
+          `/api/redirects?pathname=${encodeURIComponent(pathname)}`,
+          request.nextUrl.origin
+        )
+        
+        try {
+          const redirectData = await fetch(api)
+          if (redirectData.ok) {
+            const entry = await redirectData.json()
+            return NextResponse.redirect(
+              entry.destination,
+              entry.permanent ? 308 : 307
+            )
+          }
+        } catch (error) {
+          console.error(error)
+        }
+      }
+      
+      return NextResponse.next()
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6 bg-blue-50">
+  <AlertDescription>
+    대규모 리다이렉트를 효율적으로 처리하기 위해서는:
+    - 빠른 읽기에 최적화된 데이터베이스 사용 (예: Vercel Edge Config, Redis)
+    - Bloom 필터와 같은 데이터 조회 전략 활용
+    - 리다이렉트 맵의 효율적인 저장 및 관리가 필요합니다.
+  </AlertDescription>
+</Alert>

@@ -1,0 +1,258 @@
+---
+title: "Server Actions"
+description: "Next.js에서 서버 사이드 데이터 변경을 처리하는 방법"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Server Actions란?</CardTitle>
+    <CardDescription>
+      서버에서 실행되는 비동기 함수로, 폼 제출이나 데이터 변경을 처리하는 데 사용됩니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        Server Actions는 'use server' 지시어를 사용하여 정의되며, 
+        Server Components와 Client Components 모두에서 호출할 수 있습니다.
+      </p>
+    </div>
+  </CardContent>
+</Card>
+
+## 컴포넌트 타입별 사용법
+
+<Tabs defaultValue="server" className="w-full">
+  <TabsList>
+    <TabsTrigger value="server">Server Components</TabsTrigger>
+    <TabsTrigger value="client">Client Components</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="server">
+    <Card>
+      <CardHeader>
+        <CardTitle>Server Components에서 사용</CardTitle>
+      </CardHeader>
+      <CardContent>
+```typescript
+// app/page.tsx
+export default function Page() {
+  // Server Action 정의
+  async function create() {
+    'use server'
+    // 데이터 변경 로직
+  }
+
+  return <form action={create}>...</form>
+}
+```
+      </CardContent>
+    </Card>
+  </TabsContent>
+
+  <TabsContent value="client">
+    <Card>
+      <CardHeader>
+        <CardTitle>Client Components에서 사용</CardTitle>
+      </CardHeader>
+      <CardContent>
+```typescript
+// app/actions.ts
+'use server'
+export async function create() {
+  // 데이터 변경 로직
+}
+
+// app/ui/button.tsx
+'use client'
+import { create } from '@/app/actions'
+
+export function Button() {
+  return <button onClick={() => create()}>생성</button>
+}
+```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 폼 처리하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>폼 데이터 처리</CardTitle>
+    <CardDescription>
+      Server Actions를 사용한 폼 제출 처리 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```typescript
+export default function Page() {
+  async function createInvoice(formData: FormData) {
+    'use server'
+    
+    const rawFormData = {
+      customerId: formData.get('customerId'),
+      amount: formData.get('amount'),
+      status: formData.get('status'),
+    }
+    
+    // 데이터 변경 및 캐시 재검증
+  }
+
+  return <form action={createInvoice}>...</form>
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>팁</AlertTitle>
+  <AlertDescription>
+    많은 필드가 있는 폼의 경우 Object.fromEntries(formData)를 사용하여 
+    데이터를 더 쉽게 처리할 수 있습니다.
+  </AlertDescription>
+</Alert>
+  </CardContent>
+</Card>
+
+## 서버 사이드 유효성 검사
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>폼 데이터 검증</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+'use server'
+ 
+import { z } from 'zod'
+ 
+const schema = z.object({
+  email: z.string({
+    invalid_type_error: '잘못된 이메일 형식입니다',
+  }),
+})
+ 
+export default async function createUser(formData: FormData) {
+  const validatedFields = schema.safeParse({
+    email: formData.get('email'),
+  })
+ 
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    }
+  }
+ 
+  // 데이터 처리 로직
+}
+```
+  </CardContent>
+</Card>
+
+## 최적화 및 상태 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>낙관적 업데이트 구현</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+'use client'
+ 
+import { useOptimistic } from 'react'
+import { send } from './actions'
+ 
+export function Thread({ messages }: { messages: Message[] }) {
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic<
+    Message[],
+    string
+  >(messages, (state, newMessage) => [...state, { message: newMessage }])
+ 
+  const formAction = async (formData: FormData) => {
+    const message = formData.get('message') as string
+    addOptimisticMessage(message)
+    await send(message)
+  }
+ 
+  return (
+    <form action={formAction}>
+      <input type="text" name="message" />
+      <button type="submit">전송</button>
+    </form>
+  )
+}
+```
+  </CardContent>
+</Card>
+
+## 보안
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>보안 고려사항</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+'use server'
+ 
+import { auth } from './lib'
+ 
+export async function addItem() {
+  const { user } = auth()
+  if (!user) {
+    throw new Error('이 작업을 수행하려면 로그인이 필요합니다')
+  }
+ 
+  // 데이터 처리 로직
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>주요 보안 기능</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6">
+      <li>암호화된 고유 액션 ID 사용</li>
+      <li>사용하지 않는 Server Actions 자동 제거</li>
+      <li>Origin 검증을 통한 CSRF 공격 방지</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+  </CardContent>
+</Card>
+
+## 데이터 재검증과 리다이렉션
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>캐시 관리와 페이지 이동</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+'use server'
+ 
+import { redirect } from 'next/navigation'
+import { revalidatePath, revalidateTag } from 'next/cache'
+ 
+export async function createPost(id: string) {
+  try {
+    // 데이터 생성 로직
+    
+    // 캐시 재검증
+    revalidateTag('posts')
+    // 또는 특정 경로 재검증
+    revalidatePath('/posts')
+    
+  } catch (error) {
+    // 에러 처리
+  }
+ 
+  // 새 포스트 페이지로 이동
+  redirect(`/post/${id}`)
+}
+```
+  </CardContent>
+</Card>

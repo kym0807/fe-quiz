@@ -1,0 +1,159 @@
+---
+title: "Fragment"
+description: "React에서 여러 요소를 그룹화하는 컴포넌트"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+
+## 개요
+
+Fragment는 DOM에 별도의 노드를 추가하지 않고도 여러 자식 엘리먼트를 그룹화할 수 있게 해주는 특별한 React 컴포넌트입니다. 일반적으로 `<>...</>` 구문을 통해 사용됩니다.
+
+```tsx
+<>
+  <OneChild />
+  <AnotherChild />
+</>
+```
+
+## 주요 특징
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Props</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>`key` (선택사항): 명시적인 `<Fragment>` 문법을 사용할 때만 key를 전달할 수 있습니다.</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Alert variant="warning" className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>Fragment에 key를 전달하려면 `<>...</>` 구문을 사용할 수 없습니다. 대신 `Fragment`를 직접 import하여 사용해야 합니다.</li>
+      <li>중첩된 Fragment의 경우 (`<><><Child /></></>` → `<Child />`), 상태가 초기화될 수 있습니다.</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 사용 예시
+
+### 여러 요소 반환하기
+
+컴포넌트에서 여러 요소를 반환해야 할 때 Fragment를 사용할 수 있습니다:
+
+```tsx
+function Post() {
+  return (
+    <>
+      <PostTitle />
+      <PostBody />
+    </>
+  );
+}
+
+export default function Blog() {
+  return (
+    <>
+      <Post title="업데이트" body="오랜만의 포스팅입니다..." />
+      <Post title="새로운 블로그" body="새로운 블로그를 시작합니다!" />
+    </>
+  )
+}
+```
+
+이렇게 작성하면 DOM에 추가적인 래퍼 요소 없이 컴포넌트들이 렌더링됩니다.
+
+## 고급 사용법
+
+### Fragment 직접 import 하기
+
+`<>...</>` 구문 대신 Fragment를 직접 import하여 사용할 수 있습니다:
+
+```tsx
+import { Fragment } from 'react';
+
+function Post() {
+  return (
+    <Fragment>
+      <PostTitle />
+      <PostBody />
+    </Fragment>
+  );
+}
+```
+
+### 변수에 여러 요소 할당하기
+
+Fragment를 사용하여 여러 요소를 하나의 변수에 할당할 수 있습니다:
+
+```tsx
+function CloseDialog() {
+  const buttons = (
+    <>
+      <OKButton />
+      <CancelButton />
+    </>
+  );
+  return (
+    <AlertDialog buttons={buttons}>
+      이 페이지를 나가시겠습니까?
+    </AlertDialog>
+  );
+}
+```
+
+### 텍스트와 요소 그룹화하기
+
+Fragment를 사용하여 텍스트와 컴포넌트를 함께 그룹화할 수 있습니다:
+
+```tsx
+function DateRangePicker({ start, end }) {
+  return (
+    <>
+      시작일
+      <DatePicker date={start} />
+      종료일
+      <DatePicker date={end} />
+    </>
+  );
+}
+```
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Fragment 리스트 렌더링</CardTitle>
+    <CardDescription>
+      반복문에서 Fragment를 사용할 때는 key 속성이 필요합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```tsx
+const posts = [
+  { id: 1, title: '업데이트', body: '오랜만의 포스팅입니다...' },
+  { id: 2, title: '새 블로그', body: '새로운 블로그를 시작합니다!' }
+];
+
+export default function Blog() {
+  return posts.map(post =>
+    <Fragment key={post.id}>
+      <PostTitle title={post.title} />
+      <PostBody body={post.body} />
+    </Fragment>
+  );
+}
+```
+  </CardContent>
+</Card>
+
+<Alert variant="info" className="mt-6">
+  <AlertTitle>도움말</AlertTitle>
+  <AlertDescription>
+    리스트를 렌더링할 때는 반드시 명시적인 Fragment 구문을 사용해야 합니다. 축약형 `<>...</>` 구문에서는 key를 지정할 수 없습니다.
+  </AlertDescription>
+</Alert>

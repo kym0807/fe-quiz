@@ -1,0 +1,258 @@
+---
+title: "Next.js의 폰트 최적화"
+description: "next/font를 사용한 효율적인 폰트 관리"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Next.js 폰트 최적화
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>next/font의 특징</CardTitle>
+    <CardDescription>
+      next/font는 사용자 정의 폰트를 포함한 모든 폰트를 자동으로 최적화하고, 외부 네트워크 요청을 제거하여 개인정보 보호와 성능을 향상시킵니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">자동 최적화</h3>
+        <p>모든 폰트 파일의 자동 자체 호스팅</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">레이아웃 시프트 방지</h3>
+        <p>CSS size-adjust 속성을 활용한 zero 레이아웃 시프트</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## Google Fonts 사용하기
+
+<Tabs defaultValue="variable" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="variable">가변 폰트</TabsTrigger>
+    <TabsTrigger value="static">일반 폰트</TabsTrigger>
+  </TabsList>
+  <TabsContent value="variable">
+    ```tsx
+    import { Inter } from 'next/font/google'
+    
+    // 가변 폰트는 weight를 지정할 필요가 없습니다
+    const inter = Inter({
+      subsets: ['latin'],
+      display: 'swap',
+    })
+    
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html lang="ko" className={inter.className}>
+          <body>{children}</body>
+        </html>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="static">
+    ```tsx
+    import { Roboto } from 'next/font/google'
+    
+    const roboto = Roboto({
+      weight: ['400', '700'],
+      style: ['normal', 'italic'],
+      subsets: ['latin'],
+      display: 'swap',
+    })
+    
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html lang="ko" className={roboto.className}>
+          <body>{children}</body>
+        </html>
+      )
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>알아두세요</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>여러 단어로 된 폰트 이름은 언더스코어(_)를 사용하세요 (예: Roboto_Mono)</li>
+      <li>subset을 지정하지 않으면 경고가 발생합니다</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 다중 폰트 사용하기
+
+<Tabs defaultValue="utility" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="utility">유틸리티 함수 방식</TabsTrigger>
+    <TabsTrigger value="css">CSS 변수 방식</TabsTrigger>
+  </TabsList>
+  <TabsContent value="utility">
+    ```tsx
+    // fonts.ts
+    import { Inter, Roboto_Mono } from 'next/font/google'
+    
+    export const inter = Inter({
+      subsets: ['latin'],
+      display: 'swap',
+    })
+    
+    export const roboto_mono = Roboto_Mono({
+      subsets: ['latin'],
+      display: 'swap',
+    })
+    
+    // layout.tsx
+    import { inter } from './fonts'
+    
+    export default function Layout({ children }) {
+      return (
+        <html lang="ko" className={inter.className}>
+          <body>{children}</body>
+        </html>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="css">
+    ```tsx
+    // layout.tsx
+    import { Inter, Roboto_Mono } from 'next/font/google'
+    
+    const inter = Inter({
+      subsets: ['latin'],
+      variable: '--font-inter',
+      display: 'swap',
+    })
+    
+    const roboto_mono = Roboto_Mono({
+      subsets: ['latin'],
+      variable: '--font-roboto-mono',
+      display: 'swap',
+    })
+    
+    // global.css
+    html {
+      font-family: var(--font-inter);
+    }
+    
+    h1 {
+      font-family: var(--font-roboto-mono);
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 로컬 폰트 사용하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>로컬 폰트 설정</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import localFont from 'next/font/local'
+    
+    const myFont = localFont({
+      src: [
+        {
+          path: './Pretendard-Regular.woff2',
+          weight: '400',
+          style: 'normal',
+        },
+        {
+          path: './Pretendard-Bold.woff2',
+          weight: '700',
+          style: 'normal',
+        },
+      ],
+      display: 'swap',
+    })
+    ```
+  </CardContent>
+</Card>
+
+## Tailwind CSS와 함께 사용하기
+
+<Tabs defaultValue="config" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="config">Tailwind 설정</TabsTrigger>
+    <TabsTrigger value="usage">사용 방법</TabsTrigger>
+  </TabsList>
+  <TabsContent value="config">
+    ```js
+    /** @type {import('tailwindcss').Config} */
+    module.exports = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['var(--font-inter)'],
+            mono: ['var(--font-roboto-mono)'],
+          },
+        },
+      },
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="usage">
+    ```tsx
+    const inter = Inter({
+      subsets: ['latin'],
+      variable: '--font-inter',
+      display: 'swap',
+    })
+    
+    export default function Layout({ children }) {
+      return (
+        <html lang="ko" className={inter.variable}>
+          <body className="font-sans">{children}</body>
+        </html>
+      )
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 폰트 프리로딩
+
+<Card className="mb-6">
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">페이지별 프리로딩</h4>
+        <p>해당 페이지의 경로에서만 프리로드</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">레이아웃 프리로딩</h4>
+        <p>해당 레이아웃이 적용된 모든 경로에서 프리로드</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">루트 레이아웃 프리로딩</h4>
+        <p>모든 경로에서 프리로드</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>폰트 재사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    동일한 폰트를 여러 파일에서 로드하면 중복 인스턴스가 생성됩니다. 대신 공유 파일에서 폰트를 로드하고 상수로 내보내어 재사용하세요.
+  </AlertDescription>
+</Alert>

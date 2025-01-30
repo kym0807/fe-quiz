@@ -1,0 +1,278 @@
+---
+title: "JavaScript 텍스트 다루기"
+description: "JavaScript에서 문자열과 텍스트를 다루는 방법에 대해 알아봅니다"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>문자열(String)의 기본</CardTitle>
+    <CardDescription>
+      JavaScript에서 텍스트를 다루는 가장 기본적인 데이터 타입입니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    JavaScript의 String 타입은 UTF-16 코드 단위로 이루어진 16비트 부호 없는 정수값들의 집합입니다. 
+    각 문자는 문자열 내에서 고유한 위치(인덱스)를 가지며, 첫 번째 문자는 0번 인덱스부터 시작합니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>문자열 리터럴</CardTitle>
+    <CardDescription>
+      문자열을 생성하는 가장 기본적인 방법입니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // 작은따옴표 사용
+    const text1 = 'Hello'
+    // 큰따옴표 사용
+    const text2 = "World"
+    ```
+
+    ## 특수 문자 처리
+    
+    ```js
+    // 16진수 이스케이프
+    console.log("\xA9") // "©" 출력
+    
+    // 유니코드 이스케이프
+    console.log("\u00A9") // "©" 출력
+    
+    // 유니코드 코드 포인트
+    console.log("\u{2F804}") // 더 큰 범위의 유니코드 문자 표현 가능
+    ```
+  </CardContent>
+</Card>
+
+<Tabs defaultValue="literal" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="literal">문자열 리터럴</TabsTrigger>
+    <TabsTrigger value="object">문자열 객체</TabsTrigger>
+  </TabsList>
+  <TabsContent value="literal">
+    <Card>
+      <CardContent className="pt-6">
+        문자열 리터럴은 가장 일반적이고 권장되는 문자열 생성 방식입니다.
+        ```js
+        const str = "Hello World"
+        console.log(str.length) // 11
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  <TabsContent value="object">
+    <Card>
+      <CardContent className="pt-6">
+        String 객체는 특별한 경우에만 사용하는 것이 좋습니다.
+        ```js
+        const strObj = new String("Hello World")
+        console.log(typeof strObj) // 'object'
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>템플릿 리터럴</CardTitle>
+    <CardDescription>
+      백틱(`)을 사용한 더 강력한 문자열 표현 방식
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ## 여러 줄 문자열
+    ```js
+    // 기존 방식
+    const oldWay = "첫 번째 줄\n" +
+                   "두 번째 줄";
+
+    // 템플릿 리터럴 사용
+    const newWay = `첫 번째 줄
+    두 번째 줄`;
+    ```
+
+    ## 표현식 삽입
+    ```js
+    const name = "홍길동";
+    const age = 20;
+
+    // 기존 방식
+    console.log("제 이름은 " + name + "이고, " + age + "살입니다.");
+
+    // 템플릿 리터럴 사용
+    console.log(`제 이름은 ${name}이고, ${age}살입니다.`);
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>문자열 메서드</CardTitle>
+    <CardDescription>
+      자주 사용되는 유용한 문자열 메서드들을 소개합니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">기본 조작</h3>
+        <ul className="list-disc list-inside space-y-2">
+          <li>
+            <code>charAt()</code>: 특정 위치의 문자 반환
+          </li>
+          <li>
+            <code>substring()</code>: 부분 문자열 추출
+          </li>
+          <li>
+            <code>slice()</code>: 문자열의 일부분 추출
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold mb-2">검색과 변환</h3>
+        <ul className="list-disc list-inside space-y-2">
+          <li>
+            <code>indexOf()</code>: 문자열 검색
+          </li>
+          <li>
+            <code>replace()</code>: 문자열 치환
+          </li>
+          <li>
+            <code>toLowerCase()/toUpperCase()</code>: 대소문자 변환
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    ```js
+    const text = "Hello, World!";
+    
+    console.log(text.charAt(0));        // "H"
+    console.log(text.substring(0, 5));  // "Hello"
+    console.log(text.indexOf("World")); // 7
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>국제화(Internationalization)</CardTitle>
+    <CardDescription>
+      Intl 객체를 사용한 다국어 지원 기능
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    JavaScript의 Intl 객체는 날짜, 시간, 숫자, 통화 등을 각 나라의 형식에 맞게 표현할 수 있게 해줍니다.
+  </CardContent>
+</Card>
+
+<Tabs defaultValue="date" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="date">날짜/시간</TabsTrigger>
+    <TabsTrigger value="number">숫자/통화</TabsTrigger>
+    <TabsTrigger value="sort">정렬</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="date">
+    <Card>
+      <CardHeader>
+        <CardTitle>날짜와 시간 포맷팅</CardTitle>
+      </CardHeader>
+      <CardContent>
+        ```js
+        const date = new Date("2024-01-01");
+        
+        const formatter = new Intl.DateTimeFormat("ko-KR", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          weekday: "long"
+        });
+        
+        console.log(formatter.format(date));
+        // "2024년 1월 1일 월요일" 출력
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="number">
+    <Card>
+      <CardHeader>
+        <CardTitle>숫자와 통화 포맷팅</CardTitle>
+      </CardHeader>
+      <CardContent>
+        ```js
+        // 통화 포맷팅
+        const price = new Intl.NumberFormat("ko-KR", {
+          style: "currency",
+          currency: "KRW"
+        });
+        
+        console.log(price.format(1000000));
+        // "₩1,000,000" 출력
+        
+        // 일반 숫자 포맷팅
+        const number = new Intl.NumberFormat("ko-KR");
+        console.log(number.format(1234567.89));
+        // "1,234,567.89" 출력
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="sort">
+    <Card>
+      <CardHeader>
+        <CardTitle>문자열 정렬(Collation)</CardTitle>
+      </CardHeader>
+      <CardContent>
+        ```js
+        const fruits = ["사과", "배", "감", "귤"];
+        
+        const collator = new Intl.Collator("ko-KR");
+        
+        // 한글 자모음 순서에 맞게 정렬
+        console.log(fruits.sort(collator.compare));
+        // ["감", "귤", "배", "사과"] 출력
+        ```
+
+        각 언어와 지역에 맞는 정렬 규칙을 적용할 수 있어 
+        다국어 애플리케이션 개발에 매우 유용합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>문자열 처리 모범 사례</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-semibold mb-2">1. 문자열 생성</h3>
+        - 일반적인 경우에는 리터럴 방식(`''` 또는 `""`) 사용
+        - 템플릿 리터럴이 필요한 경우 백틱(`) 사용
+      </div>
+      
+      <div>
+        <h3 className="font-semibold mb-2">2. 성능 고려사항</h3>
+        - 큰 문자열을 여러 번 연결할 때는 배열을 사용하고 `join()` 메서드 활용
+        - 정규식을 자주 사용하는 경우 미리 컴파일하여 재사용
+      </div>
+      
+      <div>
+        <h3 className="font-semibold mb-2">3. 국제화</h3>
+        - 가능한 한 Intl 객체 활용
+        - 지역에 따른 날짜, 시간, 통화 형식 고려
+      </div>
+    </div>
+  </CardContent>
+</Card>

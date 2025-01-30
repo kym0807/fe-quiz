@@ -1,0 +1,914 @@
+---
+title: "Socket.IO 서버"
+description: "Socket.IO 서버 설정 및 초기화 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Socket.IO 서버 초기화
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>시작하기 전에</CardTitle>
+    <CardDescription>
+      Socket.IO 서버 라이브러리를 설치한 후, 서버를 초기화할 수 있습니다. TypeScript 사용자의 경우 이벤트에 대한 타입 힌트를 제공할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 기본 초기화 방법
+
+<Tabs defaultValue="standalone" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="standalone">단독 실행</TabsTrigger>
+    <TabsTrigger value="with-http">HTTP 서버와 함께</TabsTrigger>
+    <TabsTrigger value="with-https">HTTPS 서버와 함께</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="standalone">
+    ```typescript
+    import { Server } from "socket.io";
+
+    const io = new Server({ /* options */ });
+
+    io.on("connection", (socket) => {
+      // 연결 핸들링
+    });
+
+    io.listen(3000);
+    ```
+
+    포트를 첫 번째 인자로 직접 전달할 수도 있습니다:
+
+    ```typescript
+    const io = new Server(3000, { /* options */ });
+    ```
+
+    <Alert>
+      <AlertTitle>참고</AlertTitle>
+      <AlertDescription>
+        이 방식은 내부적으로 Node.js HTTP 서버를 시작합니다. io.httpServer를 통해 접근할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </TabsContent>
+
+  <TabsContent value="with-http">
+    ```typescript
+    import { createServer } from "http";
+    import { Server } from "socket.io";
+
+    const httpServer = createServer();
+    const io = new Server(httpServer, { /* options */ });
+
+    io.on("connection", (socket) => {
+      // 연결 핸들링
+    });
+
+    httpServer.listen(3000);
+    ```
+  </TabsContent>
+
+  <TabsContent value="with-https">
+    ```typescript
+    import { readFileSync } from "fs";
+    import { createServer } from "https";
+    import { Server } from "socket.io";
+
+    const httpsServer = createServer({
+      key: readFileSync("/path/to/key.pem"),
+      cert: readFileSync("/path/to/cert.pem")
+    });
+
+    const io = new Server(httpsServer, { /* options */ });
+
+    io.on("connection", (socket) => {
+      // 연결 핸들링
+    });
+
+    httpsServer.listen(3000);
+    ```
+  </TabsContent>
+</Tabs>
+
+## 프레임워크와 함께 사용하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Express와 함께 사용</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    import express from "express";
+    import { createServer } from "http";
+    import { Server } from "socket.io";
+
+    const app = express();
+    const httpServer = createServer(app);
+    const io = new Server(httpServer, { /* options */ });
+
+    io.on("connection", (socket) => {
+      // 연결 핸들링
+    });
+
+    httpServer.listen(3000);
+    ```
+
+    <Alert variant="warning">
+      <AlertTitle>주의</AlertTitle>
+      <AlertDescription>
+        app.listen(3000)은 새로운 HTTP 서버를 생성하기 때문에 여기서는 동작하지 않습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 보안 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클라이언트 인증서 인증</CardTitle>
+    <CardDescription>
+      SSL/TLS 클라이언트 인증을 사용하여 보안을 강화할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 서버 설정
+    const httpsServer = createServer({
+      key: readFileSync("/path/to/server-key.pem"),
+      cert: readFileSync("/path/to/server-cert.pem"),
+      requestCert: true,
+      ca: [readFileSync("/path/to/client-cert.pem")]
+    });
+
+    const io = new Server(httpsServer);
+
+    // 인증서 정보 접근
+    io.engine.on("connection", (rawSocket) => {
+      rawSocket.peerCertificate = rawSocket.request.client.getPeerCertificate();
+    });
+    ```
+  </CardContent>
+</Card>
+
+# 미들웨어와 CORS 설정
+
+## 미들웨어 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>미들웨어 기본 사용법</CardTitle>
+    <CardDescription>
+      미들웨어는 모든 수신 연결에 대해 실행되는 함수입니다. 로깅, 인증, 권한 부여, 속도 제한 등에 유용합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    io.use((socket, next) => {
+      if (isValid(socket.request)) {
+        next();
+      } else {
+        next(new Error("인증 실패"));
+      }
+    });
+    ```
+
+    <Alert>
+      <AlertTitle>중요</AlertTitle>
+      <AlertDescription>
+        미들웨어 실행 중에는 소켓이 아직 연결되지 않은 상태입니다. 연결이 실패하면 disconnect 이벤트가 발생하지 않습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 인증 처리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클라이언트 인증 정보 처리</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 클라이언트 측
+    const socket = io({
+      auth: {
+        token: "your-token"
+      }
+    });
+
+    // 또는 함수로 정의
+    const socket = io({
+      auth: (cb) => {
+        cb({ token: "your-token" });
+      }
+    });
+
+    // 서버 측
+    io.use((socket, next) => {
+      const token = socket.handshake.auth.token;
+      // 토큰 검증 로직
+      if (isValidToken(token)) {
+        next();
+      } else {
+        next(new Error("Invalid token"));
+      }
+    });
+    ```
+  </CardContent>
+</Card>
+
+## CORS 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>CORS 활성화</CardTitle>
+    <CardDescription>
+      Socket.IO v3부터는 CORS를 명시적으로 활성화해야 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    const io = new Server(httpServer, {
+      cors: {
+        origin: "https://your-domain.com",
+        methods: ["GET", "POST"],
+        allowedHeaders: ["my-custom-header"],
+        credentials: true
+      }
+    });
+    ```
+
+    <Alert>
+      <AlertTitle>로컬 개발 시 주의사항</AlertTitle>
+      <AlertDescription>
+        웹 애플리케이션과 서버가 다른 포트에서 실행되는 경우에도 CORS 설정이 필요합니다.
+        {`
+        const io = new Server(httpServer, {
+          cors: {
+            origin: "http://localhost:8080"
+          }
+        });
+        `}
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## CORS 문제 해결
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>자주 발생하는 CORS 오류 해결</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ### 1. Access-Control-Allow-Origin 헤더 누락
+    
+    ```typescript
+    // 올바른 설정
+    const io = new Server(httpServer, {
+      cors: {
+        origin: "https://your-domain.com" // 구체적인 도메인 지정
+      }
+    });
+    ```
+
+    ### 2. Credentials 관련 오류
+    
+    ```typescript
+    // 서버 측
+    const io = new Server(httpServer, {
+      cors: {
+        origin: "https://your-domain.com", // '*'를 사용하면 안됨
+        credentials: true
+      }
+    });
+
+    // 클라이언트 측
+    const socket = io("https://api.example.com", {
+      withCredentials: true
+    });
+    ```
+  </CardContent>
+</Card>
+
+# 멀티 노드 환경 설정
+
+## 기본 개념
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>멀티 노드 환경이란?</CardTitle>
+    <CardDescription>
+      여러 서버에 Socket.IO를 분산 배포하여 부하를 분산하고 가용성을 높이는 구성입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    멀티 노드 환경에서 고려해야 할 두 가지 핵심 요소:
+    1. Sticky Session (고정 세션)
+    2. Node 간 이벤트 공유
+  </CardContent>
+</Card>
+
+## Sticky Session 구성
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Sticky Session이 필요한 이유</CardTitle>
+    <CardDescription>
+      HTTP Long-Polling 전송 방식에서는 클라이언트의 모든 요청이 동일한 서버로 전달되어야 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Alert>
+      <AlertTitle>WebSocket만 사용하는 경우</AlertTitle>
+      <AlertDescription>
+        WebSocket 전송만 사용하는 경우 Sticky Session이 필요 없습니다. 클라이언트 설정:
+        ```typescript
+        const socket = io("https://server.com", {
+          transports: ["websocket"]
+        });
+        ```
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 로드 밸런서 설정
+
+<Tabs defaultValue="nginx" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="nginx">Nginx</TabsTrigger>
+    <TabsTrigger value="haproxy">HAProxy</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="nginx">
+    ```nginx
+    http {
+      upstream socket_nodes {
+        ip_hash; # Sticky Session 활성화
+        server app1:3000;
+        server app2:3000;
+        server app3:3000;
+      }
+
+      server {
+        listen 80;
+        
+        location /socket.io/ {
+          proxy_pass http://socket_nodes;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+        }
+      }
+    }
+    ```
+    
+    <Alert>
+      <AlertTitle>주의사항</AlertTitle>
+      <AlertDescription>
+        nginx의 proxy_read_timeout 값은 Socket.IO의 pingInterval + pingTimeout보다 커야 합니다.
+        기본값: pingInterval(25초) + pingTimeout(20초) = 45초
+      </AlertDescription>
+    </Alert>
+  </TabsContent>
+
+  <TabsContent value="haproxy">
+    ```haproxy
+    frontend socket_frontend
+      bind *:80
+      mode http
+      default_backend socket_backend
+
+    backend socket_backend
+      mode http
+      option forwardfor
+      cookie IO prefix indirect nocache # Socket.IO 세션을 위한 쿠키
+      server app1 app1:3000 check cookie app1
+      server app2 app2:3000 check cookie app2
+      server app3 app3:3000 check cookie app3
+    ```
+  </TabsContent>
+</Tabs>
+
+## Node.js Cluster 활용
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클러스터 모듈 사용</CardTitle>
+    <CardDescription>
+      단일 서버에서 여러 프로세스를 실행하여 CPU 코어를 최대한 활용하는 방법입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    import cluster from "cluster";
+    import { createServer } from "http";
+    import { Server } from "socket.io";
+    import { setupWorker, setupMaster } from "@socket.io/sticky";
+    import { createAdapter } from "@socket.io/cluster-adapter";
+    import os from "os";
+
+    if (cluster.isMaster) {
+      console.log(`마스터 프로세스 ${process.pid} 실행 중`);
+      
+      const httpServer = createServer();
+      setupMaster(httpServer, {
+        loadBalancingMethod: "least-connection"
+      });
+      
+      const cpuCount = os.cpus().length;
+      for (let i = 0; i < cpuCount; i++) {
+        cluster.fork();
+      }
+      
+      cluster.on("exit", (worker) => {
+        console.log(`워커 ${worker.process.pid} 종료됨`);
+        cluster.fork(); // 새로운 워커 시작
+      });
+
+      httpServer.listen(3000);
+      
+    } else {
+      console.log(`워커 프로세스 ${process.pid} 시작됨`);
+      
+      const httpServer = createServer();
+      const io = new Server(httpServer);
+      io.adapter(createAdapter());
+      
+      setupWorker(io);
+      
+      io.on("connection", (socket) => {
+        console.log(`새로운 연결: ${socket.id}`);
+      });
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 클라우드 환경 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클라우드 서비스별 설정</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ### AWS Elastic Load Balancer
+    - Application Load Balancer 사용
+    - Sticky Session 활성화 (애플리케이션 기반 쿠키)
+    - WebSocket 프로토콜 활성화
+
+    ### Google Cloud Load Balancer
+    - HTTP(S) 로드 밸런서 사용
+    - Session Affinity 활성화
+    - WebSocket 프록시 설정
+
+    ### Azure Load Balancer
+    - Application Gateway 사용
+    - 쿠키 기반 세션 유지 활성화
+    - WebSocket 프로토콜 지원 설정
+  </CardContent>
+</Card>
+
+## 모니터링과 디버깅
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>분산 환경에서의 모니터링</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 연결된 클라이언트 수 확인
+    const count = io.engine.clientsCount;
+    
+    // 특정 네임스페이스의 소켓 수
+    const namespaceCount = io.of("/").sockets.size;
+    
+    // 이벤트 모니터링
+    io.engine.on("connection_error", (err) => {
+      console.log({
+        code: err.code,
+        message: err.message,
+        context: err.context
+      });
+    });
+    ```
+  </CardContent>
+</Card>
+
+# 이벤트 핸들링과 애플리케이션 구조화
+
+## 이벤트 처리 기본
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 이벤트</CardTitle>
+    <CardDescription>
+      Socket.IO 서버에서 기본적으로 제공하는 이벤트들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    io.on("connection", (socket) => {
+      console.log(`클라이언트 연결됨: ${socket.id}`);
+
+      socket.on("disconnect", (reason) => {
+        console.log(`클라이언트 연결 해제: ${reason}`);
+      });
+
+      socket.on("disconnecting", (reason) => {
+        // 연결 해제 직전 처리
+        console.log(`연결 해제 중: ${reason}`);
+        console.log('현재 룸:', Array.from(socket.rooms));
+      });
+    });
+    ```
+
+    <Alert>
+      <AlertTitle>연결 해제 이유</AlertTitle>
+      <AlertDescription>
+        주요 disconnect 이유:
+        - transport close: 네트워크 연결 끊김
+        - ping timeout: 클라이언트 응답 없음
+        - transport error: 전송 중 오류 발생
+        - client disconnect: 클라이언트가 의도적으로 연결 종료
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 애플리케이션 구조화
+
+<Tabs defaultValue="modular" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="modular">모듈식 구조</TabsTrigger>
+    <TabsTrigger value="centralized">중앙 집중식 구조</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="modular">
+    ### 모듈식 구조
+    각 기능별로 파일을 분리하여 관리하는 방식입니다.
+
+    ```typescript
+    // handlers/orderHandler.ts
+    export default (io: Server, socket: Socket) => {
+      const createOrder = async (data: OrderData) => {
+        // 주문 생성 로직
+      };
+
+      const updateOrder = async (data: UpdateOrderData) => {
+        // 주문 수정 로직
+      };
+
+      socket.on("order:create", createOrder);
+      socket.on("order:update", updateOrder);
+    };
+
+    // index.ts
+    import orderHandler from './handlers/orderHandler';
+    import userHandler from './handlers/userHandler';
+
+    io.on("connection", (socket) => {
+      orderHandler(io, socket);
+      userHandler(io, socket);
+    });
+    ```
+  </TabsContent>
+
+  <TabsContent value="centralized">
+    ### 중앙 집중식 구조
+    모든 이벤트 핸들러를 한 곳에서 관리하는 방식입니다.
+
+    ```typescript
+    // index.ts
+    import { createOrder, updateOrder } from './services/orderService';
+    import { updateUser, deleteUser } from './services/userService';
+
+    io.on("connection", (socket) => {
+      // 주문 관련 이벤트
+      socket.on("order:create", createOrder);
+      socket.on("order:update", updateOrder);
+
+      // 사용자 관련 이벤트
+      socket.on("user:update", updateUser);
+      socket.on("user:delete", deleteUser);
+    });
+    ```
+  </TabsContent>
+</Tabs>
+
+## 미들웨어를 활용한 이벤트 처리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>소켓 미들웨어</CardTitle>
+    <CardDescription>
+      각 이벤트가 처리되기 전에 실행되는 미들웨어를 설정할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    socket.use(([event, ...args], next) => {
+      // 이벤트 로깅
+      console.log(`이벤트 ${event} 실행됨`);
+      
+      // 권한 검사
+      if (event.startsWith('admin:') && !socket.data.isAdmin) {
+        return next(new Error('관리자 권한이 필요합니다'));
+      }
+      
+      // 속도 제한
+      if (isRateLimited(socket.id, event)) {
+        return next(new Error('너무 많은 요청이 발생했습니다'));
+      }
+
+      next();
+    });
+
+    // 에러 처리
+    socket.on("error", (err) => {
+      console.error('소켓 에러:', err.message);
+      
+      if (err.message === '관리자 권한이 필요합니다') {
+        socket.emit('error', { code: 'FORBIDDEN', message: err.message });
+      }
+    });
+    ```
+  </CardContent>
+</Card>
+
+## 타입스크립트 활용
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>타입 안전성 확보</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    interface ServerToClientEvents {
+      noArg: () => void;
+      basicEmit: (a: number, b: string, c: Buffer) => void;
+      withAck: (d: string, callback: (e: number) => void) => void;
+    }
+
+    interface ClientToServerEvents {
+      hello: () => void;
+    }
+
+    interface InterServerEvents {
+      ping: () => void;
+    }
+
+    interface SocketData {
+      user: {
+        id: string;
+        name: string;
+      };
+    }
+
+    const io = new Server<
+      ClientToServerEvents,
+      ServerToClientEvents,
+      InterServerEvents,
+      SocketData
+    >();
+    ```
+  </CardContent>
+</Card>
+
+## 테스트
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Socket.IO 서버 테스트</CardTitle>
+    <CardDescription>
+      Jest를 사용한 Socket.IO 서버 테스트 방법입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    import { createServer } from 'http';
+    import { Server } from 'socket.io';
+    import Client from 'socket.io-client';
+    import { AddressInfo } from 'net';
+
+    describe('Socket.IO 서버 테스트', () => {
+      let io: Server;
+      let clientSocket: any;
+      let serverSocket: any;
+
+      beforeAll((done) => {
+        const httpServer = createServer();
+        io = new Server(httpServer);
+        httpServer.listen(() => {
+          const port = (httpServer.address() as AddressInfo).port;
+          clientSocket = Client(`http://localhost:${port}`);
+          
+          io.on('connection', (socket) => {
+            serverSocket = socket;
+          });
+
+          clientSocket.on('connect', done);
+        });
+      });
+
+      afterAll(() => {
+        io.close();
+        clientSocket.close();
+      });
+
+      test('메시지 교환 테스트', (done) => {
+        clientSocket.on('greeting', (msg: string) => {
+          expect(msg).toBe('Hello!');
+          done();
+        });
+
+        serverSocket.emit('greeting', 'Hello!');
+      });
+    });
+    ```
+  </CardContent>
+</Card>
+
+## 모범 사례
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>에러 처리</CardTitle>
+    <CardDescription>
+      Socket.IO 애플리케이션의 안정성을 높이는 에러 처리 방법입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    io.on('connection', (socket) => {
+      socket.on('someEvent', async (data, callback) => {
+        try {
+          const result = await processData(data);
+          callback({ success: true, data: result });
+        } catch (error) {
+          console.error('Error:', error);
+          callback({ 
+            success: false, 
+            error: {
+              code: error.code || 'UNKNOWN_ERROR',
+              message: error.message || '알 수 없는 오류가 발생했습니다.'
+            }
+          });
+        }
+      });
+
+      socket.on('error', (error) => {
+        console.error('Socket error:', error);
+        socket.emit('error', {
+          message: '서버에서 오류가 발생했습니다.'
+        });
+      });
+    });
+    ```
+
+    <Alert>
+      <AlertTitle>오류 응답 구조화</AlertTitle>
+      <AlertDescription>
+        일관된 오류 응답 구조를 사용하여 클라이언트에서 쉽게 처리할 수 있도록 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 성능 최적화
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>성능 개선 전략</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ### 1. 이벤트 배치 처리
+    ```typescript
+    // 개별 처리 대신
+    items.forEach(item => {
+      socket.emit('updateItem', item);
+    });
+
+    // 배치 처리 사용
+    socket.emit('updateItems', items);
+    ```
+
+    ### 2. 불필요한 데이터 전송 최소화
+    ```typescript
+    // 전체 객체 대신 필요한 필드만 전송
+    const user = {
+      id: 1,
+      name: 'John',
+      email: 'john@example.com',
+      // ... 많은 필드들
+    };
+
+    // 좋은 예
+    socket.emit('userUpdate', {
+      id: user.id,
+      name: user.name
+    });
+    ```
+
+    ### 3. 룸 최적화
+    ```typescript
+    // 브로드캐스트 최적화
+    socket.to([room1, room2]).emit('update', data);
+    ```
+  </CardContent>
+</Card>
+
+## 보안 고려사항
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>보안 강화 방법</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 1. 입력 유효성 검사
+    socket.on('createUser', (data) => {
+      const schema = Joi.object({
+        username: Joi.string().min(3).max(30).required(),
+        email: Joi.string().email().required()
+      });
+
+      const { error } = schema.validate(data);
+      if (error) {
+        return socket.emit('error', {
+          code: 'VALIDATION_ERROR',
+          message: error.details[0].message
+        });
+      }
+      // 처리 계속...
+    });
+
+    // 2. 속도 제한
+    const rateLimiter = new RateLimiter();
+
+    socket.on('message', async (data) => {
+      if (!await rateLimiter.checkLimit(socket.id)) {
+        return socket.emit('error', {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: '잠시 후 다시 시도해주세요.'
+        });
+      }
+      // 메시지 처리...
+    });
+    ```
+
+    <Alert variant="warning">
+      <AlertTitle>보안 체크리스트</AlertTitle>
+      <AlertDescription>
+        - 인증 및 권한 검사 구현
+        - 입력 데이터 검증
+        - 속도 제한 설정
+        - 민감한 정보 필터링
+        - 적절한 에러 처리
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 개발 도구
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>디버깅과 모니터링</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ### 디버그 모드 활성화
+    ```bash
+    # 환경변수 설정
+    DEBUG=socket.io* node app.js
+    ```
+
+    ### 커스텀 로거 구현
+    ```typescript
+    const io = new Server(httpServer, {
+      logger: {
+        debug: (...args) => console.debug(args),
+        info: (...args) => console.info(args),
+        warn: (...args) => console.warn(args),
+        error: (...args) => console.error(args)
+      }
+    });
+    ```
+
+    <Alert>
+      <AlertTitle>모니터링 지표</AlertTitle>
+      <AlertDescription>
+        - 연결된 클라이언트 수
+        - 이벤트 처리 시간
+        - 메모리 사용량
+        - 에러 발생 빈도
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>

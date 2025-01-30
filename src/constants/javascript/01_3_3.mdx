@@ -1,0 +1,305 @@
+---
+title: "자바스크립트 메모리 관리"
+description: "자바스크립트의 메모리 관리 방식과 가비지 컬렉션에 대한 심층 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>메모리 관리의 기본 개념</CardTitle>
+    <CardDescription>
+      C와 같은 저수준 언어와 달리, 자바스크립트는 자동으로 메모리를 할당하고 해제합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    메모리 생명 주기는 세 단계로 구성됩니다:
+    1. 필요한 메모리 할당
+    2. 할당된 메모리 사용
+    3. 더 이상 필요하지 않을 때 메모리 해제
+  </CardContent>
+</Card>
+
+## 자바스크립트의 메모리 할당
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 할당</TabsTrigger>
+    <TabsTrigger value="function">함수를 통한 할당</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```javascript
+    const n = 123; // 숫자를 위한 메모리 할당
+    const s = "string"; // 문자열을 위한 메모리 할당
+    
+    const o = {
+      a: 1,
+      b: null
+    }; // 객체와 그 내부 값들을 위한 메모리 할당
+    
+    const a = [1, null, "str2"]; // 배열과 내부 값들을 위한 메모리 할당
+    ```
+  </TabsContent>
+  <TabsContent value="function">
+    ```javascript
+    const d = new Date(); // Date 객체를 위한 메모리 할당
+    
+    const e = document.createElement('div'); // DOM 요소를 위한 메모리 할당
+    
+    // 메서드 호출을 통한 새로운 값 할당
+    const s = "string";
+    const s2 = s.substr(0, 3); // 새로운 문자열 생성
+    
+    const a = ["yes", "no"];
+    const a2 = a.concat(["maybe"]); // 새로운 배열 생성
+    ```
+  </TabsContent>
+</Tabs>
+
+## 가비지 컬렉션의 기본 원리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>참조 개념 이해하기</CardTitle>
+    <CardDescription>
+      가비지 컬렉션은 객체 간의 참조 관계를 기반으로 동작합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    자바스크립트에서 객체는 다음과 같은 방식으로 다른 객체를 참조할 수 있습니다:
+    - 명시적 참조: 객체의 프로퍼티가 다른 객체를 가리키는 경우
+    - 암시적 참조: 프로토타입 체인이나 스코프 체인을 통한 참조
+  </CardContent>
+</Card>
+
+## 참조 카운팅 방식
+
+<Alert>
+  <AlertTitle>참조 카운팅의 한계</AlertTitle>
+  <AlertDescription>
+    현대의 자바스크립트 엔진들은 더 이상 참조 카운팅 방식을 사용하지 않습니다. 
+    순환 참조 문제를 해결하지 못하기 때문입니다.
+  </AlertDescription>
+</Alert>
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 예제</TabsTrigger>
+    <TabsTrigger value="circular">순환 참조 문제</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```javascript
+    let x = {
+      a: {
+        b: 2
+      }
+    };
+    let y = x; // 객체에 대한 두 번째 참조
+    x = 1;     // 원래 객체는 이제 y만 참조
+    let z = y.a; // a 객체에 대한 새로운 참조
+    y = "mozilla"; // 원래 객체는 이제 참조 없음
+    z = null;     // a 객체도 이제 참조 없음
+    ```
+  </TabsContent>
+  <TabsContent value="circular">
+    ```javascript
+    function createCycle() {
+      const obj1 = {};
+      const obj2 = {};
+      obj1.ref = obj2; // obj1은 obj2를 참조
+      obj2.ref = obj1; // obj2는 obj1을 참조
+      
+      return "완료";
+    }
+    
+    createCycle();
+    // 함수가 종료되어도 순환 참조로 인해
+    // 메모리가 해제되지 않을 수 있습니다
+    ```
+  </TabsContent>
+</Tabs>
+
+## Mark-and-sweep 알고리즘
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>도달 가능성 기반 가비지 컬렉션</CardTitle>
+    <CardDescription>
+      현대 자바스크립트 엔진들이 사용하는 주요 가비지 컬렉션 알고리즘입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    이 알고리즘은 "더 이상 필요하지 않은 객체"를 "도달할 수 없는 객체"로 
+    정의합니다. 전역 객체(루트)에서 시작하여 참조를 따라가면서 도달 가능한 
+    모든 객체를 표시(Mark)하고, 표시되지 않은 객체들을 메모리에서 
+    해제(Sweep)합니다.
+  </CardContent>
+</Card>
+
+## 메모리 관리를 돕는 데이터 구조
+
+<Tabs defaultValue="weakMap" className="w-full">
+  <TabsList>
+    <TabsTrigger value="weakMap">WeakMap/WeakSet</TabsTrigger>
+    <TabsTrigger value="weakRef">WeakRef</TabsTrigger>
+  </TabsList>
+  <TabsContent value="weakMap">
+    ```javascript
+    const wm = new WeakMap();
+    
+    {
+      const obj = { data: "some data" };
+      wm.set(obj, "메타데이터");
+      // obj가 스코프를 벗어나면 WeakMap의 
+      // 키-값 쌍도 가비지 컬렉션의 대상이 됨
+    }
+    
+    const ws = new WeakSet();
+    {
+      const obj = { data: "some data" };
+      ws.add(obj);
+      // obj가 스코프를 벗어나면
+      // WeakSet에서도 자동으로 제거됨
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="weakRef">
+    ```javascript
+    // 캐시 시스템 예제
+    function createCache(getter) {
+      const cache = new Map();
+      
+      return async (key) => {
+        if (cache.has(key)) {
+          const ref = cache.get(key).deref();
+          if (ref !== undefined) {
+            return ref;
+          }
+        }
+        
+        const value = await getter(key);
+        cache.set(key, new WeakRef(value));
+        return value;
+      };
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert>
+  <AlertTitle>약한 참조의 특징</AlertTitle>
+  <AlertDescription>
+    WeakMap, WeakSet, WeakRef는 모두 '약한 참조'를 제공합니다. 
+    이는 해당 데이터 구조가 객체에 대한 참조를 유지하고 있더라도 
+    가비지 컬렉션을 방해하지 않는다는 것을 의미합니다.
+  </AlertDescription>
+</Alert>
+
+## FinalizationRegistry와 메모리 정리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>가비지 컬렉션 알림 시스템</CardTitle>
+    <CardDescription>
+      FinalizationRegistry를 사용하면 객체가 가비지 컬렉션될 때 
+      정리 작업을 수행할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    const registry = new FinalizationRegistry((key) => {
+      console.log(`${key}에 대한 리소스 정리`);
+    });
+
+    function createResource() {
+      const resource = {
+        data: new Array(10000).fill('대용량 데이터')
+      };
+      
+      registry.register(resource, "리소스1");
+      return resource;
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 실제 응용 예제
+
+<Tabs defaultValue="cache" className="w-full">
+  <TabsList>
+    <TabsTrigger value="cache">캐시 시스템</TabsTrigger>
+    <TabsTrigger value="cleanup">자동 정리</TabsTrigger>
+  </TabsList>
+  <TabsContent value="cache">
+    ```javascript
+    function createSmartCache(getter) {
+      const cache = new Map();
+      const registry = new FinalizationRegistry((key) => {
+        if (!cache.get(key)?.deref()) {
+          cache.delete(key);
+        }
+      });
+
+      return async (key) => {
+        if (cache.has(key)) {
+          const ref = cache.get(key).deref();
+          if (ref !== undefined) {
+            return ref;
+          }
+        }
+
+        const value = await getter(key);
+        cache.set(key, new WeakRef(value));
+        registry.register(value, key);
+        return value;
+      };
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="cleanup">
+    ```javascript
+    class ResourceManager {
+      #resources = new Map();
+      #registry = new FinalizationRegistry((id) => {
+        this.#cleanup(id);
+      });
+
+      acquire(id, resource) {
+        this.#resources.set(id, new WeakRef(resource));
+        this.#registry.register(resource, id);
+      }
+
+      #cleanup(id) {
+        if (!this.#resources.get(id)?.deref()) {
+          this.#resources.delete(id);
+        }
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>성능 고려사항</AlertTitle>
+  <AlertDescription>
+    WeakRef와 FinalizationRegistry는 메모리 최적화를 위한 도구이지만, 
+    가비지 컬렉션의 타이밍이 보장되지 않습니다. 중요한 리소스 관리에는 
+    try...finally와 같은 명시적인 방법을 사용하는 것이 좋습니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>메모리 관리 모범 사례</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2">
+      <li>큰 객체나 배열은 더 이상 필요하지 않을 때 명시적으로 null 처리하기</li>
+      <li>WeakMap/WeakSet을 사용하여 캐시나 매핑 데이터 관리하기</li>
+      <li>순환 참조를 피하거나 약한 참조로 관리하기</li>
+      <li>메모리 누수를 방지하기 위해 이벤트 리스너 정리하기</li>
+    </ul>
+  </CardContent>
+</Card>

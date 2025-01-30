@@ -1,0 +1,272 @@
+---
+title: "memo"
+description: "props가 변경되지 않았을 때 컴포넌트의 불필요한 리렌더링을 방지하는 React 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>memo란?</CardTitle>
+    <CardDescription>
+      컴포넌트의 props가 변경되지 않았을 때 리렌더링을 건너뛸 수 있게 해주는 고차 컴포넌트(HOC)입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const MemoizedComponent = memo(SomeComponent, arePropsEqual?);
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+### 컴포넌트 메모이제이션
+
+```tsx
+import { memo } from 'react';
+
+const Greeting = memo(function Greeting({ name }) {
+  console.log("Greeting이 렌더링됨:", new Date().toLocaleTimeString());
+  return <h1>안녕하세요, {name}님!</h1>;
+});
+
+export default Greeting;
+```
+
+### 실제 사용 예제
+
+```tsx
+function MyApp() {
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <label className="block">
+          이름:
+          <input 
+            value={name} 
+            onChange={e => setName(e.target.value)}
+            className="ml-2 border rounded px-2 py-1" 
+          />
+        </label>
+        <label className="block">
+          주소:
+          <input 
+            value={address} 
+            onChange={e => setAddress(e.target.value)}
+            className="ml-2 border rounded px-2 py-1" 
+          />
+        </label>
+      </div>
+      <Greeting name={name} />
+    </div>
+  );
+}
+```
+
+<Alert className="my-4">
+  <AlertTitle>중요</AlertTitle>
+  <AlertDescription>
+    memo는 성능 최적화를 위한 도구일 뿐, 렌더링 방지를 보장하지는 않습니다. 
+    컴포넌트의 동작이 memo 없이 올바르게 작동하는지 먼저 확인하세요.
+  </AlertDescription>
+</Alert>
+
+## memo를 사용해야 하는 경우
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>memo가 효과적인 상황</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>컴포넌트가 자주 리렌더링되는 경우</li>
+      <li>동일한 props로 반복적으로 렌더링되는 경우</li>
+      <li>렌더링 비용이 비싼 복잡한 컴포넌트의 경우</li>
+      <li>큰 리스트의 개별 항목 컴포넌트</li>
+    </ul>
+  </CardContent>
+</Card>
+
+## 주의사항과 최적화 원칙
+
+1. **순수한 렌더링 로직 유지하기**
+   - 컴포넌트는 동일한 props에 대해 항상 동일한 결과를 반환해야 합니다.
+
+2. **상태 관리 최적화**
+   ```tsx
+   // ✅ 좋은 예: 지역 상태 사용
+   function SearchInput() {
+     const [query, setQuery] = useState('');
+     return <input value={query} onChange={e => setQuery(e.target.value)} />;
+   }
+
+   // ❌ 나쁜 예: 불필요하게 상위로 상태 끌어올리기
+   function SearchPage({ query, setQuery }) {
+     return <input value={query} onChange={e => setQuery(e.target.value)} />;
+   }
+   ```
+
+3. **불필요한 Effect 제거**
+   ```tsx
+   // ❌ 나쁜 예: 불필요한 상태 업데이트
+   useEffect(() => {
+     setResults(filterData(data, query));
+   }, [data, query]);
+
+   // ✅ 좋은 예: 렌더링 중에 직접 계산
+   const results = filterData(data, query);
+   ```
+
+## 고급 사용법
+
+### 상태를 가진 메모이제이션 컴포넌트
+
+```tsx
+const Greeting = memo(function Greeting({ name }) {
+  const [greeting, setGreeting] = useState('안녕하세요');
+  
+  return (
+    <div className="space-y-4">
+      <h3>{greeting}{name && ', '}{name}님!</h3>
+      <select 
+        value={greeting} 
+        onChange={(e) => setGreeting(e.target.value)}
+        className="border rounded px-2 py-1"
+      >
+        <option>안녕하세요</option>
+        <option>반갑습니다</option>
+      </select>
+    </div>
+  );
+});
+```
+
+### Context와 함께 사용하기
+
+```tsx
+const ThemeContext = createContext(null);
+
+const ThemedGreeting = memo(function ThemedGreeting({ name }) {
+  const theme = useContext(ThemeContext);
+  
+  return (
+    <div className={`p-4 ${theme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+      <h3>안녕하세요, {name}님!</h3>
+    </div>
+  );
+});
+```
+
+## Props 변경 최소화하기
+
+### 1. useMemo로 객체 Props 최적화
+
+<Tabs defaultValue="before" className="w-full">
+  <TabsList>
+    <TabsTrigger value="before">최적화 전</TabsTrigger>
+    <TabsTrigger value="after">최적화 후</TabsTrigger>
+  </TabsList>
+  <TabsContent value="before">
+    ```tsx
+    function Profile({ person }) {
+      // 매 렌더링마다 새로운 객체 생성
+      const data = {
+        name: person.name,
+        age: person.age
+      };
+      
+      return <MemoizedBio data={data} />;
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="after">
+    ```tsx
+    function Profile({ person }) {
+      // 객체를 메모이제이션
+      const data = useMemo(() => ({
+        name: person.name,
+        age: person.age
+      }), [person.name, person.age]);
+      
+      return <MemoizedBio data={data} />;
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+### 2. Props 단순화
+
+```tsx
+// ❌ 객체를 통째로 전달
+function UserProfile({ user }) {
+  return <MemoizedProfile user={user} />;
+}
+
+// ✅ 필요한 값만 전달
+function UserProfile({ name, age }) {
+  return <MemoizedProfile name={name} age={age} />;
+}
+```
+
+### 3. 커스텀 비교 함수 사용
+
+```tsx
+const Chart = memo(function Chart({ dataPoints }) {
+  return (
+    <div className="chart">
+      {/* 차트 렌더링 로직 */}
+    </div>
+  );
+}, arePropsEqual);
+
+function arePropsEqual(oldProps, newProps) {
+  return (
+    oldProps.dataPoints.length === newProps.dataPoints.length &&
+    oldProps.dataPoints.every((oldPoint, index) => {
+      const newPoint = newProps.dataPoints[index];
+      return oldPoint.x === newPoint.x && oldPoint.y === newPoint.y;
+    })
+  );
+}
+```
+
+<Alert className="my-4" variant="warning">
+  <AlertTitle>커스텀 비교 함수 사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>모든 props를 비교해야 합니다 (함수 포함)</li>
+      <li>깊은 비교는 성능 문제를 일으킬 수 있습니다</li>
+      <li>브라우저 개발자 도구로 성능을 측정해보세요</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 문제 해결과 디버깅
+
+<Card className="my-4 border-yellow-500">
+  <CardHeader>
+    <CardTitle>일반적인 문제와 해결 방법</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <h4 className="font-semibold">1. 객체/배열/함수 props가 있을 때 리렌더링 발생</h4>
+      <div className="pl-4">
+        - useMemo나 useCallback 사용
+        - 필요한 값만 props로 전달
+        - 상위 컴포넌트에서 객체 생성 최소화
+      </div>
+      
+      <h4 className="font-semibold">2. 불필요한 메모이제이션</h4>
+      <div className="pl-4">
+        - 단순한 컴포넌트는 메모이제이션이 불필요할 수 있음
+        - 성능 측정 후 필요한 경우에만 적용
+      </div>
+    </div>
+  </CardContent>
+</Card>

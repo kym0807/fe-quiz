@@ -1,0 +1,181 @@
+---
+title: "Next.js의 OpenTelemetry"
+description: "애플리케이션 관찰성과 성능 모니터링 구현 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# OpenTelemetry 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>관찰성(Observability)의 중요성</CardTitle>
+    <CardDescription>
+      애플리케이션이 복잡해질수록 문제를 식별하고 진단하기가 어려워집니다. 
+      로깅과 메트릭스 같은 관찰성 도구를 활용하면 애플리케이션의 동작을 이해하고 최적화할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 시작하기
+
+<Tabs defaultValue="vercel" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="vercel">@vercel/otel 사용</TabsTrigger>
+    <TabsTrigger value="manual">수동 설정</TabsTrigger>
+  </TabsList>
+  <TabsContent value="vercel">
+    ```bash
+    npm install @vercel/otel @opentelemetry/sdk-logs @opentelemetry/api-logs @opentelemetry/instrumentation
+    
+    # instrumentation.ts
+    import { registerOTel } from '@vercel/otel'
+    
+    export function register() {
+      registerOTel({ serviceName: 'next-app' })
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="manual">
+    ```tsx
+    // instrumentation.ts
+    export async function register() {
+      if (process.env.NEXT_RUNTIME === 'nodejs') {
+        await import('./instrumentation.node.ts')
+      }
+    }
+    
+    // instrumentation.node.ts
+    import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
+    import { Resource } from '@opentelemetry/resources'
+    import { NodeSDK } from '@opentelemetry/sdk-node'
+    import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-node'
+    import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions'
+    
+    const sdk = new NodeSDK({
+      resource: new Resource({
+        [ATTR_SERVICE_NAME]: 'next-app',
+      }),
+      spanProcessor: new SimpleSpanProcessor(new OTLPTraceExporter()),
+    })
+    sdk.start()
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>설정 시 주의사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>instrumentation 파일은 app 또는 pages 디렉토리가 아닌 프로젝트 루트에 위치해야 합니다</li>
+      <li>더 자세한 스팬을 보려면 NEXT_OTEL_VERBOSE=1 환경변수를 설정하세요</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 커스텀 스팬 추가
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>커스텀 스팬 구현</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import { trace } from '@opentelemetry/api'
+    
+    export async function fetchGithubStars() {
+      return await trace
+        .getTracer('nextjs-example')
+        .startActiveSpan('fetchGithubStars', async (span) => {
+          try {
+            return await getValue()
+          } finally {
+            span.end()
+          }
+        })
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 기본 스팬 속성
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>공통 속성</CardTitle>
+    <CardDescription>
+      Next.js는 모든 스팬에 다음과 같은 기본 속성을 제공합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">기본 속성</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>next.span_name: 스팬 이름</li>
+          <li>next.span_type: 스팬 유형 식별자</li>
+          <li>next.route: 요청의 라우트 패턴 (예: /[param]/user)</li>
+          <li>next.rsc: RSC 요청 여부</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 주요 스팬 유형
+
+<Card className="mb-6">
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">서버 요청 처리</h4>
+        <p>BaseServer.handleRequest</p>
+        <ul className="list-disc list-inside mt-2">
+          <li>HTTP 메소드</li>
+          <li>라우트 정보</li>
+          <li>상태 코드</li>
+        </ul>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">앱 렌더링</h4>
+        <p>AppRender.getBodyResult</p>
+        <ul className="list-disc list-inside mt-2">
+          <li>라우트 렌더링</li>
+          <li>메타데이터 생성</li>
+          <li>컴포넌트 해석</li>
+        </ul>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">데이터 페칭</h4>
+        <p>AppRender.fetch</p>
+        <ul className="list-disc list-inside mt-2">
+          <li>HTTP 요청 정보</li>
+          <li>피어 정보</li>
+          <li>URL 정보</li>
+        </ul>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">서버 사이드 처리</h4>
+        <p>getServerSideProps / getStaticProps</p>
+        <ul className="list-disc list-inside mt-2">
+          <li>라우트 정보</li>
+          <li>실행 컨텍스트</li>
+          <li>처리 결과</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>배포 시 고려사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>Vercel: 자동으로 OpenTelemetry 지원</li>
+      <li>자체 호스팅: OpenTelemetry Collector 설정 필요</li>
+      <li>커스텀 익스포터: @vercel/otel 또는 수동 설정으로 구현 가능</li>
+    </ul>
+  </AlertDescription>
+</Alert>

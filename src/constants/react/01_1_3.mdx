@@ -1,0 +1,1089 @@
+---
+title: "useContext"
+description: "컴포넌트에서 Context를 읽고 구독할 수 있게 해주는 React Hook"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+## 개요
+
+useContext는 컴포넌트에서 Context를 읽고 구독할 수 있게 해주는 React Hook입니다.
+
+```tsx
+const value = useContext(SomeContext)
+```
+
+## 레퍼런스
+
+### useContext(SomeContext)
+
+컴포넌트의 최상위 레벨에서 useContext를 호출하여 Context를 읽고 구독합니다.
+
+```tsx
+import { useContext } from 'react';
+
+function MyComponent() {
+  const theme = useContext(ThemeContext);
+  // ...
+}
+```
+
+### 매개변수
+
+- `SomeContext`: createContext로 이전에 생성한 Context입니다. Context 자체는 정보를 보유하지 않으며, 컴포넌트에서 제공하거나 읽을 수 있는 정보의 종류만을 나타냅니다.
+
+### 반환값
+
+useContext는 호출하는 컴포넌트에 대한 Context 값을 반환합니다. 이 값은 트리에서 호출하는 컴포넌트 위에 있는 가장 가까운 `SomeContext.Provider`에 전달된 value로 결정됩니다. 그러한 Provider가 없다면, createContext에 전달한 defaultValue가 반환됩니다. 반환된 값은 항상 최신 상태를 유지합니다. React는 Context가 변경되면 해당 Context를 읽는 컴포넌트를 자동으로 다시 렌더링합니다.
+
+<Card>
+  <CardHeader>
+    <CardTitle>주의사항</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>컴포넌트에서 useContext() 호출은 동일한 컴포넌트에서 반환된 Provider의 영향을 받지 않습니다. useContext() 호출을 하는 컴포넌트 위에 해당하는 Context.Provider가 있어야 합니다.</li>
+      <li>React는 다른 값을 받는 Provider부터 시작하여 특정 Context를 사용하는 모든 자식들을 자동으로 다시 렌더링합니다. 이전 값과 다음 값은 Object.is 비교로 비교됩니다. memo를 사용한 리렌더링 건너뛰기는 자식들이 새로운 Context 값을 받는 것을 방지하지 않습니다.</li>
+      <li>빌드 시스템이 출력에서 중복 모듈을 생성하면(심볼릭 링크 사용 시 발생할 수 있음) Context가 깨질 수 있습니다. Context를 통해 무언가를 전달하는 것은 Context를 제공하는 데 사용하는 SomeContext와 읽는 데 사용하는 SomeContext가 === 비교로 정확히 동일한 객체인 경우에만 작동합니다.</li>
+    </ul>
+  </CardContent>
+</Card>
+
+## 사용법
+
+### 트리 깊숙이 데이터 전달하기
+
+컴포넌트의 최상위 레벨에서 useContext를 호출하여 Context를 읽고 구독합니다.
+
+```tsx
+import { useContext } from 'react';
+
+function Button() {
+  const theme = useContext(ThemeContext);
+  // ...
+}
+```
+
+useContext는 전달한 Context에 대한 Context 값을 반환합니다. 값을 결정하기 위해 React는 컴포넌트 트리를 검색하고 해당 Context에 대해 위에서 가장 가까운 Context Provider를 찾습니다.
+
+Button에 Context를 전달하려면 해당 컴포넌트나 상위 컴포넌트 중 하나를 해당 Context Provider로 감싸세요:
+
+```tsx
+function MyPage() {
+  return (
+    <ThemeContext.Provider value="dark">
+      <Form />
+    </ThemeContext.Provider>
+  );
+}
+
+function Form() {
+  // ... 내부에 버튼을 렌더링 ...
+}
+```
+
+<Card>
+  <CardHeader>
+    <CardTitle>핵심</CardTitle>
+  </CardHeader>
+  <CardContent>
+    Provider와 Button 사이에 얼마나 많은 컴포넌트 계층이 있는지는 중요하지 않습니다. Form 내부의 어디에서든 Button이 useContext(ThemeContext)를 호출하면 "dark"를 값으로 받게 됩니다.
+  </CardContent>
+</Card>
+
+### 함정 피하기
+
+useContext()는 항상 이를 호출하는 컴포넌트 위에서 가장 가까운 Provider를 찾습니다. 위로 검색하며 useContext()를 호출하는 컴포넌트에서의 Provider는 고려하지 않습니다.
+
+<Tabs defaultValue="example" className="w-full">
+  <TabsList>
+    <TabsTrigger value="example">예제</TabsTrigger>
+    <TabsTrigger value="code">전체 코드</TabsTrigger>
+  </TabsList>
+  <TabsContent value="example">
+    <Card>
+      <CardContent className="pt-6">
+        <div className="grid gap-4">
+          ```tsx
+          export default function MyApp() {
+            return (
+              <ThemeContext.Provider value="dark">
+                <Form />
+              </ThemeContext.Provider>
+            )
+          }
+          ```
+        </div>
+      </CardContent>
+    </Card>
+  </TabsContent>
+  <TabsContent value="code">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        import { createContext, useContext } from 'react';
+
+        const ThemeContext = createContext(null);
+
+        export default function MyApp() {
+          return (
+            <ThemeContext.Provider value="dark">
+              <Form />
+            </ThemeContext.Provider>
+          )
+        }
+
+        function Form() {
+          return (
+            <Panel title="Welcome">
+              <Button>Sign up</Button>
+              <Button>Log in</Button>
+            </Panel>
+          );
+        }
+
+        function Panel({ title, children }) {
+          const theme = useContext(ThemeContext);
+          const className = 'panel-' + theme;
+          return (
+            <section className={className}>
+              <h1>{title}</h1>
+              {children}
+            </section>
+          )
+        }
+
+        function Button({ children }) {
+          const theme = useContext(ThemeContext);
+          const className = 'button-' + theme;
+          return (
+            <button className={className}>
+              {children}
+            </button>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## Context를 통해 전달된 데이터 업데이트하기
+
+시간이 지남에 따라 Context를 변경하고 싶을 때가 자주 있습니다. Context를 업데이트하려면 state와 결합하세요. 부모 컴포넌트에서 state 변수를 선언하고 현재 state를 Provider의 Context 값으로 전달하세요.
+
+<Card>
+  <CardContent className="pt-6">
+    ```tsx
+    function MyPage() {
+      const [theme, setTheme] = useState('dark');
+      return (
+        <ThemeContext.Provider value={theme}>
+          <Form />
+          <Button onClick={() => {
+            setTheme('light');
+          }}>
+            라이트 테마로 전환
+          </Button>
+        </ThemeContext.Provider>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+이제 Provider 내부의 모든 Button은 현재 theme 값을 받게 됩니다. Provider에 전달하는 theme 값을 업데이트하기 위해 setTheme을 호출하면, 모든 Button 컴포넌트는 새로운 'light' 값으로 다시 렌더링됩니다.
+
+## 예제들
+
+### 예제 1: Context를 통한 값 업데이트
+
+이 예제에서는 MyApp 컴포넌트가 ThemeContext Provider에 전달되는 state 변수를 가지고 있습니다. "다크 모드" 체크박스를 체크하면 state가 업데이트됩니다. 제공된 값을 변경하면 해당 Context를 사용하는 모든 컴포넌트가 다시 렌더링됩니다.
+
+<Tabs defaultValue="preview" className="w-full">
+  <TabsList>
+    <TabsTrigger value="preview">미리보기</TabsTrigger>
+    <TabsTrigger value="code">코드</TabsTrigger>
+  </TabsList>
+  <TabsContent value="preview">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        export default function MyApp() {
+          const [theme, setTheme] = useState('light');
+          return (
+            <ThemeContext.Provider value={theme}>
+              <Form />
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={theme === 'dark'}
+                  onChange={(e) => {
+                    setTheme(e.target.checked ? 'dark' : 'light')
+                  }}
+                />
+                <span>다크 모드 사용</span>
+              </label>
+            </ThemeContext.Provider>
+          )
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  <TabsContent value="code">
+    <Card>
+      <CardContent>
+        ```tsx
+        import { createContext, useContext, useState } from 'react';
+
+        const ThemeContext = createContext(null);
+
+        export default function MyApp() {
+          const [theme, setTheme] = useState('light');
+          return (
+            <ThemeContext.Provider value={theme}>
+              <Form />
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={theme === 'dark'}
+                  onChange={(e) => {
+                    setTheme(e.target.checked ? 'dark' : 'light')
+                  }}
+                />
+                <span>다크 모드 사용</span>
+              </label>
+            </ThemeContext.Provider>
+          )
+        }
+
+        function Form({ children }) {
+          return (
+            <Panel title="환영합니다">
+              <Button>가입하기</Button>
+              <Button>로그인</Button>
+            </Panel>
+          );
+        }
+
+        function Panel({ title, children }) {
+          const theme = useContext(ThemeContext);
+          const className = 'panel-' + theme;
+          return (
+            <section className={className}>
+              <h1>{title}</h1>
+              {children}
+            </section>
+          )
+        }
+
+        function Button({ children }) {
+          const theme = useContext(ThemeContext);
+          const className = 'button-' + theme;
+          return (
+            <button className={className}>
+              {children}
+            </button>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Card>
+  <CardHeader>
+    <CardTitle>참고</CardTitle>
+  </CardHeader>
+  <CardContent>
+    value="dark"는 "dark" 문자열을 전달하지만, `value={theme}`는 JSX 중괄호를 사용하여 JavaScript theme 변수의 값을 전달합니다. 중괄호를 사용하면 문자열이 아닌 Context 값도 전달할 수 있습니다.
+  </CardContent>
+</Card>
+
+### 예제 2: Context를 통한 객체 업데이트
+
+이 예제에서는 객체를 보유하는 currentUser state 변수가 있습니다. `{ currentUser, setCurrentUser }`를 단일 객체로 결합하여 value={} 내부의 Context를 통해 전달합니다. 이렇게 하면 LoginButton과 같은 하위 컴포넌트가 currentUser와 setCurrentUser 모두를 읽고 필요할 때 setCurrentUser를 호출할 수 있습니다.
+
+<Tabs defaultValue="preview" className="w-full">
+  <TabsList>
+    <TabsTrigger value="preview">미리보기</TabsTrigger>
+    <TabsTrigger value="code">코드</TabsTrigger>
+  </TabsList>
+  <TabsContent value="preview">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        export default function MyApp() {
+          const [currentUser, setCurrentUser] = useState(null);
+          return (
+            <CurrentUserContext.Provider
+              value={{
+                currentUser,
+                setCurrentUser
+              }}
+            >
+              <Form />
+            </CurrentUserContext.Provider>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  <TabsContent value="code">
+    <Card>
+      <CardContent>
+        ```tsx
+        import { createContext, useContext, useState } from 'react';
+
+        const CurrentUserContext = createContext(null);
+
+        export default function MyApp() {
+          const [currentUser, setCurrentUser] = useState(null);
+          return (
+            <CurrentUserContext.Provider
+              value={{
+                currentUser,
+                setCurrentUser
+              }}
+            >
+              <Form />
+            </CurrentUserContext.Provider>
+          );
+        }
+
+        function Form({ children }) {
+          return (
+            <Panel title="환영합니다">
+              <LoginButton />
+            </Panel>
+          );
+        }
+
+        function LoginButton() {
+          const {
+            currentUser,
+            setCurrentUser
+          } = useContext(CurrentUserContext);
+
+          if (currentUser !== null) {
+            return <p>로그인된 사용자: {currentUser.name}</p>;
+          }
+
+          return (
+            <Button onClick={() => {
+              setCurrentUser({ name: '김철수' })
+            }}>김철수로 로그인</Button>
+          );
+        }
+
+        function Panel({ title, children }) {
+          return (
+            <section className="panel">
+              <h1>{title}</h1>
+              {children}
+            </section>
+          )
+        }
+
+        function Button({ children, onClick }) {
+          return (
+            <button 
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" 
+              onClick={onClick}
+            >
+              {children}
+            </button>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+### 예제 3: 다중 Context 사용하기
+
+이 예제에는 두 개의 독립적인 Context가 있습니다. ThemeContext는 현재 테마를 제공하는 문자열이고, CurrentUserContext는 현재 사용자를 나타내는 객체를 보유합니다.
+
+<Card>
+  <CardContent className="pt-6">
+    ```tsx
+    import { createContext, useContext, useState } from 'react';
+
+    const ThemeContext = createContext(null);
+    const CurrentUserContext = createContext(null);
+
+    export default function MyApp() {
+      const [theme, setTheme] = useState('light');
+      const [currentUser, setCurrentUser] = useState(null);
+      return (
+        <ThemeContext.Provider value={theme}>
+          <CurrentUserContext.Provider
+            value={{
+              currentUser,
+              setCurrentUser
+            }}
+          >
+            <WelcomePanel />
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={theme === 'dark'}
+                onChange={(e) => {
+                  setTheme(e.target.checked ? 'dark' : 'light')
+                }}
+              />
+              <span>다크 모드 사용</span>
+            </label>
+          </CurrentUserContext.Provider>
+        </ThemeContext.Provider>
+      )
+    }
+
+    function WelcomePanel({ children }) {
+      const {currentUser} = useContext(CurrentUserContext);
+      return (
+        <Panel title="환영합니다">
+          {currentUser !== null ?
+            <Greeting /> :
+            <LoginForm />
+          }
+        </Panel>
+      );
+    }
+
+    function Greeting() {
+      const {currentUser} = useContext(CurrentUserContext);
+      return (
+        <p className="text-lg">환영합니다, {currentUser.name}님!</p>
+      )
+    }
+
+    function LoginForm() {
+      const {setCurrentUser} = useContext(CurrentUserContext);
+      const [firstName, setFirstName] = useState('');
+      const [lastName, setLastName] = useState('');
+      const canLogin = firstName.trim() !== '' && lastName.trim() !== '';
+
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="block">
+              이름:
+              <input
+                required
+                value={firstName}
+                onChange={e => setFirstName(e.target.value)}
+                className="border rounded px-2 py-1 ml-2"
+              />
+            </label>
+            <label className="block">
+              성:
+              <input
+                required
+                value={lastName}
+                onChange={e => setLastName(e.target.value)}
+                className="border rounded px-2 py-1 ml-2"
+              />
+            </label>
+          </div>
+          <Button
+            disabled={!canLogin}
+            onClick={() => {
+              setCurrentUser({
+                name: firstName + ' ' + lastName
+              });
+            }}
+          >
+            로그인
+          </Button>
+          {!canLogin && <i>모든 필드를 채워주세요.</i>}
+        </div>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+### 예제 4: Provider를 컴포넌트로 추출하기
+
+앱이 커지면서 루트에 가까운 곳에 Context "피라미드"가 생기는 것은 예상된 일입니다. 이는 문제가 되지 않지만, 중첩이 미관상 마음에 들지 않는다면 Provider들을 단일 컴포넌트로 추출할 수 있습니다.
+
+<Card>
+  <CardContent>
+    ```tsx
+    export default function MyApp() {
+      const [theme, setTheme] = useState('light');
+      return (
+        <MyProviders theme={theme} setTheme={setTheme}>
+          <WelcomePanel />
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={theme === 'dark'}
+              onChange={(e) => {
+                setTheme(e.target.checked ? 'dark' : 'light')
+              }}
+            />
+            <span>다크 모드 사용</span>
+          </label>
+        </MyProviders>
+      );
+    }
+
+    function MyProviders({ children, theme, setTheme }) {
+      const [currentUser, setCurrentUser] = useState(null);
+      return (
+        <ThemeContext.Provider value={theme}>
+          <CurrentUserContext.Provider
+            value={{
+              currentUser,
+              setCurrentUser
+            }}
+          >
+            {children}
+          </CurrentUserContext.Provider>
+        </ThemeContext.Provider>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+이 예제에서 MyProviders는 "배관" 작업을 숨기고 필요한 Provider 내부에서 전달된 children을 렌더링합니다. theme과 setTheme state는 MyApp 자체에서 필요하므로, MyApp은 여전히 해당 state를 소유합니다.
+
+### 예제 5: Context와 Reducer를 활용한 확장
+
+대규모 앱에서는 Context와 reducer를 결합하여 일부 state와 관련된 로직을 컴포넌트에서 추출하는 것이 일반적입니다. 다음 예제에서는 모든 "배관" 작업이 TasksContext.js에 숨겨져 있으며, 이는 reducer와 두 개의 별도 Context를 포함합니다.
+
+<Tabs defaultValue="app" className="w-full">
+  <TabsList>
+    <TabsTrigger value="app">App.tsx</TabsTrigger>
+    <TabsTrigger value="context">TasksContext.tsx</TabsTrigger>
+    <TabsTrigger value="components">컴포넌트</TabsTrigger>
+  </TabsList>
+  <TabsContent value="app">
+    <Card>
+      <CardContent>
+        ```tsx
+        import AddTask from './AddTask';
+        import TaskList from './TaskList';
+        import { TasksProvider } from './TasksContext';
+
+        export default function TaskApp() {
+          return (
+            <TasksProvider>
+              <div className="p-4">
+                <h1 className="text-2xl font-bold mb-4">교토에서의 휴일</h1>
+                <AddTask />
+                <TaskList />
+              </div>
+            </TasksProvider>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+
+  <TabsContent value="context">
+    <Card>
+      <CardContent>
+        ```tsx
+        import { createContext, useContext, useReducer } from 'react';
+
+        const TasksContext = createContext(null);
+        const TasksDispatchContext = createContext(null);
+
+        export function TasksProvider({ children }) {
+          const [tasks, dispatch] = useReducer(
+            tasksReducer,
+            initialTasks
+          );
+
+          return (
+            <TasksContext.Provider value={tasks}>
+              <TasksDispatchContext.Provider value={dispatch}>
+                {children}
+              </TasksDispatchContext.Provider>
+            </TasksContext.Provider>
+          );
+        }
+
+        export function useTasks() {
+          return useContext(TasksContext);
+        }
+
+        export function useTasksDispatch() {
+          return useContext(TasksDispatchContext);
+        }
+
+        function tasksReducer(tasks, action) {
+          switch (action.type) {
+            case 'added': {
+              return [...tasks, {
+                id: action.id,
+                text: action.text,
+                done: false
+              }];
+            }
+            case 'changed': {
+              return tasks.map(t => {
+                if (t.id === action.task.id) {
+                  return action.task;
+                } else {
+                  return t;
+                }
+              });
+            }
+            case 'deleted': {
+              return tasks.filter(t => t.id !== action.id);
+            }
+            default: {
+              throw Error('알 수 없는 액션: ' + action.type);
+            }
+          }
+        }
+
+        const initialTasks = [
+          { id: 0, text: '철학자의 길 산책', done: true },
+          { id: 1, text: '사원 방문', done: false },
+          { id: 2, text: '말차 마시기', done: false }
+        ];
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  <TabsContent value="components">
+    <Card>
+      <CardContent>
+        ```tsx
+        // AddTask.tsx
+        import { useState } from 'react';
+        import { useTasksDispatch } from './TasksContext';
+
+        export default function AddTask() {
+          const [text, setText] = useState('');
+          const dispatch = useTasksDispatch();
+          
+          return (
+            <div className="flex gap-2 mb-4">
+              <input
+                placeholder="할 일 추가"
+                value={text}
+                onChange={e => setText(e.target.value)}
+                className="border rounded px-2 py-1 flex-1"
+              />
+              <button 
+                onClick={() => {
+                  setText('');
+                  dispatch({
+                    type: 'added',
+                    id: nextId++,
+                    text: text,
+                  }); 
+                }}
+                className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+              >
+                추가
+              </button>
+            </div>
+          );
+        }
+
+        let nextId = 3;
+
+        // TaskList.tsx
+        import { useState } from 'react';
+        import { useTasks, useTasksDispatch } from './TasksContext';
+
+        export default function TaskList() {
+          const tasks = useTasks();
+          return (
+            <ul className="space-y-2">
+              {tasks.map(task => (
+                <li key={task.id}>
+                  <Task task={task} />
+                </li>
+              ))}
+            </ul>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 기본값 지정하기
+
+React가 부모 트리에서 특정 Context의 Provider를 찾지 못하면, useContext()가 반환하는 Context 값은 해당 Context를 생성할 때 지정한 기본값과 동일합니다:
+
+```tsx
+const ThemeContext = createContext(null);
+```
+
+기본값은 절대 변경되지 않습니다. Context를 업데이트하려면 위에서 설명한 대로 state와 함께 사용하세요.
+
+<Card>
+  <CardHeader>
+    <CardTitle>더 나은 기본값 사용하기</CardTitle>
+  </CardHeader>
+  <CardContent>
+    종종 null 대신 더 의미 있는 기본값을 사용할 수 있습니다. 예를 들면:
+
+    ```tsx
+    const ThemeContext = createContext('light');
+    ```
+
+    이렇게 하면:
+    - 실수로 Provider 없이 컴포넌트를 렌더링해도 작동이 중단되지 않습니다
+    - 테스트 환경에서 많은 Provider를 설정하지 않아도 컴포넌트가 잘 작동합니다
+  </CardContent>
+</Card>
+
+예제를 살펴보겠습니다:
+
+<Tabs defaultValue="preview" className="w-full">
+  <TabsList>
+    <TabsTrigger value="preview">미리보기</TabsTrigger>
+    <TabsTrigger value="code">코드</TabsTrigger>
+  </TabsList>
+  <TabsContent value="preview">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        const ThemeContext = createContext('light');
+
+        export default function MyApp() {
+          const [theme, setTheme] = useState('light');
+          return (
+            <>
+              <ThemeContext.Provider value={theme}>
+                <Form />
+              </ThemeContext.Provider>
+              <Button 
+                onClick={() => {
+                  setTheme(theme === 'dark' ? 'light' : 'dark');
+                }}
+                className="mt-4"
+              >
+                테마 전환
+              </Button>
+            </>
+          )
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  <TabsContent value="code">
+    <Card>
+      <CardContent>
+        ```tsx
+        import { createContext, useContext, useState } from 'react';
+
+        const ThemeContext = createContext('light');
+
+        export default function MyApp() {
+          const [theme, setTheme] = useState('light');
+          return (
+            <div className="p-4">
+              <ThemeContext.Provider value={theme}>
+                <Form />
+              </ThemeContext.Provider>
+              <Button 
+                onClick={() => {
+                  setTheme(theme === 'dark' ? 'light' : 'dark');
+                }}
+                className="mt-4"
+              >
+                테마 전환
+              </Button>
+            </div>
+          )
+        }
+
+        function Form() {
+          return (
+            <Panel title="환영합니다">
+              <Button>회원가입</Button>
+              <Button>로그인</Button>
+            </Panel>
+          );
+        }
+
+        function Panel({ title, children }) {
+          const theme = useContext(ThemeContext);
+          const className = 'bg-' + (theme === 'dark' ? 'gray-800' : 'white') + 
+                          ' p-4 rounded shadow';
+          return (
+            <section className={className}>
+              <h1 className={`text-xl ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
+                {title}
+              </h1>
+              {children}
+            </section>
+          )
+        }
+
+        function Button({ children, onClick }) {
+          const theme = useContext(ThemeContext);
+          const className = 'px-4 py-2 rounded ' +
+            (theme === 'dark' ? 
+              'bg-gray-600 text-white hover:bg-gray-500' : 
+              'bg-gray-100 text-black hover:bg-gray-200');
+          return (
+            <button className={className} onClick={onClick}>
+              {children}
+            </button>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 트리의 일부에 대한 Context 재정의하기
+
+Provider로 트리의 일부를 감싸서 해당 부분의 Context를 다른 값으로 재정의할 수 있습니다:
+
+```tsx
+<ThemeContext.Provider value="dark">
+  ...
+  <ThemeContext.Provider value="light">
+    <Footer />
+  </ThemeContext.Provider>
+  ...
+</ThemeContext.Provider>
+```
+
+필요한 만큼 Provider를 중첩하고 재정의할 수 있습니다.
+
+### 예제 1: 테마 재정의
+
+<Card>
+  <CardContent className="pt-6">
+    ```tsx
+    import { createContext, useContext } from 'react';
+
+    const ThemeContext = createContext(null);
+
+    export default function MyApp() {
+      return (
+        <ThemeContext.Provider value="dark">
+          <Form />
+        </ThemeContext.Provider>
+      )
+    }
+
+    function Form() {
+      return (
+        <Panel title="환영합니다">
+          <Button className="mb-2">가입하기</Button>
+          <Button className="mb-2">로그인</Button>
+          <ThemeContext.Provider value="light">
+            <Footer />
+          </ThemeContext.Provider>
+        </Panel>
+      );
+    }
+
+    function Footer() {
+      return (
+        <footer className="mt-4 pt-4 border-t">
+          <Button>설정</Button>
+        </footer>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+위 예제에서 Footer 내부의 버튼은 다른 버튼("dark")과 다른 Context 값("light")을 받습니다.
+
+### 예제 2: 자동으로 중첩된 제목
+
+Context Provider를 중첩할 때 정보를 "축적"할 수 있습니다. 
+
+<Tabs defaultValue="preview" className="w-full">
+  <TabsList>
+    <TabsTrigger value="preview">미리보기</TabsTrigger>
+    <TabsTrigger value="code">코드</TabsTrigger>
+  </TabsList>
+  <TabsContent value="preview">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        export default function Page() {
+          return (
+            <Section>
+              <Heading>제목</Heading>
+              <Section>
+                <Heading>주요 제목</Heading>
+                <Heading>주요 제목</Heading>
+                <Section>
+                  <Heading>하위 제목</Heading>
+                  <Section>
+                    <Heading>하위-하위 제목</Heading>
+                  </Section>
+                </Section>
+              </Section>
+            </Section>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  <TabsContent value="code">
+    <Card>
+      <CardContent>
+        ```tsx
+        import { createContext, useContext } from 'react';
+
+        // LevelContext.ts
+        export const LevelContext = createContext(0);
+
+        // Section.tsx
+        export default function Section({ children }) {
+          const level = useContext(LevelContext);
+          return (
+            <section className="p-4 border rounded my-2">
+              <LevelContext.Provider value={level + 1}>
+                {children}
+              </LevelContext.Provider>
+            </section>
+          );
+        }
+
+        // Heading.tsx
+        export default function Heading({ children }) {
+          const level = useContext(LevelContext);
+          switch (level) {
+            case 0:
+              throw Error('Heading은 Section 내부에 있어야 합니다!');
+            case 1:
+              return <h1 className="text-4xl font-bold">{children}</h1>;
+            case 2:
+              return <h2 className="text-3xl font-bold">{children}</h2>;
+            case 3:
+              return <h3 className="text-2xl font-bold">{children}</h3>;
+            case 4:
+              return <h4 className="text-xl font-bold">{children}</h4>;
+            case 5:
+              return <h5 className="text-lg font-bold">{children}</h5>;
+            case 6:
+              return <h6 className="text-base font-bold">{children}</h6>;
+            default:
+              throw Error('알 수 없는 수준: ' + level);
+          }
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 객체와 함수를 전달할 때 리렌더링 최적화하기
+
+Context를 통해 객체와 함수를 포함한 모든 값을 전달할 수 있습니다.
+
+<Card>
+  <CardContent>
+    ```tsx
+    function MyApp() {
+      const [currentUser, setCurrentUser] = useState(null);
+
+      function login(response) {
+        storeCredentials(response.credentials);
+        setCurrentUser(response.user);
+      }
+
+      return (
+        <AuthContext.Provider value={{ currentUser, login }}>
+          <Page />
+        </AuthContext.Provider>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+여기서 Context 값은 함수가 속성 중 하나인 JavaScript 객체입니다. MyApp이 다시 렌더링될 때마다(예: 라우트 업데이트 시) 이것은 다른 함수를 가리키는 다른 객체가 되므로, React는 useContext(AuthContext)를 호출하는 트리 깊은 곳의 모든 컴포넌트를 다시 렌더링해야 합니다.
+
+작은 앱에서는 이것이 문제가 되지 않습니다. 하지만 currentUser와 같은 기본 데이터가 변경되지 않았다면 다시 렌더링할 필요가 없습니다. React가 이 사실을 활용할 수 있도록 login 함수를 useCallback으로 감싸고 객체 생성을 useMemo로 감쌀 수 있습니다.
+
+<Card>
+  <CardContent>
+    ```tsx
+    import { useCallback, useMemo } from 'react';
+
+    function MyApp() {
+      const [currentUser, setCurrentUser] = useState(null);
+
+      const login = useCallback((response) => {
+        storeCredentials(response.credentials);
+        setCurrentUser(response.user);
+      }, []);
+
+      const contextValue = useMemo(() => ({
+        currentUser,
+        login
+      }), [currentUser, login]);
+
+      return (
+        <AuthContext.Provider value={contextValue}>
+          <Page />
+        </AuthContext.Provider>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+이러한 변경으로 인해 MyApp이 다시 렌더링되어야 하는 경우에도 currentUser가 변경되지 않았다면 useContext(AuthContext)를 호출하는 컴포넌트는 다시 렌더링할 필요가 없게 됩니다.
+
+## 문제 해결
+
+### 내 컴포넌트가 Provider의 값을 볼 수 없습니다
+
+이런 일이 발생하는 일반적인 경우들:
+
+1. useContext()를 호출하는 동일한 컴포넌트(또는 그 아래)에서 `<SomeContext.Provider>`를 렌더링하고 있습니다. useContext()를 호출하는 컴포넌트 위와 바깥에 `<SomeContext.Provider>`를 이동하세요.
+
+2. 컴포넌트를 `<SomeContext.Provider>`로 감싸는 것을 잊었거나 생각했던 것과 다른 트리 부분에 넣었을 수 있습니다. React DevTools를 사용하여 계층 구조가 올바른지 확인하세요.
+
+3. 제공하는 컴포넌트에서 보는 SomeContext와 읽는 컴포넌트에서 보는 SomeContext가 두 개의 다른 객체가 되게 하는 빌드 도구 문제가 있을 수 있습니다. 심볼릭 링크를 사용할 때 발생할 수 있습니다.
+
+### 기본값이 다른데도 Context에서 항상 undefined를 받습니다
+
+트리에 값 없는 Provider가 있을 수 있습니다:
+
+<Card>
+  <CardContent>
+    ```tsx
+    // 🚩 작동하지 않음: value prop 없음
+    <ThemeContext.Provider>
+      <Button />
+    </ThemeContext.Provider>
+
+    // 🚩 작동하지 않음: prop이 "value"여야 함
+    <ThemeContext.Provider theme={theme}>
+      <Button />
+    </ThemeContext.Provider>
+
+    // ✅ 올바른 방법
+    <ThemeContext.Provider value={theme}>
+      <Button />
+    </ThemeContext.Provider>
+    ```
+  </CardContent>
+</Card>
+
+createContext(defaultValue)의 기본값은 위에 일치하는 Provider가 전혀 없을 때만 사용됩니다. 부모 트리 어딘가에 `<SomeContext.Provider value={undefined}>`가 있다면, useContext(SomeContext)를 호출하는 컴포넌트는 Context 값으로 undefined를 받게 됩니다.

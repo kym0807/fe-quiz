@@ -1,0 +1,210 @@
+---
+title: "Server와 Client Component 구성 패턴"
+description: "Server Components와 Client Components를 효율적으로 조합하는 방법"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>컴포넌트 선택 가이드</CardTitle>
+    <CardDescription>
+      어떤 컴포넌트를 언제 사용해야 할까요?
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b">
+          <th className="text-left p-2">필요한 기능</th>
+          <th className="text-center p-2">Server</th>
+          <th className="text-center p-2">Client</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="border-b">
+          <td className="p-2">데이터 페칭</td>
+          <td className="text-center">✅</td>
+          <td className="text-center">❌</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2">백엔드 리소스 직접 접근</td>
+          <td className="text-center">✅</td>
+          <td className="text-center">❌</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2">민감한 정보 처리 (API 키 등)</td>
+          <td className="text-center">✅</td>
+          <td className="text-center">❌</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2">이벤트 리스너 (onClick 등)</td>
+          <td className="text-center">❌</td>
+          <td className="text-center">✅</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2">상태 관리 (useState 등)</td>
+          <td className="text-center">❌</td>
+          <td className="text-center">✅</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2">브라우저 API 사용</td>
+          <td className="text-center">❌</td>
+          <td className="text-center">✅</td>
+        </tr>
+      </tbody>
+    </table>
+  </CardContent>
+</Card>
+
+## Server Component 패턴
+
+<Tabs defaultValue="data-sharing" className="w-full">
+  <TabsList>
+    <TabsTrigger value="data-sharing">데이터 공유</TabsTrigger>
+    <TabsTrigger value="server-only">서버 전용 코드</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="data-sharing">
+    <Card>
+      <CardHeader>
+        <CardTitle>컴포넌트 간 데이터 공유</CardTitle>
+      </CardHeader>
+      <CardContent>
+```typescript
+// 데이터 페칭 함수
+async function getData() {
+  const res = await fetch('https://api.example.com/data')
+  return res.json()
+}
+
+// 여러 컴포넌트에서 동일한 데이터 사용
+async function Layout() {
+  const data = await getData()
+  return <div>{/* data 사용 */}</div>
+}
+
+async function Page() {
+  const data = await getData() // 중복 요청 걱정 없음
+  return <div>{/* data 사용 */}</div>
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>자동 요청 중복 제거</AlertTitle>
+  <AlertDescription>
+    React는 fetch 요청을 자동으로 메모이제이션하여 
+    동일한 데이터에 대한 중복 요청을 방지합니다.
+  </AlertDescription>
+</Alert>
+      </CardContent>
+    </Card>
+  </TabsContent>
+
+  <TabsContent value="server-only">
+    <Card>
+      <CardHeader>
+        <CardTitle>서버 전용 코드 보호</CardTitle>
+      </CardHeader>
+      <CardContent>
+```typescript
+import 'server-only'
+
+export async function getData() {
+  const res = await fetch('https://api.example.com/data', {
+    headers: {
+      authorization: process.env.API_KEY, // 민감한 정보
+    },
+  })
+  return res.json()
+}
+```
+
+<Alert className="mt-4" variant="destructive">
+  <AlertTitle>보안 주의사항</AlertTitle>
+  <AlertDescription>
+    server-only 패키지를 사용하면 서버 전용 코드가 
+    실수로 클라이언트에서 사용되는 것을 빌드 타임에 방지할 수 있습니다.
+  </AlertDescription>
+</Alert>
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## Client Component 최적화
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Client Component 트리 아래로 이동</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// app/layout.tsx
+import SearchBar from './searchbar' // Client Component
+import Logo from './logo' // Server Component
+
+// Layout은 기본적으로 Server Component
+export default function Layout({ children }) {
+  return (
+    <>
+      <nav>
+        <Logo /> {/* 정적 컴포넌트 */}
+        <SearchBar /> {/* 인터랙티브 컴포넌트만 Client로 분리 */}
+      </nav>
+      <main>{children}</main>
+    </>
+  )
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>최적화 팁</AlertTitle>
+  <AlertDescription>
+    인터랙티브한 부분만 Client Component로 분리하면
+    전체 레이아웃의 JavaScript 번들 크기를 줄일 수 있습니다.
+  </AlertDescription>
+</Alert>
+  </CardContent>
+</Card>
+
+## Server Component를 Client Component로 전달하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>올바른 컴포넌트 조합 패턴</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// ❌ 잘못된 방법: Client Component에서 Server Component 직접 import
+'use client'
+import ServerComponent from './server-component' // 불가능!
+
+// ✅ 올바른 방법: props로 전달
+'use client'
+export default function ClientComponent({ children }) {
+  const [count, setCount] = useState(0)
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>{count}</button>
+      {children} {/* Server Component를 children으로 전달 */}
+    </>
+  )
+}
+
+// 사용 예시 (Server Component 내에서)
+import ClientComponent from './client-component'
+import ServerComponent from './server-component'
+
+export default function Page() {
+  return (
+    <ClientComponent>
+      <ServerComponent />
+    </ClientComponent>
+  )
+}
+```
+  </CardContent>
+</Card>

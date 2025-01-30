@@ -1,0 +1,89 @@
+---
+title: "Vite SSR 설정 옵션"
+description: "Vite의 서버 사이드 렌더링(SSR) 관련 설정 옵션에 대한 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+
+<Card className="mb-6">
+ <CardHeader>
+   <CardTitle>외부화(Externalization) 설정</CardTitle>
+   <CardDescription>
+     SSR 빌드 시 의존성 외부화 관련 설정
+   </CardDescription>
+ </CardHeader>
+ <CardContent>
+   ### ssr.external
+   - **타입**: string[] | true
+   - **설명**: 지정된 의존성과 그 하위 의존성을 SSR에서 외부화
+   - **기본 동작**:
+     - 기본적으로 링크된 의존성을 제외한 모든 의존성이 외부화됨
+     - true로 설정 시 링크된 의존성을 포함한 모든 의존성 외부화
+   - ssr.noExternal에도 나열된 경우 ssr.external이 우선순위를 가짐
+
+   ### ssr.noExternal
+   ```js
+   export default defineConfig({
+     ssr: {
+       noExternal: ['lodash-es', /^@myapp/], // 문자열 또는 정규식
+       // 또는
+       noExternal: true // 모든 의존성을 번들링
+     }
+   })
+   ```
+   - **타입**: string | RegExp | (string | RegExp)[] | true
+   - 지정된 의존성을 SSR 빌드에 포함(번들링)
+   - true로 설정 시 모든 의존성을 번들링
+ </CardContent>
+</Card>
+
+<Card className="mb-6">
+ <CardHeader>
+   <CardTitle>빌드 타겟과 해결 조건</CardTitle>
+   <CardDescription>
+     SSR 빌드의 타겟 환경과 의존성 해결 방식 설정
+   </CardDescription>
+ </CardHeader>
+ <CardContent>
+   ### ssr.target
+   - **타입**: 'node' | 'webworker'
+   - **기본값**: 'node'
+   - SSR 서버의 빌드 대상 지정
+
+   ### ssr.resolve.conditions
+   - **타입**: string[]
+   - **기본값**: 
+     - node 타겟: ['module', 'node', 'development|production']
+     - webworker 타겟: ['module', 'browser', 'development|production']
+   - 플러그인 파이프라인에서 사용되는 조건
+   - 외부화되지 않은 의존성에만 영향
+
+   ### ssr.resolve.externalConditions
+   - **타입**: string[]
+   - **기본값**: ['node']
+   - 외부화된 직접 의존성의 SSR 임포트 시 사용되는 조건
+   ```js
+   export default defineConfig({
+     ssr: {
+       resolve: {
+         externalConditions: ['node', 'custom']
+       }
+     }
+   })
+   ```
+   - 사용 시 개발과 빌드 모두에서 `--conditions` 플래그 설정 필요:
+   ```bash
+   # 개발 시
+   NODE_OPTIONS='--conditions custom' vite
+   # 빌드 후
+   NODE_OPTIONS="--conditions custom" node ./dist/server.js
+   ```
+
+   ### ssr.resolve.mainFields
+   - **타입**: string[]
+   - **기본값**: ['module', 'jsnext:main', 'jsnext']
+   - package.json에서 패키지 진입점 해결 시 시도할 필드 목록
+   - exports 필드를 통해 해결된 조건부 내보내기보다 낮은 우선순위
+   - 외부화되지 않은 의존성에만 적용
+ </CardContent>
+</Card>

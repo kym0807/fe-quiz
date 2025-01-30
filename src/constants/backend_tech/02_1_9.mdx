@@ -1,0 +1,354 @@
+---
+title: "Fastify 훅(Hooks)"
+description: "Fastify의 요청/응답 생명주기와 애플리케이션 이벤트를 제어하는 훅 시스템 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>훅 개요</CardTitle>
+    <CardDescription>
+      Fastify의 훅 시스템과 생명주기 이벤트
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    훅은 `fastify.addHook` 메서드를 통해 등록되며, 애플리케이션이나 요청/응답 생명주기의 특정 이벤트를 감지할 수 있게 해줍니다.
+    훅은 해당 이벤트가 발생하기 전에 등록되어야 하며, 그렇지 않으면 이벤트를 놓치게 됩니다.
+
+    두 가지 주요 훅 타입:
+    - 요청/응답 훅: 개별 요청의 처리 과정에 관여
+    - 애플리케이션 훅: 서버의 시작, 종료 등 애플리케이션 수준의 이벤트 처리
+
+    <Alert className="mt-4">
+      <AlertTitle>async/await 사용 시 주의사항</AlertTitle>
+      <AlertDescription>
+        async/await나 Promise를 사용할 때는 done 콜백을 사용하지 않습니다. 
+        이를 혼용하면 핸들러가 중복 실행되는 등 예기치 않은 동작이 발생할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>요청/응답 훅</CardTitle>
+    <CardDescription>
+      요청과 응답을 처리하는 과정에서 사용할 수 있는 핵심 훅들
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    1. **onRequest**
+    ```ts
+    fastify.addHook('onRequest', async (request, reply) => {
+      // 요청 초기 처리
+      await someAsyncOperation()
+    })
+    ```
+
+    2. **preParsing**
+    ```ts
+    fastify.addHook('preParsing', async (request, reply, payload) => {
+      // 요청 본문 파싱 전 처리
+      // 스트림 변환 등의 작업 수행
+      return modifiedPayload
+    })
+    ```
+
+    3. **preValidation**
+    ```ts
+    fastify.addHook('preValidation', async (request, reply) => {
+      // 유효성 검사 전 데이터 수정
+      request.body = { ...request.body, timestamp: Date.now() }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>핸들러 전후 훅</CardTitle>
+    <CardDescription>
+      라우트 핸들러 실행 전후에 실행되는 훅들
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    1. **preHandler**
+    ```ts
+    fastify.addHook('preHandler', async (request, reply) => {
+      // 핸들러 실행 전 작업
+      // 예: 인증, 권한 검사
+    })
+    ```
+
+    2. **preSerialization**
+    ```ts
+    fastify.addHook('preSerialization', async (request, reply, payload) => {
+      // 응답 직렬화 전 데이터 수정
+      return {
+        ...payload,
+        meta: { timestamp: Date.now() }
+      }
+    })
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>preSerialization 주의사항</AlertTitle>
+      <AlertDescription>
+        payload가 문자열, Buffer, 스트림 또는 null인 경우에는 이 훅이 실행되지 않습니다.
+      </AlertDescription>
+    </Alert>
+
+    3. **onSend**
+    ```ts
+    fastify.addHook('onSend', async (request, reply, payload) => {
+      // 응답 전송 직전 최종 수정
+      // 문자열, Buffer, 스트림 또는 null만 반환 가능
+      return payload.replace('old-text', 'new-text')
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>오류 및 응답 완료 훅</CardTitle>
+    <CardDescription>
+      오류 처리와 응답 완료 후 실행되는 훅들
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    1. **onError**
+    ```ts
+    fastify.addHook('onError', async (request, reply, error) => {
+      // 오류 로깅이나 모니터링에 활용
+      // 오류 수정은 불가능
+      console.error(`[${request.id}] ${error.message}`)
+    })
+    ```
+
+    2. **onResponse**
+    ```ts
+    fastify.addHook('onResponse', async (request, reply) => {
+      // 응답 완료 후 작업
+      // 예: 메트릭 수집, 로깅
+      metrics.recordResponseTime(Date.now() - request.startTime)
+    })
+    ```
+
+    3. **onTimeout**
+    ```ts
+    fastify.addHook('onTimeout', async (request, reply) => {
+      // 요청 타임아웃 발생 시 처리
+      metrics.incrementTimeouts()
+    })
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>onResponse 로깅 주의사항</AlertTitle>
+      <AlertDescription>
+        disableRequestLogging이 true로 설정된 경우, onResponse 훅 내의 오류 로깅이 비활성화됩니다.
+        이 경우 try-catch를 사용하여 직접 오류를 처리해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>애플리케이션 수준 훅</CardTitle>
+    <CardDescription>
+      서버의 생명주기에 따라 실행되는 애플리케이션 수준의 훅들
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    1. **onReady**
+    ```ts
+    fastify.addHook('onReady', async function () {
+      // 서버가 요청을 받기 시작하기 전 실행
+      await loadInitialData()
+      await warmupCache()
+    })
+    ```
+
+    2. **onListen**
+    ```ts
+    fastify.addHook('onListen', async function () {
+      // 서버가 요청 수신을 시작할 때 실행
+      console.log('Server is now listening for connections')
+    })
+    ```
+
+    3. **onClose**
+    ```ts
+    fastify.addHook('onClose', async (instance) => {
+      // 서버 종료 시 실행
+      // 데이터베이스 연결 종료 등의 정리 작업
+      await closeDbConnections()
+    })
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>onListen 주의사항</AlertTitle>
+      <AlertDescription>
+        이 훅은 fastify.inject() 또는 fastify.ready()를 사용할 때는 실행되지 않습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>라우트 및 등록 훅</CardTitle>
+    <CardDescription>
+      라우트 등록과 플러그인 등록 시 실행되는 훅들
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    1. **onRoute**
+    ```ts
+    fastify.addHook('onRoute', (routeOptions) => {
+      // 새로운 라우트가 등록될 때 실행
+      console.log(`New route registered: ${routeOptions.method} ${routeOptions.url}`)
+      
+      // 라우트 옵션 커스터마이징
+      routeOptions.preSerialization = [
+        ...(routeOptions.preSerialization || []),
+        async (request, reply, payload) => {
+          return { ...payload, timestamp: Date.now() }
+        }
+      ]
+    })
+    ```
+
+    2. **onRegister**
+    ```ts
+    fastify.addHook('onRegister', (instance, opts) => {
+      // 새로운 플러그인이 등록될 때 실행
+      console.log(`Registering plugin with prefix: ${opts.prefix}`)
+      
+      // 플러그인 컨텍스트에 데이터 초기화
+      instance.decorate('pluginData', [])
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>훅의 스코프와 실행 순서</CardTitle>
+    <CardDescription>
+      훅의 캡슐화와 실행 컨텍스트 관리
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```ts
+    fastify.addHook('onRequest', async function (req, reply) {
+      // this는 현재 Fastify 인스턴스를 가리킴
+      const self = this 
+      
+      if (req.url === '/nested') {
+        // 플러그인 스코프 내부
+        console.log(this.pluginData)
+      }
+    })
+
+    fastify.register(async function plugin (fastify, opts) {
+      fastify.decorate('pluginData', { key: 'value' })
+      
+      // 이 라우트는 플러그인 스코프 내에서만 pluginData에 접근 가능
+      fastify.get('/nested', async function (req, reply) {
+        return this.pluginData
+      })
+    })
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>화살표 함수 주의</AlertTitle>
+      <AlertDescription>
+        화살표 함수를 사용하면 this가 Fastify 인스턴스가 아닌 현재 스코프를 가리키게 됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>커스텀 속성 주입</CardTitle>
+    <CardDescription>
+      훅을 사용한 요청 객체 확장
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```ts
+    // 타입 정의
+    interface AuthUser {
+      id: number;
+      role: string;
+    }
+
+    declare module 'fastify' {
+      interface FastifyRequest {
+        user?: AuthUser;
+      }
+    }
+
+    // 인증 훅
+    fastify.addHook('preValidation', async (request) => {
+      const token = request.headers.authorization
+      request.user = await validateToken(token)
+    })
+
+    // 라우트에서 사용
+    fastify.get('/profile', async (request) => {
+      const user = request.user
+      if (!user) throw new Error('Not authenticated')
+      return { id: user.id, role: user.role }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>진단 채널</CardTitle>
+    <CardDescription>
+      Node.js의 diagnostics_channel을 활용한 모니터링
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```ts
+    const dc = require('node:diagnostics_channel')
+    const channel = dc.channel('fastify.initialization')
+
+    // 요청 추적 예시
+    channel.subscribe(function ({ fastify }) {
+      const requests = new Map()
+
+      fastify.addHook('onRequest', (request, reply, done) => {
+        requests.set(request.id, { 
+          startTime: Date.now(),
+          url: request.url 
+        })
+        done()
+      })
+
+      fastify.addHook('onResponse', (request, reply, done) => {
+        const data = requests.get(request.id)
+        console.log(`Request to ${data.url} took ${Date.now() - data.startTime}ms`)
+        requests.delete(request.id)
+        done()
+      })
+    })
+    ```
+
+    <Alert>
+      <AlertTitle>실험적 기능</AlertTitle>
+      <AlertDescription>
+        TracingChannel API는 현재 실험적 기능이며, Node.js의 패치 버전에서도 호환성이 깨질 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>

@@ -1,0 +1,552 @@
+---
+title: "TypeScript Classes"
+description: "TypeScript의 클래스 기능과 멤버 선언에 대한 상세 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클래스의 기초</CardTitle>
+    <CardDescription>
+      TypeScript는 ES2015에서 도입된 class 키워드를 완벽하게 지원하며, 타입 시스템의 강력한 기능을 추가로 제공합니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 클래스 멤버
+
+### 필드 선언
+
+<Tabs defaultValue="basic" className="w-full my-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본 필드</TabsTrigger>
+    <TabsTrigger value="init">초기화</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```typescript
+    class Point {
+      x: number;
+      y: number;
+    }
+
+    const pt = new Point();
+    pt.x = 0;
+    pt.y = 0;
+    ```
+  </TabsContent>
+  <TabsContent value="init">
+    ```typescript
+    class Point {
+      x = 0;
+      y = 0;
+    }
+
+    const pt = new Point();
+    console.log(`${pt.x}, ${pt.y}`); // 출력: 0, 0
+    ```
+  </TabsContent>
+</Tabs>
+
+## strictPropertyInitialization
+
+<Card className="my-4">
+  <CardContent className="pt-6">
+    strictPropertyInitialization 설정은 클래스 필드가 생성자에서 반드시 초기화되어야 하는지를 제어합니다.
+  </CardContent>
+</Card>
+
+```typescript
+// ❌ 잘못된 예
+class BadGreeter {
+  name: string; // 오류: 초기화되지 않음
+}
+
+// ✅ 올바른 예
+class GoodGreeter {
+  name: string;
+  constructor() {
+    this.name = "hello";
+  }
+}
+```
+
+## readonly 수정자
+
+```typescript
+class Greeter {
+  readonly name: string = "world";
+
+  constructor(otherName?: string) {
+    if (otherName !== undefined) {
+      this.name = otherName;
+    }
+  }
+
+  err() {
+    this.name = "not ok"; // 오류: readonly 속성
+  }
+}
+```
+
+## 생성자
+
+<Card className="my-4 bg-blue-50 dark:bg-blue-950">
+  <CardContent className="pt-6">
+    클래스 생성자는 함수와 매우 유사하며, 타입 어노테이션, 기본값, 오버로드를 지원합니다.
+  </CardContent>
+</Card>
+
+```typescript
+class Point {
+  x: number;
+  y: number;
+
+  // 기본값이 있는 일반적인 생성자
+  constructor(x = 0, y = 0) {
+    this.x = x;
+    this.y = y;
+  }
+}
+```
+
+### 생성자 오버로드
+
+```typescript
+class Point {
+  x: number = 0;
+  y: number = 0;
+
+  constructor(x: number, y: number);
+  constructor(xy: string);
+  constructor(x: string | number, y: number = 0) {
+    // 구현 로직
+  }
+}
+```
+
+## 메서드 정의
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클래스 메서드</CardTitle>
+    <CardDescription>
+      클래스의 메서드는 함수와 동일한 타입 어노테이션을 사용할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+```typescript
+class Point {
+  x = 10;
+  y = 10;
+
+  scale(n: number): void {
+    this.x *= n;
+    this.y *= n;
+  }
+}
+```
+
+<Card className="my-4 bg-yellow-50 dark:bg-yellow-950">
+  <CardContent>
+    메서드 내부에서는 반드시 this를 통해 필드와 다른 메서드에 접근해야 합니다.
+    한정자 없는 이름은 항상 둘러싸고 있는 스코프를 참조합니다.
+  </CardContent>
+</Card>
+
+## Getter/Setter
+
+<Tabs defaultValue="basic" className="w-full my-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본 접근자</TabsTrigger>
+    <TabsTrigger value="advanced">고급 접근자</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```typescript
+    class C {
+      _length = 0;
+      get length() {
+        return this._length;
+      }
+      set length(value) {
+        this._length = value;
+      }
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="advanced">
+    ```typescript
+    class Thing {
+      _size = 0;
+
+      get size(): number {
+        return this._size;
+      }
+
+      set size(value: string | number | boolean) {
+        const num = Number(value);
+        if (!Number.isFinite(num)) {
+          this._size = 0;
+          return;
+        }
+        this._size = num;
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 인덱스 시그니처
+
+```typescript
+class MyClass {
+  [s: string]: boolean | ((s: string) => boolean);
+
+  check(s: string) {
+    return this[s] as boolean;
+  }
+}
+```
+
+## 멤버 가시성
+
+### public
+
+<Card className="my-4">
+  <CardContent className="pt-6">
+    public은 기본 가시성 수정자입니다. public 멤버는 어디서든 접근할 수 있습니다.
+  </CardContent>
+</Card>
+
+```typescript
+class Greeter {
+  public greet() {
+    console.log("hello!");
+  }
+}
+```
+
+### protected
+
+```typescript
+class Greeter {
+  protected getName() {
+    return "hi";
+  }
+}
+
+class SpecialGreeter extends Greeter {
+  public howdy() {
+    // OK - protected 멤버는 파생 클래스에서 접근 가능
+    console.log("Howdy, " + this.getName());
+  }
+}
+```
+
+### private
+
+```typescript
+class Base {
+  private x = 0;
+}
+
+const b = new Base();
+console.log(b.x); // 오류: private 멤버는 클래스 외부에서 접근 불가
+```
+
+<Card className="my-4 bg-blue-50 dark:bg-blue-950">
+  <CardContent className="pt-6">
+    TypeScript의 private은 타입 체킹 중에만 강제됩니다. 
+    JavaScript의 private 필드(#)를 사용하면 런타임에도 
+    private이 강제됩니다.
+  </CardContent>
+</Card>
+
+```typescript
+class Dog {
+  #barkAmount = 0;
+  personality = "happy";
+
+  bark() {
+    this.#barkAmount++; // OK
+  }
+}
+
+const dog = new Dog();
+dog.#barkAmount = 1; // 오류: private 필드
+```
+
+## 정적 멤버
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>정적 멤버 활용</CardTitle>
+    <CardDescription>
+      정적 멤버는 클래스의 특정 인스턴스가 아닌 클래스 자체에 속합니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+```typescript
+class MyClass {
+  static x = 0;
+  static printX() {
+    console.log(MyClass.x);
+  }
+}
+
+console.log(MyClass.x);
+MyClass.printX();
+```
+
+### 정적 멤버의 가시성
+
+```typescript
+class MyClass {
+  private static x = 0;
+  
+  static getX() {
+    return MyClass.x; // private 정적 멤버 접근 가능
+  }
+}
+```
+
+### 정적 블록
+
+```typescript
+class Foo {
+  static #count = 0;
+  
+  static {
+    try {
+      const savedCount = localStorage.getItem("count");
+      Foo.#count = savedCount ? Number(savedCount) : 0;
+    } catch {}
+  }
+
+  static getCount() {
+    return Foo.#count;
+  }
+}
+```
+
+## 제네릭 클래스
+
+<Tabs defaultValue="basic" className="w-full my-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본 제네릭</TabsTrigger>
+    <TabsTrigger value="constraints">제약 조건</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```typescript
+    class Box<Type> {
+      contents: Type;
+      constructor(value: Type) {
+        this.contents = value;
+      }
+    }
+
+    const stringBox = new Box("Hello!");  // Box<string>
+    ```
+  </TabsContent>
+  <TabsContent value="constraints">
+    ```typescript
+    class DataContainer<T extends { id: number }> {
+      constructor(public data: T) {}
+      
+      getId(): number {
+        return this.data.id;
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## this의 타입 활용
+
+### 메서드 체이닝
+
+```typescript
+class Set<T> {
+  private items: T[] = [];
+  
+  add(item: T): this {
+    this.items.push(item);
+    return this;
+  }
+
+  remove(item: T): this {
+    const index = this.items.indexOf(item);
+    if (index > -1) {
+      this.items.splice(index, 1);
+    }
+    return this;
+  }
+}
+```
+
+### this 타입 가드
+
+```typescript
+class FileSystemObject {
+  isFile(): this is FileRep {
+    return this instanceof FileRep;
+  }
+  
+  isDirectory(): this is Directory {
+    return this instanceof Directory;
+  }
+  
+  constructor(public path: string) {}
+}
+```
+
+<Card className="my-4 bg-blue-50 dark:bg-blue-950">
+  <CardContent className="pt-6">
+    this 타입은 파생 클래스에서 더 구체적인 타입으로 정확하게 인식됩니다.
+    이는 메서드 체이닝과 타입 가드에서 특히 유용합니다.
+  </CardContent>
+</Card>
+
+## 추상 클래스
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>추상 클래스와 멤버</CardTitle>
+    <CardDescription>
+      추상 클래스는 직접 인스턴스화할 수 없으며, 구현을 위한 기본 클래스로 사용됩니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+```typescript
+abstract class Base {
+  abstract getName(): string;  // 추상 메서드
+
+  printName() {  // 일반 메서드
+    console.log("Hello, " + this.getName());
+  }
+}
+
+class Derived extends Base {
+  getName() {  // 추상 메서드 구현
+    return "world";
+  }
+}
+```
+
+### 추상 생성자 시그니처
+
+```typescript
+// ✅ 올바른 사용법
+function createInstance(ctor: new () => Base) {
+  return new ctor();
+}
+
+createInstance(Derived);  // 성공
+createInstance(Base);     // 오류: 추상 클래스는 인스턴스화 불가
+```
+
+## 클래스 간의 관계
+
+<Tabs defaultValue="structural" className="w-full my-6">
+  <TabsList>
+    <TabsTrigger value="structural">구조적 타이핑</TabsTrigger>
+    <TabsTrigger value="inheritance">상속 관계</TabsTrigger>
+  </TabsList>
+  <TabsContent value="structural">
+    ```typescript
+    class Point1 {
+      x = 0;
+      y = 0;
+    }
+
+    class Point2 {
+      x = 0;
+      y = 0;
+    }
+
+    // 구조가 동일하므로 호환됨
+    const p: Point1 = new Point2();
+    ```
+  </TabsContent>
+  <TabsContent value="inheritance">
+    ```typescript
+    class Person {
+      name: string;
+      age: number;
+    }
+
+    class Employee {
+      name: string;
+      age: number;
+      salary: number;
+    }
+
+    // Employee는 Person의 모든 속성을 포함하므로 호환됨
+    const p: Person = new Employee();
+    ```
+  </TabsContent>
+</Tabs>
+
+## 매개변수 속성
+
+<Card className="my-4 bg-blue-50 dark:bg-blue-950">
+  <CardContent className="pt-6">
+    생성자 매개변수에 접근 제어자를 붙이면 자동으로 동일한 이름의 속성이 선언됩니다.
+  </CardContent>
+</Card>
+
+```typescript
+class Params {
+  constructor(
+    public readonly x: number,
+    protected y: number,
+    private z: number
+  ) {
+    // 자동으로 x, y, z 속성이 선언됨
+  }
+}
+```
+
+## 클래스 표현식
+
+```typescript
+const someClass = class<Type> {
+  content: Type;
+  constructor(value: Type) {
+    this.content = value;
+  }
+};
+
+const instance = new someClass("Hello");
+```
+
+### 인스턴스 타입 다루기
+
+```typescript
+class Point {
+  x: number;
+  y: number;
+  
+  constructor(x: number, y: number) {
+    this.x = x;
+    this.y = y;
+  }
+}
+
+type PointInstance = InstanceType<typeof Point>;
+
+function moveRight(point: PointInstance) {
+  point.x += 5;
+}
+```
+
+<Card className="my-4">
+  <CardContent className="pt-6">
+    빈 클래스는 구조적 타입 시스템에서 모든 타입의 상위 타입이 될 수 있습니다.
+    하지만 실제로 빈 클래스를 사용하는 것은 권장되지 않습니다.
+  </CardContent>
+</Card>

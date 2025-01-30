@@ -1,0 +1,181 @@
+---
+title: "Next.js의 써드파티 라이브러리"
+description: "@next/third-parties를 사용한 써드파티 서비스 통합 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# 써드파티 라이브러리 통합
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>@next/third-parties</CardTitle>
+    <CardDescription>
+      Next.js 애플리케이션에서 인기 있는 써드파티 라이브러리를 효율적으로 로드하기 위한 
+      컴포넌트와 유틸리티 모음입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```bash
+    npm install @next/third-parties@latest next@latest
+    ```
+  </CardContent>
+</Card>
+
+## Google Tag Manager
+
+<Tabs defaultValue="setup" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="setup">기본 설정</TabsTrigger>
+    <TabsTrigger value="events">이벤트 전송</TabsTrigger>
+  </TabsList>
+  <TabsContent value="setup">
+    ```tsx
+    // app/layout.tsx
+    import { GoogleTagManager } from '@next/third-parties/google'
+    
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html lang="ko">
+          <GoogleTagManager gtmId="GTM-XYZ" />
+          <body>{children}</body>
+        </html>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="events">
+    ```tsx
+    'use client'
+    
+    import { sendGTMEvent } from '@next/third-parties/google'
+    
+    export function EventButton() {
+      return (
+        <div>
+          <button
+            onClick={() => sendGTMEvent({ 
+              event: 'buttonClicked', 
+              value: 'xyz' 
+            })}
+          >
+            이벤트 전송
+          </button>
+        </div>
+      )
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## Google Analytics
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>GA4 설정</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import { GoogleAnalytics } from '@next/third-parties/google'
+    
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html lang="ko">
+          <body>{children}</body>
+          <GoogleAnalytics gaId="G-XYZ" />
+        </html>
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+## Google Maps & YouTube
+
+<Tabs defaultValue="maps" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="maps">Google Maps</TabsTrigger>
+    <TabsTrigger value="youtube">YouTube</TabsTrigger>
+  </TabsList>
+  <TabsContent value="maps">
+    ```tsx
+    import { GoogleMapsEmbed } from '@next/third-parties/google'
+    
+    export default function Page() {
+      return (
+        <GoogleMapsEmbed
+          apiKey="YOUR_API_KEY"
+          height={200}
+          width="100%"
+          mode="place"
+          q="강남역,서울"
+        />
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="youtube">
+    ```tsx
+    import { YouTubeEmbed } from '@next/third-parties/google'
+    
+    export default function Page() {
+      return (
+        <YouTubeEmbed 
+          videoid="VIDEO_ID" 
+          height={400} 
+          params="controls=1" 
+        />
+      )
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>컴포넌트별 주요 옵션</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">Google Maps 옵션</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>apiKey: API 키 (필수)</li>
+          <li>mode: 지도 모드 (필수)</li>
+          <li>height: 높이</li>
+          <li>width: 너비</li>
+          <li>loading: 로딩 방식</li>
+        </ul>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">YouTube 옵션</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>videoid: 비디오 ID (필수)</li>
+          <li>height: 높이</li>
+          <li>width: 너비</li>
+          <li>params: 플레이어 매개변수</li>
+          <li>playlabel: 접근성 라벨</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>페이지뷰 추적</AlertTitle>
+  <AlertDescription>
+    Google Analytics는 브라우저 히스토리 상태 변경을 자동으로 추적합니다. 
+    Next.js의 클라이언트 사이드 네비게이션도 자동으로 측정됩니다. 
+    정확한 측정을 위해 관리자 패널에서 "Enhanced Measurement" 속성이 활성화되어 있는지 확인하세요.
+  </AlertDescription>
+</Alert>

@@ -1,0 +1,149 @@
+---
+title: "useId"
+description: "접근성 속성에 사용할 수 있는 고유 ID를 생성하는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useId란?</CardTitle>
+    <CardDescription>
+      접근성(accessibility) 속성에 전달할 수 있는 고유한 ID를 생성하는 React Hook입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const id = useId()
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+<Card className="mb-6">
+  <CardContent>
+    - **매개변수**: 없음
+    - **반환값**: 컴포넌트의 특정 useId 호출과 연관된 고유한 ID 문자열
+  </CardContent>
+</Card>
+
+<Alert variant="warning" className="mb-4">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    - useId는 리스트의 key를 생성하는 데 사용해서는 안 됩니다. key는 데이터로부터 생성되어야 합니다.
+    - 컴포넌트의 최상위 레벨에서만 호출할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 사용 예시
+
+### 접근성 속성을 위한 고유 ID 생성
+
+```tsx
+import { useId } from 'react';
+
+function PasswordField() {
+  const passwordHintId = useId();
+  return (
+    <>
+      <label>
+        Password:
+        <input
+          type="password"
+          aria-describedby={passwordHintId}
+        />
+      </label>
+      <p id={passwordHintId}>
+        비밀번호는 최소 18자 이상이어야 합니다
+      </p>
+    </>
+  );
+}
+```
+
+### 여러 관련 요소에 대한 ID 생성
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    function Form() {
+      const id = useId();
+      return (
+        <form>
+          <label htmlFor={id + '-firstName'}>이름:</label>
+          <input id={id + '-firstName'} type="text" />
+          <hr />
+          <label htmlFor={id + '-lastName'}>성:</label>
+          <input id={id + '-lastName'} type="text" />
+        </form>
+      );
+    }
+    ```
+    하나의 useId로 여러 관련 요소의 ID를 생성할 수 있습니다.
+  </CardContent>
+</Card>
+
+## 고급 사용법
+
+<Tabs defaultValue="prefix" className="w-full">
+  <TabsList>
+    <TabsTrigger value="prefix">ID 접두사 지정</TabsTrigger>
+    <TabsTrigger value="ssr">서버 사이드 렌더링</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="prefix">
+    ```tsx
+    // 여러 React 앱이 한 페이지에 있을 때
+    const root1 = createRoot(container1, {
+      identifierPrefix: 'app-1-'
+    });
+
+    const root2 = createRoot(container2, {
+      identifierPrefix: 'app-2-'
+    });
+    ```
+  </TabsContent>
+  
+  <TabsContent value="ssr">
+    ```tsx
+    // 서버
+    const { pipe } = renderToPipeableStream(
+      <App />,
+      { identifierPrefix: 'react-app1' }
+    );
+
+    // 클라이언트
+    const root = hydrateRoot(
+      domNode,
+      reactNode,
+      { identifierPrefix: 'react-app1' }
+    );
+    ```
+  </TabsContent>
+</Tabs>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>증분 카운터 대신 useId를 사용하는 이유</CardTitle>
+  </CardHeader>
+  <CardContent>
+    1. **서버 사이드 렌더링 지원**: useId는 서버와 클라이언트 간의 ID 일치를 보장합니다.
+    2. **하이드레이션 안정성**: 컴포넌트의 하이드레이션 순서가 달라도 문제가 발생하지 않습니다.
+    3. **트리 구조 기반**: ID는 컴포넌트의 '부모 경로'를 기반으로 생성되어 일관성을 유지합니다.
+  </CardContent>
+</Card>
+
+## 모범 사례
+
+<Alert className="mt-6">
+  <AlertTitle>ID 생성 시 고려사항</AlertTitle>
+  <AlertDescription className="space-y-2">
+    1. 접근성 속성에만 useId를 사용하세요.
+    2. 하나의 useId로 여러 관련 요소의 ID를 생성하는 것이 좋습니다.
+    3. 서버 사이드 렌더링 시 클라이언트와 서버의 identifierPrefix가 일치해야 합니다.
+    4. 리스트의 key 생성에는 사용하지 마세요.
+  </AlertDescription>
+</Alert>

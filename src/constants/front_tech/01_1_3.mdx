@@ -1,0 +1,250 @@
+---
+title: "Vite 서버 설정 옵션"
+description: "Vite의 개발 서버 관련 설정 옵션에 대한 상세 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 서버 설정</CardTitle>
+    <CardDescription>
+      서버의 기본적인 동작을 제어하는 설정들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### server.host
+    - **타입**: string | boolean
+    - **기본값**: 'localhost'
+    - **설명**: 서버가 수신할 IP 주소 지정
+    - '0.0.0.0' 또는 true로 설정하면 LAN과 공용 주소를 포함한 모든 주소에서 수신
+    - CLI에서는 `--host 0.0.0.0` 또는 `--host`로 설정 가능
+
+    ### server.port
+    - **타입**: number
+    - **기본값**: 5173
+    - 이미 사용 중인 포트는 자동으로 다음 사용 가능한 포트로 시도
+
+    ### server.strictPort
+    - **타입**: boolean
+    - true로 설정하면 포트가 이미 사용 중일 때 다음 포트를 시도하지 않고 종료
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>HTTPS와 브라우저 설정</CardTitle>
+    <CardDescription>
+      HTTPS 설정과 브라우저 자동 실행 관련 옵션
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### server.https
+    - **타입**: https.ServerOptions
+    - TLS + HTTP/2 활성화
+    - 기본 설정을 위해 `@vitejs/plugin-basic-ssl` 플러그인 사용 가능
+    - 프로덕션 환경에서는 자체 인증서 사용 권장
+
+    ### server.open
+    ```js
+    export default defineConfig({
+      server: {
+        open: '/docs/index.html', // 특정 페이지로 열기
+      }
+    })
+    ```
+    - **타입**: boolean | string
+    - 서버 시작 시 브라우저 자동 실행
+    - `process.env.BROWSER`로 특정 브라우저 지정 가능
+    - `process.env.BROWSER_ARGS`로 추가 인수 전달 가능
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>프록시 설정</CardTitle>
+    <CardDescription>
+      개발 서버의 프록시 규칙을 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### server.proxy
+    ```js
+    export default defineConfig({
+      server: {
+        proxy: {
+          // 문자열 단축 표기
+          '/foo': 'http://localhost:4567', // /foo -> http://localhost:4567/foo
+          
+          // 상세 옵션
+          '/api': {
+            target: 'http://jsonplaceholder.typicode.com',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/api/, '')
+          },
+          
+          // 정규식 사용
+          '^/fallback/.*': {
+            target: 'http://jsonplaceholder.typicode.com',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/fallback/, '')
+          },
+          
+          // WebSocket 프록시
+          '/socket.io': {
+            target: 'ws://localhost:5174',
+            ws: true,
+            rewriteWsOrigin: true
+          }
+        }
+      }
+    })
+    ```
+
+    - 요청 경로가 key로 시작하면 지정된 target으로 프록시
+    - `^`로 시작하면 정규식으로 해석
+    - non-relative base 사용 시 각 key에 해당 base 접두사 필요
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>HMR과 CORS 설정</CardTitle>
+    <CardDescription>
+      Hot Module Replacement와 CORS 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### server.hmr
+    ```js
+    server: {
+      hmr: {
+        protocol: 'ws', // 'ws' 또는 'wss'
+        host: '127.0.0.1',
+        port: 5174,
+        overlay: false, // 서버 에러 오버레이 비활성화
+        clientPort: 5173 // 클라이언트 측 포트 오버라이드
+      }
+    }
+    ```
+    
+    ### server.cors
+    - **타입**: boolean | CorsOptions
+    - **기본값**: 모든 출처 허용
+    - false로 설정하여 비활성화 가능
+    - CorsOptions 객체로 상세 설정 가능
+
+    ### server.headers
+    - **타입**: OutgoingHttpHeaders
+    - 서버 응답 헤더 지정
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>파일 시스템 설정</CardTitle>
+    <CardDescription>
+      파일 제공과 감시 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### server.fs.strict
+    - **타입**: boolean
+    - **기본값**: true
+    - 작업 공간 루트 외부 파일 제공 제한
+
+    ### server.fs.allow
+    ```js
+    export default defineConfig({
+      server: {
+        fs: {
+          // 프로젝트 루트보다 한 단계 위 디렉토리까지 허용
+          allow: ['..']
+        }
+      }
+    })
+    ```
+    - 파일 제공이 허용된 디렉토리 목록
+    - 디렉토리와 파일 모두 지정 가능
+
+    ### server.fs.deny
+    - **타입**: string[]
+    - **기본값**: ['.env', '.env.*', `*.{crt,pem}`, '**/.git/**']
+    - 민감한 파일에 대한 접근 차단
+    - picomatch 패턴 지원
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>성능 최적화 설정</CardTitle>
+    <CardDescription>
+      워밍업과 소스맵 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### server.warmup
+    ```js
+    export default defineConfig({
+      server: {
+        warmup: {
+          clientFiles: ['./src/components/*.vue', './src/utils/big-utils.js'],
+          ssrFiles: ['./src/server/modules/*.js']
+        }
+      }
+    })
+    ```
+    - 자주 사용되는 파일을 미리 변환하고 캐싱
+    - 서버 시작 시 초기 페이지 로드 성능 개선
+
+    ### server.sourcemapIgnoreList
+    ```js
+    export default defineConfig({
+      server: {
+        // node_modules 파일을 소스맵에서 제외
+        sourcemapIgnoreList(sourcePath, sourcemapPath) {
+          return sourcePath.includes('node_modules')
+        }
+      }
+    })
+    ```
+    - 개발 서버 소스맵의 무시 목록 설정
+    - false로 설정하여 기본 동작 비활성화 가능
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>미들웨어 모드</CardTitle>
+    <CardDescription>
+      커스텀 서버 설정을 위한 미들웨어 모드
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### server.middlewareMode
+    ```js
+    import express from 'express'
+    import { createServer as createViteServer } from 'vite'
+
+    async function createServer() {
+      const app = express()
+      
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'custom'
+      })
+      
+      app.use(vite.middlewares)
+      
+      app.use('*', async (req, res) => {
+        // 커스텀 응답 처리
+      })
+    }
+    ```
+    - **타입**: boolean
+    - **기본값**: false
+    - 미들웨어 모드에서 Vite 서버 생성
+    - 커스텀 서버 설정에 유용
+  </CardContent>
+</Card>

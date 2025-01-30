@@ -1,0 +1,290 @@
+---
+title: "JavaScript 반복문과 순회"
+description: "JavaScript의 다양한 반복문과 순회 방법에 대한 포괄적인 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>반복문의 기초</CardTitle>
+    <CardDescription>
+      반복문을 사용하여 코드를 효율적으로 반복 실행하는 방법을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className=" p-4 rounded-lg">
+      반복문은 특정 동작을 여러 번 반복해야 할 때 사용하는 프로그래밍 구문입니다.
+      마치 "동쪽으로 5걸음 가세요"라는 지시를 주는 것처럼 간단합니다.
+    </div>
+
+    ```js
+    for (let step = 0; step < 5; step++) {
+      // 0부터 4까지, 총 5번 실행됩니다
+      console.log("동쪽으로 한 걸음");
+    }
+    ```
+
+    ### JavaScript의 주요 반복문 종류
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      <div className=" p-4 rounded-lg">
+        - for
+        - while
+        - do...while
+        - for...in
+      </div>
+      <div className=" p-4 rounded-lg">
+        - for...of
+        - labeled
+        - break
+        - continue
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>for 반복문</CardTitle>
+    <CardDescription>
+      가장 기본적이고 널리 사용되는 반복문입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 기본 구조
+    ```js
+    for (초기화; 조건; 증감) {
+      // 실행할 코드
+    }
+    ```
+
+    ### 실행 순서
+    1. 초기화 식이 실행됩니다 (최초 1회)
+    2. 조건을 검사합니다
+    3. 조건이 참이면 코드 블록을 실행합니다
+    4. 증감식을 실행합니다
+    5. 2번으로 돌아가 반복합니다
+
+    ### 실제 사용 예시
+    ```js
+    function 선택된항목세기(선택객체) {
+      let 선택개수 = 0;
+      for (let i = 0; i < 선택객체.options.length; i++) {
+        if (선택객체.options[i].selected) {
+          선택개수++;
+        }
+      }
+      return 선택개수;
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>while과 do...while 반복문</CardTitle>
+    <CardDescription>
+      조건에 따라 반복하는 두 가지 방식의 반복문을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### while 반복문
+    ```js
+    while (조건) {
+      // 조건이 참인 동안 실행될 코드
+    }
+    ```
+
+    예시:
+    ```js
+    let n = 0;
+    let x = 0;
+    while (n < 3) {
+      n++;
+      x += n;
+    }
+    // 실행 결과:
+    // 1회차: n=1, x=1
+    // 2회차: n=2, x=3
+    // 3회차: n=3, x=6
+    ```
+
+    ### do...while 반복문
+    ```js
+    do {
+      // 최소 1회는 실행될 코드
+    } while (조건);
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### while과 do...while의 차이점
+      - while: 조건을 먼저 검사하고 실행
+      - do...while: 일단 실행하고 나서 조건 검사
+      - do...while은 최소 1회는 반드시 실행됨
+    </div>
+
+    ### 주의사항: 무한 루프
+    ```js
+    // 이렇게 하면 안됩니다!
+    while (true) {
+      console.log("영원히 실행됩니다!");
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>레이블, break, continue 문</CardTitle>
+    <CardDescription>
+      반복문의 흐름을 더 세밀하게 제어하는 방법을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 레이블 문법
+    ```js
+    레이블이름: {
+      // 레이블이 지정된 코드 블록
+    }
+    ```
+
+    ### break 문
+    - 반복문을 즉시 종료하고 빠져나갑니다
+    - 레이블과 함께 사용하면 특정 반복문을 종료할 수 있습니다
+
+    ```js
+    for (let i = 0; i < 배열.length; i++) {
+      if (배열[i] === 찾는값) {
+        break; // 찾으면 즉시 반복문 종료
+      }
+    }
+    ```
+
+    ### continue 문
+    - 현재 반복을 건너뛰고 다음 반복으로 진행합니다
+    - 레이블과 함께 사용 가능합니다
+
+    ```js
+    let n = 0;
+    for (let i = 1; i <= 5; i++) {
+      if (i === 3) {
+        continue; // 3일 때는 건너뜁니다
+      }
+      n += i;
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>for...in과 for...of 반복문</CardTitle>
+    <CardDescription>
+      객체와 배열을 순회하는 현대적인 방법을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### for...in 반복문
+    객체의 열거 가능한 속성을 순회합니다.
+
+    ```js
+    const 자동차 = {
+      제조사: "현대",
+      모델: "아반떼",
+      연식: 2023
+    };
+
+    for (const 속성 in 자동차) {
+      console.log(`${속성}: ${자동차[속성]}`);
+    }
+    // 출력:
+    // 제조사: 현대
+    // 모델: 아반떼
+    // 연식: 2023
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 주의사항
+      for...in은 배열에 사용하지 않는 것이 좋습니다!
+      - 사용자 정의 속성도 순회합니다
+      - 인덱스 순서가 보장되지 않습니다
+      - 배열은 일반 for문이나 for...of를 사용하세요
+    </div>
+
+    ### for...of 반복문
+    반복 가능한 객체(배열, Map, Set 등)의 값을 순회합니다.
+
+    ```js
+    const 숫자배열 = [3, 5, 7];
+    숫자배열.foo = "안녕"; // 사용자 정의 속성 추가
+
+    // for...in 사용 시 (권장하지 않음)
+    for (const i in 숫자배열) {
+      console.log(i);
+    }
+    // 출력: "0" "1" "2" "foo"
+
+    // for...of 사용 시 (권장)
+    for (const 숫자 of 숫자배열) {
+      console.log(숫자);
+    }
+    // 출력: 3 5 7
+    ```
+
+    ### 구조 분해와 함께 사용하기
+    ```js
+    const 객체 = { 
+      이름: "김철수", 
+      나이: 25 
+    };
+
+    for (const [키, 값] of Object.entries(객체)) {
+      console.log(키, 값);
+    }
+    // 출력:
+    // 이름 김철수
+    // 나이 25
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>반복문 선택 가이드</CardTitle>
+    <CardDescription>
+      상황에 맞는 최적의 반복문을 선택하는 방법을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className=" p-4 rounded-lg">
+        ### 이럴 때는 for 사용
+        - 특정 횟수만큼 반복할 때
+        - 배열의 인덱스가 필요할 때
+        - 증감 값을 제어해야 할 때
+      </div>
+      
+      <div className=" p-4 rounded-lg">
+        ### 이럴 때는 while 사용
+        - 조건이 참인 동안 계속할 때
+        - 반복 횟수를 모를 때
+        - 파일 끝까지 읽기 등의 작업
+      </div>
+
+      <div className=" p-4 rounded-lg">
+        ### 이럴 때는 for...of 사용
+        - 배열의 모든 값을 순회할 때
+        - Map, Set 등의 컬렉션 순회
+        - 문자열의 각 문자 순회
+      </div>
+
+      <div className=" p-4 rounded-lg">
+        ### 이럴 때는 for...in 사용
+        - 객체의 모든 속성을 순회할 때
+        - 객체의 키가 필요할 때
+        - 프로토타입 체인 순회 필요시
+      </div>
+    </div>
+  </CardContent>
+</Card>

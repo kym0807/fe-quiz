@@ -1,0 +1,148 @@
+---
+title: "useInsertionEffect"
+description: "레이아웃 Effect가 실행되기 전에 스타일을 삽입할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Alert variant="warning" className="mb-6">
+  <AlertTitle>주의</AlertTitle>
+  <AlertDescription>
+    useInsertionEffect는 CSS-in-JS 라이브러리 제작자를 위한 Hook입니다.
+    CSS-in-JS 라이브러리를 개발하는 것이 아니라면, useEffect나 useLayoutEffect를 사용하세요.
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useInsertionEffect란?</CardTitle>
+    <CardDescription>
+      모든 레이아웃 Effects가 실행되기 전에 DOM에 요소를 삽입할 수 있게 해주는 Hook입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    useInsertionEffect(setup, dependencies?)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **setup**: Effect의 로직이 포함된 함수. 정리(cleanup) 함수를 반환할 수 있습니다.
+    - **dependencies?**: (선택적) setup 코드 내에서 참조하는 모든 반응형 값들의 배열
+  </CardContent>
+</Card>
+
+### 제약사항
+
+<Alert className="mb-6">
+  <AlertDescription className="space-y-2">
+    - 서버 렌더링 중에는 실행되지 않습니다.
+    - 내부에서 상태를 업데이트할 수 없습니다.
+    - 실행 시점에 ref가 아직 연결되지 않은 상태입니다.
+    - DOM 업데이트 시점을 신뢰할 수 없습니다.
+  </AlertDescription>
+</Alert>
+
+## 주요 사용 사례
+
+### CSS-in-JS 라이브러리에서 동적 스타일 주입
+
+```tsx
+// CSS-in-JS 라이브러리 내부
+let isInserted = new Set();
+
+function useCSS(rule) {
+  useInsertionEffect(() => {
+    if (!isInserted.has(rule)) {
+      isInserted.add(rule);
+      document.head.appendChild(getStyleForRule(rule));
+    }
+  });
+  return rule;
+}
+
+// 사용 예시
+function Button() {
+  const className = useCSS('...');
+  return <div className={className} />;
+}
+```
+
+### 서버 사이드 렌더링 지원
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    let collectedRulesSet = new Set();
+
+    function useCSS(rule) {
+      if (typeof window === 'undefined') {
+        collectedRulesSet.add(rule);
+      }
+      useInsertionEffect(() => {
+        // 클라이언트 사이드 로직
+      });
+      return rule;
+    }
+    ```
+  </CardContent>
+</Card>
+
+## CSS-in-JS 접근 방식 비교
+
+<Tabs defaultValue="recommended" className="w-full">
+  <TabsList>
+    <TabsTrigger value="recommended">권장 방식</TabsTrigger>
+    <TabsTrigger value="alternatives">대안</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="recommended">
+    1. **정적 CSS 파일 추출** (컴파일러 사용)
+    2. **인라인 스타일** (동적 스타일용)
+    ```tsx
+    // 정적 CSS 파일
+    .success { color: green; }
+
+    // 동적 인라인 스타일
+    <div style={{ opacity: isDynamic ? 1 : 0 }} />
+    ```
+  </TabsContent>
+  
+  <TabsContent value="alternatives">
+    3. **런타임 `<style>` 태그 주입** (권장하지 않음)
+    ```tsx
+    // ⚠️ 성능 문제가 있는 방식
+    useInsertionEffect(() => {
+      document.head.appendChild(styleElement);
+    });
+    ```
+    런타임 주입은 다음과 같은 문제가 있습니다:
+    - 브라우저가 스타일을 자주 재계산해야 함
+    - React 생명주기의 잘못된 시점에서 실행 시 성능 저하
+  </TabsContent>
+</Tabs>
+
+## 성능 최적화
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>왜 useInsertionEffect를 사용해야 하나요?</CardTitle>
+  </CardHeader>
+  <CardContent>
+    1. **렌더링 중 삽입 vs useInsertionEffect**
+       - 렌더링 중 스타일 삽입: 프레임마다 스타일 재계산 발생
+       - useInsertionEffect: 다른 Effects 실행 전에 스타일 삽입 완료
+    
+    2. **useLayoutEffect vs useInsertionEffect**
+       - useLayoutEffect: 스타일이 나중에 삽입되어 레이아웃 계산 오류 가능
+       - useInsertionEffect: 레이아웃 계산 전에 스타일 삽입 보장
+  </CardContent>
+</Card>

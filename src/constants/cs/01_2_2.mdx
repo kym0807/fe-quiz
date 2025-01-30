@@ -1,0 +1,278 @@
+---
+title: "content-visibility: 렌더링 성능을 향상시키는 새로운 CSS 속성"
+description: "웹 페이지의 렌더링 성능을 크게 향상시킬 수 있는 content-visibility 속성에 대해 알아봅니다"
+---
+
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>content-visibility 속성 소개</CardTitle>
+</CardHeader>
+<CardContent>
+content-visibility 속성을 사용하면 브라우저가 필요할 때까지 요소의 렌더링 작업(레이아웃 및 페인팅 포함)을 건너뛸 수 있습니다. 렌더링이 생략되기 때문에, 콘텐츠의 큰 부분이 화면 밖에 있는 경우 content-visibility 속성을 사용하면 초기 사용자 로드가 훨씬 빨라집니다. 또한 화면에 표시된 콘텐츠와의 상호작용도 더 빠르게 할 수 있습니다.
+</CardContent>
+</Card>
+
+## CSS Containment 이해하기
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>CSS Containment의 목적</CardTitle>
+<CardDescription>웹 콘텐츠의 렌더링 성능 향상을 위한 예측 가능한 격리</CardDescription>
+</CardHeader>
+<CardContent>
+CSS containment의 주요 목표는 DOM 하위 트리를 페이지의 나머지 부분과 예측 가능하게 격리함으로써 웹 콘텐츠의 렌더링 성능을 향상시키는 것입니다.
+
+개발자는 브라우저에게 페이지의 어느 부분이 콘텐츠 집합으로 캡슐화되어 있는지 알려줄 수 있으며, 이를 통해 브라우저는 하위 트리 외부의 상태를 고려할 필요 없이 해당 콘텐츠에 대해 추론할 수 있습니다.
+</CardContent>
+</Card>
+
+## Containment의 네 가지 유형
+
+<Card className="my-6 space-y-4">
+<CardHeader>
+<CardTitle>contain CSS 속성의 값들</CardTitle>
+</CardHeader>
+<CardContent>
+contain CSS 속성에는 네 가지 유형의 containment가 있으며, 이들은 공백으로 구분된 값 목록으로 결합될 수 있습니다:
+
+1. **size**: 
+   - 요소의 박스가 하위 요소를 검사할 필요 없이 레이아웃될 수 있도록 합니다
+   - 요소의 크기만 필요한 경우 하위 요소의 레이아웃을 건너뛸 수 있습니다
+
+2. **layout**: 
+   - 하위 요소가 페이지의 다른 박스의 외부 레이아웃에 영향을 주지 않습니다
+   - 다른 박스만 레이아웃하려는 경우 하위 요소의 레이아웃을 건너뛸 수 있습니다
+
+3. **style**: 
+   - 하위 요소 이외의 요소에도 영향을 미칠 수 있는 속성(예: counter)이 요소를 벗어나지 않도록 합니다
+   - 다른 요소의 스타일만 계산하려는 경우 하위 요소의 스타일 계산을 건너뛸 수 있습니다
+
+4. **paint**: 
+   - 컨테이닝 박스의 하위 요소가 그 경계를 벗어나 표시되지 않도록 합니다
+   - 요소가 화면을 벗어나거나 보이지 않는 경우 하위 요소도 보이지 않습니다
+</CardContent>
+</Card>
+
+## content-visibility로 렌더링 작업 건너뛰기
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>content-visibility 사용하기</CardTitle>
+<CardDescription>자동화된 containment 적용으로 최적의 성능 향상 얻기</CardDescription>
+</CardHeader>
+<CardContent>
+어떤 containment 값을 사용할지 결정하기 어려울 수 있습니다. 브라우저 최적화는 적절한 값들이 지정될 때만 동작할 수 있기 때문입니다. 값들을 직접 시험해보거나, content-visibility를 사용하여 필요한 containment를 자동으로 적용할 수 있습니다.
+
+content-visibility 속성은 여러 값을 허용하지만, auto가 즉각적인 성능 향상을 제공하는 값입니다. content-visibility: auto가 적용된 요소는 다음과 같은 특성을 가집니다:
+
+- layout, style, paint containment를 얻습니다
+- 요소가 화면 밖에 있고 사용자와 관련이 없는 경우(포커스나 선택이 없는 경우), size containment도 얻으며 콘텐츠의 페인팅과 히트 테스트가 중지됩니다
+
+<div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+**주의사항**: 렌더링이 건너뛰어진 하위 트리에 대해 렌더링을 강제하는 DOM API를 호출하지 않도록 주의해야 합니다. 성능 향상을 위해 content-visibility를 사용하는 경우, 이러한 API가 호출되지 않도록 코드를 검토하세요.
+</div>
+</CardContent>
+</Card>
+
+# content-visibility: 렌더링 성능을 향상시키는 새로운 CSS 속성
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>content-visibility 속성 소개</CardTitle>
+</CardHeader>
+<CardContent>
+content-visibility 속성을 사용하면 브라우저가 필요할 때까지 요소의 렌더링 작업(레이아웃 및 페인팅 포함)을 건너뛸 수 있습니다. 렌더링이 생략되기 때문에, 콘텐츠의 큰 부분이 화면 밖에 있는 경우 content-visibility 속성을 사용하면 초기 사용자 로드가 훨씬 빨라집니다. 또한 화면에 표시된 콘텐츠와의 상호작용도 더 빠르게 할 수 있습니다.
+</CardContent>
+</Card>
+
+## 접근성에 대한 참고사항
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>content-visibility: auto와 접근성</CardTitle>
+</CardHeader>
+<CardContent>
+content-visibility: auto의 주요 특징 중 하나는 화면 밖의 콘텐츠가 DOM과 접근성 트리에서 계속 사용 가능하다는 것입니다(visibility: hidden과 달리). 이는 콘텐츠를 로드하거나 렌더링 성능을 희생하지 않고도 페이지에서 검색하고 탐색할 수 있다는 것을 의미합니다.
+
+하지만, display: none이나 visibility: hidden과 같은 스타일 기능이 있는 랜드마크 요소도 화면 밖에 있을 때 접근성 트리에 나타나게 됩니다. 이는 브라우저가 이러한 요소가 뷰포트에 들어올 때까지 해당 스타일을 렌더링하지 않기 때문입니다. 접근성 트리에서 이러한 요소가 불필요하게 표시되는 것을 방지하려면 aria-hidden="true"를 추가하세요.
+</CardContent>
+</Card>
+
+## 예시: 여행 블로그
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>실제 적용 사례</CardTitle>
+<CardDescription>content-visibility를 적용한 성능 개선 사례</CardDescription>
+</CardHeader>
+<CardContent>
+이 예시에서는 일반적인 여행 블로그의 렌더링 시간이 content-visibility: auto를 적용하여 232ms에서 30ms로 감소하는 것을 보여줍니다.
+
+### 일반적인 여행 블로그의 로딩 과정:
+
+1. 페이지의 일부와 필요한 리소스가 네트워크에서 다운로드됩니다.
+2. 브라우저는 콘텐츠가 사용자에게 보이는지 여부와 관계없이 페이지의 모든 콘텐츠의 스타일을 지정하고 레이아웃합니다.
+3. 페이지와 리소스가 모두 다운로드될 때까지 1단계로 돌아갑니다.
+
+### content-visibility: auto 적용 후:
+
+```css
+.story {
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px; /* 다음 섹션에서 설명 */
+}
+```
+
+이를 적용하면 브라우저는:
+- 현재 사용자에게 보이는(화면상의) 콘텐츠만 스타일을 지정하고 레이아웃합니다
+- 완전히 화면 밖에 있는 스토리를 처리할 때는 렌더링 작업을 건너뛰고 요소 박스 자체만 스타일을 지정하고 레이아웃합니다
+
+<div className="mt-4 p-4 bg-blue-50 rounded-lg">
+**참고**: 콘텐츠가 가시성 범위를 벗어나거나 들어올 때 필요에 따라 렌더링이 시작되고 중지됩니다. 그러나 이는 브라우저가 동일한 콘텐츠를 계속해서 다시 렌더링해야 한다는 의미는 아닙니다. 가능한 경우 렌더링 작업이 저장되기 때문입니다.
+</div>
+</CardContent>
+</Card>
+
+## contain-intrinsic-size로 요소의 자연스러운 크기 지정하기
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>크기 관리의 중요성</CardTitle>
+</CardHeader>
+<CardContent>
+content-visibility의 잠재적 이점을 실현하기 위해, 브라우저는 콘텐츠의 렌더링 결과가 요소의 크기에 영향을 주지 않도록 size containment를 적용해야 합니다. 이는 요소가 비어 있는 것처럼 레이아웃된다는 의미입니다. 일반적인 블록 레이아웃에서 높이가 지정되지 않은 경우 높이가 0이 됩니다.
+
+이는 스크롤바가 각 스토리의 높이가 0이 아님에 의존하기 때문에 이상적이지 않을 수 있습니다.
+
+### contain-intrinsic-size 속성 사용
+
+```css
+.story {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1000px; /* 또는 특정 값 지정 */
+}
+```
+
+contain-intrinsic-size 속성은 size containment의 영향을 받는 요소의 자연스러운 크기를 효과적으로 지정합니다. 예시에서는 섹션의 높이와 너비를 1000px로 추정하여 설정했습니다.
+
+### contain-intrinsic-size: auto의 특별한 기능
+
+auto 키워드를 사용하면 브라우저가 마지막으로 렌더링된 크기를 기억하고, 개발자가 제공한 플레이스홀더 크기 대신 이를 사용합니다. 이는 특히 무한 스크롤러에 유용하며, 사용자가 페이지를 탐색할수록 자동으로 크기 추정이 개선됩니다.
+</CardContent>
+</Card>
+
+## content-visibility: hidden으로 콘텐츠 숨기기
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>content-visibility: hidden의 특징</CardTitle>
+<CardDescription>렌더링 상태를 유지하면서 콘텐츠 숨기기</CardDescription>
+</CardHeader>
+<CardContent>
+content-visibility: hidden은 화면 상태와 관계없이 콘텐츠를 렌더링하지 않으면서도 캐시된 렌더링 상태의 이점을 활용할 수 있게 해줍니다.
+
+### 다른 숨김 방법과의 비교:
+
+1. **display: none**:
+   - 요소를 숨기고 렌더링 상태를 파괴
+   - 요소를 다시 표시하는 것은 동일한 콘텐츠로 새 요소를 렌더링하는 것만큼 비용이 많이 듦
+
+2. **visibility: hidden**:
+   - 요소를 숨기고 렌더링 상태를 유지
+   - 요소가 문서에서 실제로 제거되지 않아 기하학적 공간을 차지하고 클릭 가능
+   - 숨겨져 있을 때도 필요할 때마다 렌더링 상태를 업데이트
+
+3. **content-visibility: hidden**:
+   - 렌더링 상태를 보존하면서 요소를 숨김
+   - 변경사항은 요소가 다시 표시될 때만 적용
+   - SPA의 비활성 뷰를 DOM에 남겨두면서 캐시된 상태를 유지하는 데 이상적
+
+<div className="mt-4 p-4 bg-green-50 rounded-lg">
+**성능 개선 사례**: Facebook 엔지니어들의 실험에서 이전에 캐시된 뷰로 돌아갈 때 최대 250ms의 탐색 시간 개선을 관찰했습니다.
+</div>
+</CardContent>
+</Card>
+
+## INP(Interaction to Next Paint)에 미치는 영향
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>응답성 개선</CardTitle>
+<CardDescription>content-visibility가 페이지 응답성에 미치는 영향</CardDescription>
+</CardHeader>
+<CardContent>
+INP는 사용자 입력에 대한 페이지의 응답성을 평가하는 메트릭입니다. 응답성은 메인 스레드에서 발생하는 과도한 작업에 영향을 받을 수 있으며, 여기에는 렌더링 작업도 포함됩니다.
+
+content-visibility CSS 속성을 적절히 사용하면:
+- 화면 밖 요소의 레이아웃과 렌더링을 연기하여 렌더링 작업 감소
+- 메인 스레드가 사용자 입력에 더 빠르게 응답할 수 있는 기회 제공
+- 특히 대부분의 렌더링과 레이아웃 작업이 이루어지는 시작 시점에서 큰 효과
+- 중요한 사용자 가시적 작업에 우선순위를 부여하여 페이지의 INP 개선 가능
+</CardContent>
+</Card>
+
+
+## CSS Containment 이해하기
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>CSS Containment의 목적</CardTitle>
+<CardDescription>웹 콘텐츠의 렌더링 성능 향상을 위한 예측 가능한 격리</CardDescription>
+</CardHeader>
+<CardContent>
+CSS containment의 주요 목표는 DOM 하위 트리를 페이지의 나머지 부분과 예측 가능하게 격리함으로써 웹 콘텐츠의 렌더링 성능을 향상시키는 것입니다.
+
+개발자는 브라우저에게 페이지의 어느 부분이 콘텐츠 집합으로 캡슐화되어 있는지 알려줄 수 있으며, 이를 통해 브라우저는 하위 트리 외부의 상태를 고려할 필요 없이 해당 콘텐츠에 대해 추론할 수 있습니다.
+</CardContent>
+</Card>
+
+## Containment의 네 가지 유형
+
+<Card className="my-6 space-y-4">
+<CardHeader>
+<CardTitle>contain CSS 속성의 값들</CardTitle>
+</CardHeader>
+<CardContent>
+contain CSS 속성에는 네 가지 유형의 containment가 있으며, 이들은 공백으로 구분된 값 목록으로 결합될 수 있습니다:
+
+1. **size**: 
+   - 요소의 박스가 하위 요소를 검사할 필요 없이 레이아웃될 수 있도록 합니다
+   - 요소의 크기만 필요한 경우 하위 요소의 레이아웃을 건너뛸 수 있습니다
+
+2. **layout**: 
+   - 하위 요소가 페이지의 다른 박스의 외부 레이아웃에 영향을 주지 않습니다
+   - 다른 박스만 레이아웃하려는 경우 하위 요소의 레이아웃을 건너뛸 수 있습니다
+
+3. **style**: 
+   - 하위 요소 이외의 요소에도 영향을 미칠 수 있는 속성(예: counter)이 요소를 벗어나지 않도록 합니다
+   - 다른 요소의 스타일만 계산하려는 경우 하위 요소의 스타일 계산을 건너뛸 수 있습니다
+
+4. **paint**: 
+   - 컨테이닝 박스의 하위 요소가 그 경계를 벗어나 표시되지 않도록 합니다
+   - 요소가 화면을 벗어나거나 보이지 않는 경우 하위 요소도 보이지 않습니다
+</CardContent>
+</Card>
+
+## content-visibility로 렌더링 작업 건너뛰기
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>content-visibility 사용하기</CardTitle>
+<CardDescription>자동화된 containment 적용으로 최적의 성능 향상 얻기</CardDescription>
+</CardHeader>
+<CardContent>
+어떤 containment 값을 사용할지 결정하기 어려울 수 있습니다. 브라우저 최적화는 적절한 값들이 지정될 때만 동작할 수 있기 때문입니다. 값들을 직접 시험해보거나, content-visibility를 사용하여 필요한 containment를 자동으로 적용할 수 있습니다.
+
+content-visibility 속성은 여러 값을 허용하지만, auto가 즉각적인 성능 향상을 제공하는 값입니다. content-visibility: auto가 적용된 요소는 다음과 같은 특성을 가집니다:
+
+- layout, style, paint containment를 얻습니다
+- 요소가 화면 밖에 있고 사용자와 관련이 없는 경우(포커스나 선택이 없는 경우), size containment도 얻으며 콘텐츠의 페인팅과 히트 테스트가 중지됩니다
+
+<div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+**주의사항**: 렌더링이 건너뛰어진 하위 트리에 대해 렌더링을 강제하는 DOM API를 호출하지 않도록 주의해야 합니다. 성능 향상을 위해 content-visibility를 사용하는 경우, 이러한 API가 호출되지 않도록 코드를 검토하세요.
+</div>
+</CardContent>
+</Card>

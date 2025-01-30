@@ -1,0 +1,181 @@
+---
+title: "Dynamic Routes"
+description: "Next.js의 Dynamic Routes에 대해 알아보고 실제 적용 방법을 이해해봅시다"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Dynamic Routes란?</CardTitle>
+    <CardDescription>
+      미리 정확한 세그먼트 이름을 알 수 없을 때 동적 데이터를 기반으로 라우트를 생성하는 방법입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    요청 시점이나 빌드 시점에 채워지는 동적 세그먼트를 사용하여 유연한 라우팅을 구현할 수 있습니다.
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동적 세그먼트 생성하기</CardTitle>
+  </CardHeader>
+  <CardContent>
+    폴더 이름을 대괄호로 감싸서 동적 세그먼트를 생성할 수 있습니다:
+    - `[id]` 또는 `[slug]`와 같은 형태
+    - 이렇게 생성된 동적 세그먼트는 layout, page, route, generateMetadata 함수에 params 프롭으로 전달됩니다
+  </CardContent>
+</Card>
+
+## 실제 예시
+
+블로그 게시물을 위한 동적 라우트 예시를 살펴보겠습니다:
+
+```tsx
+// app/blog/[slug]/page.tsx
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const slug = (await params).slug
+  return <div>내 게시물: {slug}</div>
+}
+```
+
+<Card className="mt-4">
+  <CardContent>
+    <table className="w-full">
+      <thead>
+        <tr className="border-b">
+          <th className="text-left p-2">라우트</th>
+          <th className="text-left p-2">URL 예시</th>
+          <th className="text-left p-2">params 값</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="border-b">
+          <td className="p-2">app/blog/[slug]/page.js</td>
+          <td className="p-2">/blog/a</td>
+          <td className="p-2">{'{ slug: "a" }'}</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2">app/blog/[slug]/page.js</td>
+          <td className="p-2">/blog/b</td>
+          <td className="p-2">{'{ slug: "b" }'}</td>
+        </tr>
+      </tbody>
+    </table>
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>알아두면 좋은 점</AlertTitle>
+  <AlertDescription>
+    - params는 Promise이므로 async/await 또는 React의 use 함수를 사용해야 합니다
+    - Next.js 14 이전 버전에서는 params가 동기적이었으나, 15버전부터는 비동기로 변경되었습니다
+    - pages 디렉토리의 Dynamic Routes와 동일한 개념입니다
+  </AlertDescription>
+</Alert>
+
+## Static Params 생성하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>generateStaticParams 활용</CardTitle>
+    <CardDescription>
+      빌드 시점에 동적 라우트를 미리 생성하여 성능을 최적화할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```tsx
+export async function generateStaticParams() {
+  const posts = await fetch('https://.../posts').then((res) => res.json())
+ 
+  return posts.map((post) => ({
+    slug: post.slug,
+  }))
+}
+```
+
+특징:
+- fetch 요청이 자동으로 메모이제이션됩니다
+- 동일한 요청은 한 번만 실행되어 빌드 시간이 단축됩니다
+</CardContent>
+</Card>
+
+## Catch-all 세그먼트
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>다중 세그먼트 캡처하기</CardTitle>
+    <CardDescription>
+      [...folderName] 형식으로 여러 세그먼트를 한 번에 캡처할 수 있습니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <table className="w-full">
+      <thead>
+        <tr className="border-b">
+          <th className="text-left p-2">라우트</th>
+          <th className="text-left p-2">URL 예시</th>
+          <th className="text-left p-2">params 값</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="border-b">
+          <td className="p-2">app/shop/[...slug]/page.js</td>
+          <td className="p-2">/shop/clothes</td>
+          <td className="p-2">{'{ slug: ["clothes"] }'}</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2">app/shop/[...slug]/page.js</td>
+          <td className="p-2">/shop/clothes/tops</td>
+          <td className="p-2">{'{ slug: ["clothes", "tops"] }'}</td>
+        </tr>
+      </tbody>
+    </table>
+  </CardContent>
+</Card>
+
+## 선택적 Catch-all 세그먼트
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>선택적 다중 세그먼트</CardTitle>
+    <CardDescription>
+      [[...folderName]] 형식으로 선택적 다중 세그먼트를 구현할 수 있습니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    일반 Catch-all과의 차이점:
+    - 매개변수가 없는 기본 라우트도 매칭됩니다 (예: /shop)
+    - params는 undefined가 될 수 있습니다
+  </CardContent>
+</Card>
+
+## TypeScript 지원
+
+<Alert className="mt-6">
+  <AlertTitle>타입 정의 예시</AlertTitle>
+  <AlertDescription>
+```tsx
+// 기본 동적 세그먼트
+{ params: { slug: string } }
+
+// Catch-all 세그먼트
+{ params: { slug: string[] } }
+
+// 선택적 Catch-all 세그먼트
+{ params: { slug?: string[] } }
+
+// 다중 동적 세그먼트
+{ params: { categoryId: string, itemId: string } }
+```
+  </AlertDescription>
+</Alert>

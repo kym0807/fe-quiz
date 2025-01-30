@@ -1,0 +1,225 @@
+---
+title: "Parallel Routes"
+description: "Next.js에서 하나의 레이아웃에서 여러 페이지를 동시에 또는 조건부로 렌더링하는 방법"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Parallel Routes란?</CardTitle>
+    <CardDescription>
+      하나의 레이아웃 안에서 여러 페이지를 동시에 또는 조건부로 렌더링할 수 있게 해주는 기능입니다.
+      대시보드나 소셜 미디어의 피드처럼 동적인 섹션이 많은 앱에서 특히 유용합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    예를 들어, 대시보드에서 팀 정보와 분석 페이지를 동시에 렌더링할 수 있습니다.
+  </CardContent>
+</Card>
+
+## Slots 이해하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>슬롯(Slots) 생성과 사용</CardTitle>
+    <CardDescription>
+      Parallel Routes는 이름이 지정된 슬롯을 사용하여 생성됩니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    - 슬롯은 `@folder` 규칙을 사용하여 정의됩니다
+    - 예: `@analytics`와 `@team` 두 개의 슬롯을 만들 수 있습니다
+    
+```tsx
+// app/layout.tsx
+export default function Layout({
+  children,
+  team,
+  analytics,
+}: {
+  children: React.ReactNode
+  analytics: React.ReactNode
+  team: React.ReactNode
+}) {
+  return (
+    <>
+      {children}
+      {team}
+      {analytics}
+    </>
+  )
+}
+```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>주의할 점</AlertTitle>
+  <AlertDescription>
+    - 슬롯은 라우트 세그먼트가 아니며 URL 구조에 영향을 주지 않습니다
+    - 예: `/@analytics/views`의 실제 URL은 `/views`입니다
+    - `children` prop은 암시적 슬롯으로, 폴더로 매핑할 필요가 없습니다
+    - `app/page.js`는 `app/@children/page.js`와 동일합니다
+  </AlertDescription>
+</Alert>
+
+## 활성 상태와 네비게이션
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>네비게이션 타입에 따른 동작 방식</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-semibold text-lg">소프트 네비게이션</h3>
+        <p>클라이언트 사이드 네비게이션 시:</p>
+        <ul className="list-disc pl-6">
+          <li>부분적 렌더링 수행</li>
+          <li>현재 URL과 일치하지 않더라도 다른 슬롯의 활성 상태 유지</li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3 className="font-semibold text-lg">하드 네비게이션</h3>
+        <p>전체 페이지 로드 시 (브라우저 새로고침):</p>
+        <ul className="list-disc pl-6">
+          <li>현재 URL과 일치하지 않는 슬롯의 활성 상태를 판단할 수 없음</li>
+          <li>`default.js` 파일을 렌더링하거나, 없는 경우 404 표시</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## default.js 활용하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 폴백 페이지 설정</CardTitle>
+    <CardDescription>
+      일치하지 않는 슬롯에 대한 대체 콘텐츠를 제공합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```tsx
+// app/@analytics/default.tsx
+export default function Default() {
+  return <div>기본 분석 페이지</div>
+}
+```
+    
+주요 특징:
+초기 로드나 전체 페이지 새로고침 시 폴백으로 사용
+`default.js`가 없으면 404 페이지가 표시됨
+암시적 슬롯인 `children`에도 적용 가능
+  </CardContent>
+</Card>
+
+## 조건부 라우팅 구현
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>사용자 역할에 따른 라우팅</CardTitle>
+  </CardHeader>
+  <CardContent>
+```tsx
+// app/dashboard/layout.tsx
+import { checkUserRole } from '@/lib/auth'
+
+export default function Layout({
+  user,
+  admin,
+}: {
+  user: React.ReactNode
+  admin: React.ReactNode
+}) {
+  const role = checkUserRole()
+  return role === 'admin' ? admin : user
+}
+```
+  </CardContent>
+</Card>
+
+## 탭 그룹 만들기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>독립적인 네비게이션을 위한 탭 구현</CardTitle>
+  </CardHeader>
+  <CardContent>
+```tsx
+// app/@analytics/layout.tsx
+import Link from 'next/link'
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <nav>
+        <Link href="/page-views">페이지뷰</Link>
+        <Link href="/visitors">방문자</Link>
+      </nav>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+  </CardContent>
+</Card>
+
+## 모달 구현하기
+
+<Alert className="mt-6">
+  <AlertTitle>모달 구현의 장점</AlertTitle>
+  <AlertDescription>
+    - URL을 통한 모달 콘텐츠 공유 가능
+    - 페이지 새로고침 시에도 모달 상태 유지
+    - 뒤로 가기 시 모달 닫기
+    - 앞으로 가기 시 모달 다시 열기
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모달 닫기 구현</CardTitle>
+  </CardHeader>
+  <CardContent>
+```tsx
+'use client'
+
+import { useRouter } from 'next/navigation'
+
+export function Modal({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+
+  return (
+    <>
+      <button onClick={() => router.back()}>
+        모달 닫기
+      </button>
+      <div>{children}</div>
+    </>
+  )
+}
+```
+  </CardContent>
+</Card>
+
+## 로딩과 에러 UI
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>독립적인 상태 관리</CardTitle>
+    <CardDescription>
+      각 라우트별로 독립적인 로딩 및 에러 상태를 정의할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    - 각 Parallel Route는 독립적으로 스트리밍됨
+    - 각각 독립적인 loading.tsx와 error.tsx 설정 가능
+    - 한 라우트의 에러가 다른 라우트에 영향을 주지 않음
+  </CardContent>
+</Card>

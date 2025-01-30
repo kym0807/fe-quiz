@@ -1,0 +1,207 @@
+---
+title: "JavaScript의 비동기 프로그래밍과 콜백"
+description: "JavaScript에서 비동기 프로그래밍의 기초와 콜백 패턴의 이해"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>프로그래밍 언어의 비동기성</CardTitle>
+    <CardDescription>
+      컴퓨터와 프로그래밍 언어의 비동기 특성 이해하기
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    컴퓨터는 기본적으로 비동기적으로 설계되었습니다. 비동기성이란 작업들이 
+    메인 프로그램 흐름과 독립적으로 실행될 수 있다는 것을 의미합니다.
+
+    <Card className="mt-4">
+      <CardContent>
+        현대 컴퓨터에서는 각 프로그램이 정해진 시간 동안 실행되다가 중단되고, 
+        다른 프로그램이 실행되는 과정이 반복됩니다. 이 순환이 매우 빠르게 
+        일어나기 때문에, 우리는 여러 프로그램이 동시에 실행되는 것처럼 느낍니다.
+      </CardContent>
+    </Card>
+
+    <Alert className="mt-4">
+      <AlertTitle>다른 프로그래밍 언어들의 특징</AlertTitle>
+      <AlertDescription>
+        C, Java, C#, PHP, Go, Ruby, Swift, Python 등은 기본적으로 동기식입니다. 
+        이러한 언어들은 주로 스레드나 새로운 프로세스를 생성하여 비동기 작업을 
+        처리합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JavaScript의 특별한 점</CardTitle>
+    <CardDescription>
+      JavaScript의 동기식 특성과 단일 스레드 환경
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    JavaScript는 기본적으로 동기식이며 단일 스레드로 동작합니다. 즉, 코드가 
+    새로운 스레드를 생성하여 병렬로 실행될 수 없습니다.
+
+    <Tabs defaultValue="sync" className="w-full mt-4">
+      <TabsList>
+        <TabsTrigger value="sync">동기식 코드</TabsTrigger>
+        <TabsTrigger value="browser">브라우저 환경</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="sync">
+        ```javascript
+        const a = 1;
+        const b = 2;
+        const c = a * b;
+        console.log(c);
+        doSomething();
+        ```
+        코드가 한 줄씩 순차적으로 실행됩니다.
+      </TabsContent>
+      
+      <TabsContent value="browser">
+        JavaScript는 브라우저 내에서 탄생했으며, 초기의 주요 역할은 onClick, 
+        onMouseOver, onChange, onSubmit 등의 사용자 동작에 응답하는 것이었습니다.
+
+        브라우저는 API를 제공하여 이러한 비동기 기능을 처리할 수 있게 해주었고, 
+        최근에는 Node.js가 파일 접근, 네트워크 호출 등을 위한 논블로킹 I/O 
+        환경을 도입했습니다.
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>콜백(Callback)의 이해</CardTitle>
+    <CardDescription>
+      이벤트 기반 프로그래밍에서의 콜백 함수 활용
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="basic" className="w-full">
+      <TabsList>
+        <TabsTrigger value="basic">기본 예제</TabsTrigger>
+        <TabsTrigger value="timer">타이머</TabsTrigger>
+        <TabsTrigger value="xhr">XHR 요청</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="basic">
+        ```javascript
+        document.getElementById('button').addEventListener('click', () => {
+          // 버튼 클릭 시 실행될 코드
+        });
+
+        window.addEventListener('load', () => {
+          // 페이지 로드 완료 시 실행될 코드
+        });
+        ```
+        콜백은 다른 함수에 값으로 전달되는 함수로, 특정 이벤트가 발생할 때만 실행됩니다.
+      </TabsContent>
+      
+      <TabsContent value="timer">
+        ```javascript
+        setTimeout(() => {
+          // 2초 후에 실행될 코드
+        }, 2000);
+        ```
+      </TabsContent>
+      
+      <TabsContent value="xhr">
+        ```javascript
+        const xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState === 4) {
+            xhr.status === 200 
+              ? console.log(xhr.responseText) 
+              : console.error('error');
+          }
+        };
+        xhr.open('GET', 'https://yoursite.com');
+        xhr.send();
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>콜백에서의 에러 처리</CardTitle>
+    <CardDescription>
+      Node.js 스타일의 에러-우선 콜백 패턴
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    const fs = require('node:fs');
+    fs.readFile('/file.json', (err, data) => {
+      if (err) {
+        // 에러 처리
+        console.log(err);
+        return;
+      }
+      // 에러가 없는 경우, 데이터 처리
+      console.log(data);
+    });
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>에러-우선 콜백 패턴</AlertTitle>
+      <AlertDescription>
+        콜백 함수의 첫 번째 매개변수는 에러 객체입니다. 에러가 없으면 null이 되고, 
+        에러가 있다면 에러에 대한 설명과 정보를 포함합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>콜백의 문제점</CardTitle>
+    <CardDescription>
+      중첩된 콜백으로 인한 코드 복잡성 증가
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    window.addEventListener('load', () => {
+      document.getElementById('button').addEventListener('click', () => {
+        setTimeout(() => {
+          items.forEach(item => {
+            // 실제 코드
+          });
+        }, 2000);
+      });
+    });
+    ```
+    
+    <Alert variant="warning" className="mt-4">
+      <AlertTitle>콜백 지옥(Callback Hell)</AlertTitle>
+      <AlertDescription>
+        위 예제는 4단계의 중첩만 보여주지만, 실제 상황에서는 더 많은 
+        단계의 중첩이 발생할 수 있으며, 이는 코드의 가독성과 유지보수성을 
+        크게 저하시킵니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>콜백의 대안</AlertTitle>
+  <AlertDescription>
+    ES6부터는 콜백을 사용하지 않고 비동기 코드를 처리할 수 있는 새로운 기능들이 
+    도입되었습니다:
+    - Promise (ES6)
+    - Async/Await (ES2017)
+    
+    이러한 새로운 패턴들은 콜백의 문제점을 해결하고 더 깔끔한 비동기 코드 작성을 
+    가능하게 합니다.
+  </AlertDescription>
+</Alert>

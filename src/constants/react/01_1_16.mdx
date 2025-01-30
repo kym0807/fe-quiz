@@ -1,0 +1,272 @@
+---
+title: "useSyncExternalStore"
+description: "외부 저장소를 구독할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useSyncExternalStore란?</CardTitle>
+    <CardDescription>
+      React 외부의 데이터 저장소를 구독하고 해당 저장소의 값을 읽을 수 있게 해주는 Hook입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const snapshot = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot?)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **subscribe**: 저장소의 변경사항을 구독하는 함수
+      - 콜백 함수를 인자로 받아 저장소에 구독을 설정
+      - 구독을 정리하는 함수를 반환해야 함
+    
+    - **getSnapshot**: 저장소의 현재 데이터 스냅샷을 반환하는 함수
+      - 저장소가 변경되지 않았다면 같은 값을 반환해야 함
+      - 변경되었다면 다른 값을 반환해야 함
+    
+    - **getServerSnapshot?**: (선택적) 서버 렌더링을 위한 초기 스냅샷을 반환하는 함수
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+### 외부 저장소 구독하기
+
+<Tabs defaultValue="store" className="w-full">
+  <TabsList>
+    <TabsTrigger value="store">기본 예제</TabsTrigger>
+    <TabsTrigger value="browser">브라우저 API</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="store">
+    ```tsx
+    function TodosApp() {
+      const todos = useSyncExternalStore(
+        todosStore.subscribe,
+        todosStore.getSnapshot
+      );
+
+      return (
+        <ul>
+          {todos.map(todo => (
+            <li key={todo.id}>{todo.text}</li>
+          ))}
+        </ul>
+      );
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="browser">
+    ```tsx
+    function ChatIndicator() {
+      const isOnline = useSyncExternalStore(
+        subscribe,
+        () => navigator.onLine,
+        () => true // 서버 사이드 초기값
+      );
+
+      return (
+        <div>
+          {isOnline ? '✅ 온라인' : '❌ 오프라인'}
+        </div>
+      );
+    }
+
+    function subscribe(callback) {
+      window.addEventListener('online', callback);
+      window.addEventListener('offline', callback);
+      return () => {
+        window.removeEventListener('online', callback);
+        window.removeEventListener('offline', callback);
+      };
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>사용 시 고려사항</AlertTitle>
+  <AlertDescription>
+    1. 가능한 경우 React의 내장 상태 관리(useState, useReducer)를 사용하세요.
+    2. 이 Hook은 주로 기존 비 React 코드와의 통합에 유용합니다.
+    3. store 스냅샷은 반드시 불변해야 합니다.
+    4. subscribe 함수는 가능한 컴포넌트 외부에 선언하세요.
+  </AlertDescription>
+</Alert>
+
+## 커스텀 Hook으로 로직 추출
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>재사용 가능한 Hook 만들기</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    export function useOnlineStatus() {
+      const isOnline = useSyncExternalStore(subscribe, getSnapshot);
+      return isOnline;
+      
+      function getSnapshot() {
+        return navigator.onLine;
+      }
+      
+      function subscribe(callback) {
+        window.addEventListener('online', callback);
+        window.addEventListener('offline', callback);
+        return () => {
+          window.removeEventListener('online', callback);
+          window.removeEventListener('offline', callback);
+        };
+      }
+    }
+
+    // 사용 예시
+    function StatusBar() {
+      const isOnline = useOnlineStatus();
+      return <div>{isOnline ? '온라인' : '오프라인'}</div>;
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 서버 사이드 렌더링 지원
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 구현</TabsTrigger>
+    <TabsTrigger value="advanced">고급 패턴</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="basic">
+    ```tsx
+    export function useOnlineStatus() {
+      const isOnline = useSyncExternalStore(
+        subscribe,
+        getSnapshot,
+        // 서버 스냅샷 제공
+        () => true // 서버에서는 항상 '온라인' 표시
+      );
+      return isOnline;
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="advanced">
+    ```tsx
+    // 서버와 클라이언트 간 데이터 동기화
+    function getServerSnapshot() {
+      // 1. 서버에서 HTML 생성 시
+      // 2. 클라이언트에서 하이드레이션 시
+      if (typeof window === 'undefined') {
+        return initialData; // 서버 데이터
+      }
+      return window.MY_STORE_DATA; // 클라이언트로 전달된 데이터
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 문제 해결
+
+### getSnapshot 관련 오류
+
+<Alert className="mb-6" variant="destructive">
+  <AlertTitle>"The result of getSnapshot should be cached" 오류</AlertTitle>
+  <AlertDescription>
+    ```tsx
+    // 🔴 잘못된 방법: 매번 새로운 객체 반환
+    function getSnapshot() {
+      return { todos: myStore.todos };
+    }
+
+    // ✅ 올바른 방법: 불변 데이터 직접 반환
+    function getSnapshot() {
+      return myStore.todos;
+    }
+
+    // ✅ 변경 가능한 데이터의 경우
+    function getSnapshot() {
+      if (hasChanged(myStore.todos)) {
+        lastSnapshot = createSnapshot(myStore.todos);
+      }
+      return lastSnapshot;
+    }
+    ```
+  </AlertDescription>
+</Alert>
+
+### 구독 함수 최적화
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    // 🔴 피해야 할 방법: 매 렌더링마다 새로운 함수
+    function ChatIndicator() {
+      const isOnline = useSyncExternalStore(
+        () => { // 인라인 함수
+          // ...
+        },
+        getSnapshot
+      );
+    }
+
+    // ✅ 권장하는 방법: 컴포넌트 외부로 이동
+    const subscribe = (callback) => {
+      // ...
+    };
+
+    function ChatIndicator() {
+      const isOnline = useSyncExternalStore(
+        subscribe,
+        getSnapshot
+      );
+    }
+
+    // ✅ 또는 useCallback 사용
+    function ChatIndicator({ userId }) {
+      const subscribe = useCallback((callback) => {
+        // ...
+      }, [userId]);
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 모범 사례
+
+<Card className="mt-6">
+  <CardContent className="space-y-4">
+    1. **불변성 유지**:
+       - 스냅샷은 항상 불변이어야 함
+       - 변경 가능한 데이터는 스냅샷으로 변환
+
+    2. **성능 최적화**:
+       - subscribe 함수는 컴포넌트 외부에 정의
+       - 필요한 경우만 useCallback 사용
+       
+    3. **서버 사이드 렌더링**:
+       - 서버와 클라이언트 데이터 일치 보장
+       - 적절한 초기값 제공
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>추가 고려사항</AlertTitle>
+  <AlertDescription>
+    1. Transition 업데이트 중 저장소가 변경되면 블로킹 업데이트로 전환됩니다.
+    2. Suspense와 함께 사용할 때는 주의가 필요합니다.
+    3. 가능한 한 React의 내장 상태 관리를 우선 고려하세요.
+  </AlertDescription>
+</Alert>

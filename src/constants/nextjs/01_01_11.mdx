@@ -1,0 +1,205 @@
+---
+title: "Middleware"
+description: "Next.js에서 요청을 처리하기 전에 실행되는 미들웨어 기능 이해하기"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Middleware란?</CardTitle>
+    <CardDescription>
+      요청이 완료되기 전에 코드를 실행하여 응답을 수정하거나 제어할 수 있는 기능입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    미들웨어를 통해 할 수 있는 작업들:
+    - URL 재작성
+    - 리다이렉트
+    - 요청/응답 헤더 수정
+    - 직접 응답 반환
+  </CardContent>
+</Card>
+
+## 주요 사용 사례
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>효과적인 미들웨어 활용 사례</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="grid gap-4">
+      <div className="p-4 border rounded">
+        <h3 className="font-semibold">인증과 인가</h3>
+        <p>특정 페이지나 API 접근 전 사용자 신원 확인 및 세션 쿠키 검증</p>
+      </div>
+      
+      <div className="p-4 border rounded">
+        <h3 className="font-semibold">서버 사이드 리다이렉트</h3>
+        <p>로케일, 사용자 역할 등 조건에 따른 서버 레벨 리다이렉션</p>
+      </div>
+      
+      <div className="p-4 border rounded">
+        <h3 className="font-semibold">경로 재작성</h3>
+        <p>A/B 테스팅, 기능 출시, 레거시 경로 지원을 위한 동적 경로 재작성</p>
+      </div>
+
+      <div className="p-4 border rounded">
+        <h3 className="font-semibold">봇 탐지</h3>
+        <p>봇 트래픽 감지 및 차단을 통한 리소스 보호</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 피해야 할 사용 사례
+
+<Alert className="mt-6">
+  <AlertTitle>주의해야 할 상황</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>복잡한 데이터 조회 및 조작 (대신 Route Handlers 사용)</li>
+      <li>무거운 연산 작업 (페이지 로드 지연 발생 가능)</li>
+      <li>광범위한 세션 관리 (전용 인증 서비스 사용 권장)</li>
+      <li>직접적인 데이터베이스 작업 (Route Handlers나 서버 유틸리티 사용)</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 기본 사용법
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>미들웨어 설정</CardTitle>
+    <CardDescription>
+      프로젝트 루트에 middleware.ts (또는 .js) 파일을 생성합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```typescript
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
+
+export function middleware(request: NextRequest) {
+  return NextResponse.redirect(new URL('/home', request.url))
+}
+
+// 특정 경로에만 적용
+export const config = {
+  matcher: '/about/:path*',
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>알아두세요</AlertTitle>
+  <AlertDescription>
+    프로젝트당 하나의 middleware.ts 파일만 지원되지만,
+    미들웨어 로직은 모듈화하여 관리할 수 있습니다.
+  </AlertDescription>
+</Alert>
+  </CardContent>
+</Card>
+
+## 경로 매칭
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>매처(Matcher) 설정</CardTitle>
+    <CardDescription>
+      미들웨어를 특정 경로에만 적용하기 위한 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```typescript
+// 단일 경로 매칭
+export const config = {
+  matcher: '/about/:path*',
+}
+
+// 여러 경로 매칭
+export const config = {
+  matcher: ['/about/:path*', '/dashboard/:path*'],
+}
+
+// 특정 경로 제외
+export const config = {
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
+}
+```
+  </CardContent>
+</Card>
+
+## 쿠키 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>쿠키 조작하기</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+export function middleware(request: NextRequest) {
+  // 요청에서 쿠키 읽기
+  const cookie = request.cookies.get('nextjs')
+  console.log(cookie) // { name: 'nextjs', value: 'fast', Path: '/' }
+
+  // 응답에 쿠키 설정
+  const response = NextResponse.next()
+  response.cookies.set('vercel', 'fast', {
+    path: '/',
+    httpOnly: true
+  })
+
+  return response
+}
+```
+  </CardContent>
+</Card>
+
+## CORS 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>크로스 오리진 요청 처리</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+const allowedOrigins = ['https://example.com', 'https://app.example.org']
+
+export function middleware(request: NextRequest) {
+  const origin = request.headers.get('origin') ?? ''
+  const isAllowedOrigin = allowedOrigins.includes(origin)
+  
+  // OPTIONS 요청 처리
+  if (request.method === 'OPTIONS') {
+    return NextResponse.json({}, {
+      headers: {
+        'Access-Control-Allow-Origin': isAllowedOrigin ? origin : '',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      }
+    })
+  }
+  
+  const response = NextResponse.next()
+  if (isAllowedOrigin) {
+    response.headers.set('Access-Control-Allow-Origin', origin)
+  }
+  
+  return response
+}
+```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>성능 최적화 팁</AlertTitle>
+  <AlertDescription>
+    - 미들웨어는 가벼운 작업에 적합합니다
+    - 큰 헤더 설정은 피하세요 (431 에러 발생 가능)
+    - 복잡한 로직은 Route Handlers로 분리하세요
+  </AlertDescription>
+</Alert>

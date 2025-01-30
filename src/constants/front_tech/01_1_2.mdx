@@ -1,0 +1,306 @@
+---
+title: "Vite 공통 설정 옵션"
+description: "Vite의 개발, 빌드, 프리뷰 모드에서 공통적으로 사용되는 설정 옵션들을 설명합니다."
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>프로젝트 기본 설정</CardTitle>
+    <CardDescription>
+      프로젝트의 루트 디렉토리와 기본 경로 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### root
+    - **타입**: string
+    - **기본값**: process.cwd()
+    - **설명**: 프로젝트 루트 디렉토리(index.html이 위치한 곳)
+    - 절대 경로나 현재 작업 디렉토리 기준 상대 경로 사용 가능
+
+    ### base
+    - **타입**: string
+    - **기본값**: /
+    - **유효한 값**:
+      - 절대 URL 경로 (예: /foo/)
+      - 전체 URL (예: https://bar.com/foo/)
+      - 빈 문자열 또는 ./ (임베디드 배포용)
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모드와 전역 상수</CardTitle>
+    <CardDescription>
+      개발/프로덕션 모드 설정과 전역 상수 정의
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### mode
+    - **타입**: string
+    - **기본값**: 
+      - serve: 'development'
+      - build: 'production'
+    - 설정 파일에서 지정하면 기본값 덮어쓰기 가능
+    - CLI의 --mode 옵션으로도 덮어쓰기 가능
+
+    ### define
+    전역 상수 대체를 정의합니다:
+    ```js
+    export default defineConfig({
+      define: {
+        __APP_VERSION__: JSON.stringify('v1.0.0'),
+        __API_URL__: 'window.__backend_api_url',
+      },
+    })
+    ```
+
+    TypeScript 사용자는 `env.d.ts` 또는 `vite-env.d.ts`에 타입 선언 추가 필요:
+    ```ts
+    // vite-env.d.ts
+    declare const __APP_VERSION__: string
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>플러그인과 정적 자산</CardTitle>
+    <CardDescription>
+      플러그인 설정과 정적 파일 처리 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### plugins
+    - **타입**: `(Plugin | Plugin[] | Promise<Plugin | Plugin[]>)[]`
+    - 사용할 플러그인 배열
+    - 거짓 값은 무시되고 배열은 평면화됨
+    - Promise 반환 시 실행 전 해결됨
+
+    ### publicDir
+    - **타입**: string | false
+    - **기본값**: "public"
+    - 정적 자산을 제공할 디렉토리
+    - 개발 중에는 / 에서 제공되고 빌드 시 outDir의 루트로 복사
+    - 절대 경로나 프로젝트 루트 기준 상대 경로 사용 가능
+    - false로 설정하면 기능 비활성화
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>캐시와 경로 해결</CardTitle>
+    <CardDescription>
+      캐시 디렉토리 설정과 모듈 경로 해결 옵션
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### cacheDir
+    - **타입**: string
+    - **기본값**: "node_modules/.vite"
+    - 캐시 파일 저장 디렉토리
+    - --force 플래그로 캐시 재생성 가능
+    - package.json이 없을 경우 .vite가 기본값
+
+    ### resolve.alias
+    ```js
+    export default defineConfig({
+      resolve: {
+        alias: {
+          '@': '/path/to/src',
+          'components': '/path/to/components'
+        }
+      }
+    })
+    ```
+    - 파일 시스템 경로 별칭 지정 시 항상 절대 경로 사용
+    - SSR에서 사용 시 `npm:` 접두사로 실제 node_modules 패키지 별칭 가능
+
+    ### resolve.dedupe
+    - **타입**: string[]
+    - 중복된 의존성을 프로젝트 루트의 동일한 복사본으로 강제 해결
+    ```js
+    resolve: {
+      dedupe: ['react', 'react-dom']
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 해결 옵션</CardTitle>
+    <CardDescription>
+      조건부 내보내기와 패키지 진입점 해결을 위한 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### resolve.conditions
+    - **타입**: string[]
+    - **기본값**: ['module', 'browser', 'development|production']
+    - 패키지의 조건부 내보내기 해결 시 허용할 추가 조건
+
+    예시 package.json:
+    ```json
+    {
+      "exports": {
+        ".": {
+          "import": "./index.mjs",
+          "require": "./index.js"
+        }
+      }
+    }
+    ```
+
+    ### resolve.mainFields
+    - **타입**: string[]
+    - **기본값**: ['browser', 'module', 'jsnext:main', 'jsnext']
+    - 패키지 진입점 해결 시 시도할 package.json 필드 목록
+
+    ### resolve.extensions
+    - **타입**: string[]
+    - **기본값**: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
+    - 확장자 생략 시 시도할 파일 확장자 목록
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>CSS 관련 설정</CardTitle>
+    <CardDescription>
+      CSS 모듈과 전처리기 설정 옵션
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### css.modules
+    CSS 모듈 동작 설정:
+    ```js
+    css: {
+      modules: {
+        scopeBehaviour: 'local',
+        localsConvention: 'camelCase',
+        generateScopedName: '[name]__[local]__[hash:base64:5]'
+      }
+    }
+    ```
+
+    ### css.preprocessorOptions
+    CSS 전처리기 옵션 설정:
+    ```js
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: `$injectedColor: orange;`,
+          api: 'modern-compiler'
+        },
+        less: {
+          math: 'parens-division'
+        },
+        stylus: {
+          define: {
+            $specialColor: new stylus.nodes.RGBA(51, 197, 255, 1)
+          }
+        }
+      }
+    }
+    ```
+
+    ### css.devSourcemap
+    - **타입**: boolean
+    - **기본값**: false
+    - 개발 중 소스맵 활성화 여부
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JSON과 esbuild 설정</CardTitle>
+    <CardDescription>
+      JSON 파일 처리와 esbuild 변환 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### JSON 설정
+    ```js
+    export default defineConfig({
+      json: {
+        namedExports: true, // .json 파일에서 이름 있는 내보내기 지원
+        stringify: true     // JSON.parse로 변환하여 성능 향상
+      }
+    })
+    ```
+
+    ### esbuild 설정
+    ```js
+    export default defineConfig({
+      esbuild: {
+        jsxFactory: 'h',
+        jsxFragment: 'Fragment',
+        jsxInject: `import React from 'react'`
+      }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>환경 변수와 로깅</CardTitle>
+    <CardDescription>
+      환경 변수 설정과 로깅 관련 옵션
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 환경 변수 설정
+    - **envDir**: .env 파일을 불러올 디렉토리 (기본값: root)
+    - **envPrefix**: 클라이언트에 노출할 환경 변수 접두사 (기본값: VITE_)
+
+    보안 주의사항:
+    - envPrefix를 빈 문자열('')로 설정하지 마세요
+    - 접두사 없는 변수는 define을 사용하여 노출:
+    ```js
+    define: {
+      'import.meta.env.ENV_VARIABLE': JSON.stringify(process.env.ENV_VARIABLE)
+    }
+    ```
+
+    ### 로깅 설정
+    ```js
+    export default defineConfig({
+      logLevel: 'info', // 'info' | 'warn' | 'error' | 'silent'
+      clearScreen: true, // 로깅 시 터미널 화면 지우기
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>애플리케이션 타입과 미래 기능</CardTitle>
+    <CardDescription>
+      앱 타입 설정과 향후 변경사항 준비
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### appType
+    - **타입**: 'spa' | 'mpa' | 'custom'
+    - **기본값**: 'spa'
+    - **옵션 설명**:
+      - 'spa': HTML 미들웨어 포함, SPA 폴백 사용
+      - 'mpa': HTML 미들웨어만 포함
+      - 'custom': HTML 미들웨어 미포함 (SSR 등)
+
+    ### future
+    - 다음 메이저 버전으로의 원활한 마이그레이션을 위한 설정
+    - 향후 변경될 수 있는 기능들을 미리 활성화
+    ```js
+    export default defineConfig({
+      future: {
+        // 향후 추가될 breaking changes 관련 설정
+      }
+    })
+    ```
+  </CardContent>
+</Card>

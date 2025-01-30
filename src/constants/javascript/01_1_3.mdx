@@ -1,0 +1,415 @@
+---
+title: "JavaScript 함수의 모든 것"
+description: "JavaScript 함수의 기본 개념부터 고급 기능까지 완벽 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>함수의 기초</CardTitle>
+    <CardDescription>
+      JavaScript에서 함수는 가장 기본적인 구성 요소입니다. 특정 작업을 수행하거나 값을 계산하는 코드의 집합입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 함수 선언
+    ```js
+    function 제곱(숫자) {
+      return 숫자 * 숫자;
+    }
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 함수의 주요 구성 요소
+      - 함수 이름
+      - 매개변수 목록 (괄호 안에 쉼표로 구분)
+      - 함수 본문 (중괄호 안의 실행될 코드)
+    </div>
+
+    ### 매개변수 전달 방식
+    ```js
+    // 객체를 매개변수로 전달
+    function 자동차변경(차량객체) {
+      차량객체.제조사 = "현대"; // 외부 객체가 변경됨
+    }
+
+    const 내차 = {
+      제조사: "기아",
+      모델: "K5"
+    };
+
+    자동차변경(내차);
+    console.log(내차.제조사); // "현대"
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>함수 표현식</CardTitle>
+    <CardDescription>
+      함수를 변수에 할당하여 사용하는 방식입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // 익명 함수 표현식
+    const 제곱 = function(숫자) {
+      return 숫자 * 숫자;
+    };
+
+    // 기명 함수 표현식
+    const 팩토리얼 = function calc(n) {
+      return n < 2 ? 1 : n * calc(n - 1);
+    };
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 함수 표현식의 장점
+      - 함수를 변수처럼 다룰 수 있음
+      - 다른 함수의 인자로 전달 가능
+      - 조건에 따라 다른 함수 정의 가능
+    </div>
+
+    ### 실제 활용 예시
+    ```js
+    function map(함수, 배열) {
+      const 결과 = new Array(배열.length);
+      for (let i = 0; i < 배열.length; i++) {
+        결과[i] = 함수(배열[i]);
+      }
+      return 결과;
+    }
+
+    const 세제곱 = x => x * x * x;
+    console.log(map(세제곱, [1, 2, 3])); // [1, 8, 27]
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>함수 호출과 호이스팅</CardTitle>
+    <CardDescription>
+      함수를 실행하는 방법과 함수 선언의 특별한 동작을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 기본적인 함수 호출
+    ```js
+    function 인사(이름) {
+      return `안녕하세요, ${이름}님!`;
+    }
+
+    console.log(인사("철수")); // "안녕하세요, 철수님!"
+    ```
+
+    ### 함수 호이스팅
+    ```js
+    // 이렇게 해도 동작합니다
+    console.log(제곱(5)); // 25
+
+    function 제곱(n) {
+      return n * n;
+    }
+
+    // 하지만 함수 표현식은 호이스팅되지 않습니다
+    console.log(세제곱(5)); // 오류 발생!
+    const 세제곱 = function(n) {
+      return n * n * n;
+    };
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 주의사항
+      - 함수 선언문은 호이스팅됨
+      - 함수 표현식은 호이스팅되지 않음
+      - 가독성을 위해 함수는 사용하기 전에 선언하는 것이 좋음
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>함수 스코프와 클로저</CardTitle>
+    <CardDescription>
+      변수의 유효 범위와 클로저의 강력한 기능을 이해합시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 스코프의 기본 규칙
+    ```js
+    const 외부변수 = "전역";
+
+    function 외부함수() {
+      const 내부변수 = "지역";
+      
+      function 내부함수() {
+        const 가장안쪽변수 = "가장 안쪽";
+        console.log(외부변수); // 접근 가능
+        console.log(내부변수); // 접근 가능
+      }
+      
+      내부함수();
+      // console.log(가장안쪽변수); // 오류: 접근 불가
+    }
+    ```
+
+    ### 클로저 예제
+    ```js
+    function 카운터만들기() {
+      let 숫자 = 0;
+      
+      return {
+        증가() { return ++숫자; },
+        감소() { return --숫자; },
+        현재값() { return 숫자; }
+      };
+    }
+
+    const 카운터 = 카운터만들기();
+    console.log(카운터.증가()); // 1
+    console.log(카운터.증가()); // 2
+    console.log(카운터.감소()); // 1
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 클로저의 장점
+      - 데이터 프라이버시 보장
+      - 상태 유지 가능
+      - 모듈화된 코드 작성 가능
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>매개변수의 특별한 기능</CardTitle>
+    <CardDescription>
+      기본값 매개변수와 나머지 매개변수를 활용하는 방법을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 기본값 매개변수
+    ```js
+    // 과거 방식
+    function 곱하기(a, b) {
+      b = typeof b !== "undefined" ? b : 1;
+      return a * b;
+    }
+
+    // 현대적인 방식
+    function 곱하기(a, b = 1) {
+      return a * b;
+    }
+
+    console.log(곱하기(5));    // 5
+    console.log(곱하기(5, 2)); // 10
+    ```
+
+    ### 나머지 매개변수
+    ```js
+    function 합계(...숫자들) {
+      return 숫자들.reduce((총합, 현재값) => 총합 + 현재값, 0);
+    }
+
+    console.log(합계(1, 2, 3, 4, 5)); // 15
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 매개변수 처리 팁
+      - 기본값은 undefined일 때만 적용됨
+      - 나머지 매개변수는 항상 마지막에 위치해야 함
+      - 나머지 매개변수는 실제 배열로 처리됨
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>화살표 함수</CardTitle>
+    <CardDescription>
+      더 간결한 함수 작성법과 this 바인딩의 새로운 방식을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 기본 문법
+    ```js
+    // 일반 함수
+    const 제곱 = function(x) {
+      return x * x;
+    };
+
+    // 화살표 함수
+    const 제곱 = x => x * x;
+
+    // 여러 매개변수
+    const 더하기 = (a, b) => a + b;
+
+    // 여러 줄의 코드
+    const 계산 = (a, b) => {
+      const 결과 = a + b;
+      return 결과 * 2;
+    };
+    ```
+
+    ### this의 새로운 동작
+    ```js
+    function 사람() {
+      this.나이 = 0;
+
+      // 화살표 함수는 상위 스코프의 this를 유지
+      setInterval(() => {
+        this.나이++;
+        console.log('현재 나이:', this.나이);
+      }, 1000);
+    }
+
+    const p = new 사람();
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 화살표 함수의 특징
+      - this가 렉시컬 스코프를 가짐
+      - arguments 객체가 없음
+      - new 연산자로 호출할 수 없음
+      - 더 간결한 문법
+    </div>
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 사용 추천 상황
+      - 콜백 함수
+      - 메서드가 아닌 함수
+      - this 바인딩이 필요 없는 경우
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>arguments 객체 활용</CardTitle>
+    <CardDescription>
+      함수에 전달된 인자들을 유연하게 다루는 방법을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### arguments 객체 사용
+    ```js
+    function 모두연결하기(구분자) {
+      let 결과 = "";
+      for (let i = 1; i < arguments.length; i++) {
+        결과 += arguments[i] + 구분자;
+      }
+      return 결과;
+    }
+
+    console.log(모두연결하기(", ", "사과", "바나나", "딸기"));
+    // "사과, 바나나, 딸기, "
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### arguments의 특징
+      - 배열과 비슷하지만 실제 배열은 아님
+      - length 속성을 가짐
+      - 인덱스로 접근 가능
+      - 화살표 함수에서는 사용 불가
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>함수의 고급 활용</CardTitle>
+    <CardDescription>
+      클로저와 재귀를 활용한 고급 프로그래밍 패턴을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 재귀 함수
+    ```js
+    function 트리순회(노드) {
+      if (노드 === null) return;
+      
+      console.log(노드.값);
+      노드.자식들.forEach(자식 => 트리순회(자식));
+    }
+    ```
+
+    ### 클로저를 활용한 private 변수
+    ```js
+    const 반려동물만들기 = function(이름) {
+      let 성별;
+      
+      return {
+        이름변경(새이름) { 이름 = 새이름; },
+        이름가져오기() { return 이름; },
+        성별설정(새성별) {
+          if (["남", "여"].includes(새성별)) {
+            성별 = 새성별;
+          }
+        }
+      };
+    };
+
+    const 우리집강아지 = 반려동물만들기("멍멍이");
+    ```
+
+    <div className=" p-4 rounded-lg mt-4">
+      ### 고급 패턴 활용 시 주의사항
+      - 메모리 누수 방지
+      - 순환 참조 주의
+      - 스택 오버플로우 고려
+      - 가독성 유지
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>함수 프로그래밍 모범 사례</CardTitle>
+    <CardDescription>
+      깔끔하고 유지보수가 쉬운 함수형 코드 작성법을 알아봅시다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className=" p-4 rounded-lg">
+        ### 추천하는 방식
+        - 순수 함수 작성
+        - 작은 단위로 분리
+        - 명확한 이름 사용
+        - 단일 책임 원칙 준수
+      </div>
+      
+      <div className=" p-4 rounded-lg">
+        ### 피해야 할 방식
+        - 과도한 매개변수
+        - 부수 효과 만들기
+        - 전역 상태 의존
+        - 복잡한 중첩 함수
+      </div>
+    </div>
+
+    ### 함수형 프로그래밍 예시
+    ```js
+    // 좋은 예
+    const 숫자배열 = [1, 2, 3, 4, 5];
+    const 제곱하기 = x => x * x;
+    const 짝수필터 = x => x % 2 === 0;
+    
+    const 결과 = 숫자배열
+      .filter(짝수필터)
+      .map(제곱하기);
+    
+    // 나쁜 예
+    let 총합 = 0;
+    for(let i = 0; i < 숫자배열.length; i++) {
+      if(숫자배열[i] % 2 === 0) {
+        총합 += 숫자배열[i] * 숫자배열[i];
+      }
+    }
+    ```
+  </CardContent>
+</Card>

@@ -1,0 +1,310 @@
+---
+title: "React Directives"
+description: "Directives는 React Server Components와 호환되는 번들러 에 대한 지침을 제공합니다 ."
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>'use client' 디렉티브</CardTitle>
+    <CardDescription>
+      'use client' 디렉티브는 클라이언트에서 실행될 코드를 표시합니다. 파일 최상단에 이 지시어를
+      추가하면 해당 모듈과 그 종속성이 클라이언트 코드로 표시됩니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```jsx
+    'use client';
+
+    import { useState } from 'react';
+    import { formatDate } from './formatters';
+    import Button from './button';
+
+    export default function RichTextEditor({ timestamp, text }) {
+      const date = formatDate(timestamp);
+      const editButton = <Button />;
+      // ...
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 주요 규칙
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    <div className="space-y-4">
+      <div className="flex items-start">
+        <span className="text-red-500 mr-2">⚠️</span>
+        <span>'use client'는 반드시 파일의 최상단에 위치해야 합니다 (주석은 허용)</span>
+      </div>
+      <div className="flex items-start">
+        <span className="text-red-500 mr-2">⚠️</span>
+        <span>작은따옴표나 큰따옴표를 사용해야 하며, 백틱은 사용할 수 없습니다</span>
+      </div>
+      <div className="flex items-start">
+        <span className="text-blue-500 mr-2">ℹ️</span>
+        <span>이미 클라이언트에서 렌더링되는 모듈에서 임포트할 경우 이 지시어는 효과가 없습니다</span>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 서버/클라이언트 컴포넌트 예시
+
+<Card className="mb-6">
+  <CardContent>
+    ```jsx
+    // App.js (서버 컴포넌트)
+    import FancyText from './FancyText';
+    import InspirationGenerator from './InspirationGenerator';
+    import Copyright from './Copyright';
+
+    export default function App() {
+      return (
+        <>
+          <FancyText title text="영감 생성기 앱" />
+          <InspirationGenerator>
+            <Copyright year={2024} />
+          </InspirationGenerator>
+        </>
+      );
+    }
+
+    // InspirationGenerator.js (클라이언트 컴포넌트)
+    'use client';
+
+    import { useState } from 'react';
+    import inspirations from './inspirations';
+    import FancyText from './FancyText';
+
+    export default function InspirationGenerator({children}) {
+      const [index, setIndex] = useState(0);
+      const quote = inspirations[index];
+      const next = () => setIndex((index + 1) % inspirations.length);
+
+      return (
+        <>
+          <p>당신의 영감 문구:</p>
+          <FancyText text={quote} />
+          <button onClick={next}>다음 영감</button>
+          {children}
+        </>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 언제 'use client'를 사용해야 하나요?
+
+<Tabs defaultValue="interactive" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="interactive">상호작용이 필요할 때</TabsTrigger>
+    <TabsTrigger value="hooks">훅을 사용할 때</TabsTrigger>
+    <TabsTrigger value="browser">브라우저 API 필요할 때</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="interactive">
+    <Card>
+      <CardContent>
+        ```jsx
+        'use client';
+
+        export default function Counter({initialValue = 0}) {
+          const [count, setCount] = useState(initialValue);
+          
+          return (
+            <>
+              <h2>카운트: {count}</h2>
+              <button onClick={() => setCount(count + 1)}>
+                증가
+              </button>
+            </>
+          );
+        }
+        ```
+        onClick 같은 이벤트 핸들러가 필요한 경우 반드시 클라이언트 컴포넌트여야 합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="hooks">
+    <Card>
+      <CardContent>
+        useState, useEffect 등 대부분의 React 훅을 사용해야 할 때는 
+        클라이언트 컴포넌트로 만들어야 합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="browser">
+    <Card>
+      <CardContent>
+        ```jsx
+        'use client';
+
+        export default function Canvas() {
+          const ref = useRef(null);
+          useEffect(() => {
+            const ctx = ref.current.getContext('2d');
+            // Canvas API 사용
+          }, []);
+          
+          return <canvas ref={ref} />;
+        }
+        ```
+        브라우저 API를 사용해야 하는 경우 클라이언트 컴포넌트가 필요합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 직렬화 가능한 Props
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>서버에서 클라이언트로 전달 가능한 데이터</CardTitle>
+    <CardDescription>
+      서버 컴포넌트에서 클라이언트 컴포넌트로 props를 전달할 때는 직렬화가 가능한 값만 전달할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <h4 className="font-medium text-green-600">✅ 지원되는 타입</h4>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>기본 타입 (string, number, boolean 등)</li>
+          <li>배열, Map, Set</li>
+          <li>Date 객체</li>
+          <li>일반 객체 (Plain objects)</li>
+          <li>서버 함수</li>
+          <li>JSX 요소</li>
+          <li>Promise</li>
+        </ul>
+      </div>
+      <div className="space-y-2">
+        <h4 className="font-medium text-red-600">❌ 지원되지 않는 타입</h4>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>일반 함수</li>
+          <li>클래스</li>
+          <li>클래스 인스턴스</li>
+          <li>전역 등록되지 않은 Symbol</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 'use server' 디렉티브
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>서버 함수 정의하기</CardTitle>
+    <CardDescription>
+      'use server' 디렉티브를 사용하면 클라이언트에서 호출할 수 있는 서버 함수를 만들 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```jsx
+    // 개별 함수에 적용
+    async function addToCart(data) {
+      'use server';
+      // 서버에서 실행될 코드
+    }
+
+    // 또는 파일 전체에 적용
+    'use server';
+
+    export async function addToCart(data) {
+      // 서버에서 실행될 코드
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 서버 함수 활용 예시
+
+<Tabs defaultValue="form" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="form">폼에서 사용</TabsTrigger>
+    <TabsTrigger value="action">일반 액션으로 사용</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="form">
+    <Card>
+      <CardContent>
+        ```jsx
+        // 서버 함수
+        async function requestUsername(formData) {
+          'use server';
+          const username = formData.get('username');
+          // 서버에서 유저네임 처리
+          return username ? 'success' : 'failed';
+        }
+
+        // 클라이언트 컴포넌트
+        'use client';
+        function UsernameForm() {
+          const [state, action] = useActionState(requestUsername, null);
+          
+          return (
+            <form action={action}>
+              <input type="text" name="username" />
+              <button type="submit">요청</button>
+              <p>결과: {state}</p>
+            </form>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="action">
+    <Card>
+      <CardContent>
+        ```jsx
+        // 서버 함수
+        'use server';
+        let likeCount = 0;
+        export async function incrementLike() {
+          likeCount++;
+          return likeCount;
+        }
+
+        // 클라이언트 컴포넌트
+        'use client';
+        function LikeButton() {
+          const [isPending, startTransition] = useTransition();
+          const [likes, setLikes] = useState(0);
+
+          const onClick = () => {
+            startTransition(async () => {
+              const count = await incrementLike();
+              setLikes(count);
+            });
+          };
+
+          return (
+            <button onClick={onClick} disabled={isPending}>
+              좋아요 ({likes})
+            </button>
+          );
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertDescription>
+    서버 함수를 호출할 때는 반드시 보안을 고려해야 합니다. 인자는 항상 신뢰할 수 없는 입력으로 
+    취급하고, 적절한 검증과 이스케이프를 수행해야 합니다. 또한 로그인한 사용자가 해당 작업을 
+    수행할 권한이 있는지 확인해야 합니다.
+  </AlertDescription>
+</Alert>

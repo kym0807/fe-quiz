@@ -1,0 +1,399 @@
+---
+title: "자바스크립트 상속과 프로토타입 체인"
+description: "자바스크립트의 프로토타입 기반 상속에 대한 심층 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>프로토타입 기반 상속이란?</CardTitle>
+    <CardDescription>
+      자바스크립트는 객체를 사용하여 상속을 구현합니다. 각 객체는 프로토타입이라 불리는 
+      다른 객체에 대한 내부 링크를 가지고 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    모든 객체는 프로토타입 객체에 대한 내부 링크를 가지며, 이 프로토타입 객체도 
+    자신만의 프로토타입을 가질 수 있습니다. 이는 null을 프로토타입으로 가지는 객체에 
+    도달할 때까지 계속됩니다. 이러한 연결 구조를 프로토타입 체인이라고 합니다.
+  </CardContent>
+</Card>
+
+## 프로토타입 체인을 통한 속성 상속
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 예제</TabsTrigger>
+    <TabsTrigger value="chain">체인 동작</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```javascript
+    const o = {
+      a: 1,
+      b: 2,
+      __proto__: {
+        b: 3,
+        c: 4,
+      },
+    };
+
+    console.log(o.a); // 1
+    console.log(o.b); // 2 (프로토타입의 b는 가려짐)
+    console.log(o.c); // 4 (프로토타입에서 상속)
+    ```
+  </TabsContent>
+  <TabsContent value="chain">
+    <Card>
+      <CardContent className="pt-6">
+        객체의 속성을 접근할 때:
+        1. 먼저 객체 자신의 속성을 확인
+        2. 없다면 객체의 프로토타입에서 검색
+        3. 계속해서 프로토타입 체인을 따라 올라가며 검색
+        4. null에 도달할 때까지 찾지 못하면 undefined 반환
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 메서드 상속과 this 바인딩
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>상속된 메서드와 this</CardTitle>
+    <CardDescription>
+      자바스크립트에서는 클래스 기반 언어와 달리 함수를 객체의 속성으로 추가하는 방식으로 메서드를 구현합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    const parent = {
+      value: 2,
+      method() {
+        return this.value + 1;
+      },
+    };
+
+    const child = {
+      __proto__: parent,
+    };
+
+    console.log(child.method()); // 3
+    // child가 value 속성을 가지고 있지 않아서 
+    // 프로토타입(parent)의 value를 사용
+
+    child.value = 4;
+    console.log(child.method()); // 5
+    // 이제 child의 value를 사용
+    ```
+  </CardContent>
+</Card>
+
+## 생성자 함수와 프로토타입
+
+<Tabs defaultValue="constructor" className="w-full">
+  <TabsList>
+    <TabsTrigger value="constructor">생성자 함수</TabsTrigger>
+    <TabsTrigger value="class">클래스 문법</TabsTrigger>
+  </TabsList>
+  <TabsContent value="constructor">
+    ```javascript
+    function Box(value) {
+      this.value = value;
+    }
+
+    Box.prototype.getValue = function() {
+      return this.value;
+    };
+
+    const boxes = [
+      new Box(1),
+      new Box(2),
+      new Box(3)
+    ];
+    ```
+  </TabsContent>
+  <TabsContent value="class">
+    ```javascript
+    class Box {
+      constructor(value) {
+        this.value = value;
+      }
+
+      getValue() {
+        return this.value;
+      }
+    }
+
+    const boxes = [
+      new Box(1),
+      new Box(2),
+      new Box(3)
+    ];
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>클래스와 프로토타입</AlertTitle>
+  <AlertDescription>
+    자바스크립트의 클래스는 프로토타입 기반 상속에 대한 문법적 설탕입니다. 
+    내부적으로는 여전히 프로토타입 메커니즘을 사용하며, Box.prototype을 통해 
+    모든 인스턴스의 동작을 수정할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 리터럴과 암시적 생성자
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>리터럴의 프로토타입 할당</CardTitle>
+    <CardDescription>
+      자바스크립트에서 리터럴 문법으로 객체를 생성할 때 자동으로 설정되는 프로토타입이 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // 객체 리터럴은 자동으로 Object.prototype을 상속
+    const object = { a: 1 };
+
+    // 배열 리터럴은 자동으로 Array.prototype을 상속
+    const array = [1, 2, 3];
+
+    // 정규식 리터럴은 자동으로 RegExp.prototype을 상속
+    const regexp = /abc/;
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>내장 프로토타입 확장 주의사항</AlertTitle>
+  <AlertDescription>
+    Object.prototype이나 다른 내장 객체의 프로토타입을 확장하는 것은 권장되지 않습니다.
+    이는 '몽키 패칭'이라고 불리며, 향후 자바스크립트 언어가 발전할 때 호환성 문제를 일으킬 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 프로토타입 체인 구축하기
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 상속</TabsTrigger>
+    <TabsTrigger value="extended">확장된 상속</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```javascript
+    function Base() {}
+    function Derived() {}
+    
+    // Derived.prototype의 [[Prototype]]을 
+    // Base.prototype으로 설정
+    Object.setPrototypeOf(Derived.prototype, Base.prototype);
+
+    const obj = new Derived();
+    // obj -> Derived.prototype -> Base.prototype 
+    // -> Object.prototype -> null
+    ```
+  </TabsContent>
+  <TabsContent value="extended">
+    ```javascript
+    class Base {}
+    class Derived extends Base {}
+
+    const obj = new Derived();
+    // 클래스 문법으로도 동일한 프로토타입 체인이 생성됨
+    // obj -> Derived.prototype -> Base.prototype 
+    // -> Object.prototype -> null
+    ```
+  </TabsContent>
+</Tabs>
+
+## 프로토타입 체인 생성 및 수정 방법
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>다양한 프로토타입 설정 방법</CardTitle>
+  </CardHeader>
+  <CardContent>
+    프로토타입을 설정하는 방법에는 여러 가지가 있으며, 각각의 장단점이 있습니다:
+
+    1. Object.create() 사용
+    2. 생성자 함수와 new 키워드 사용
+    3. 클래스 문법 사용
+    4. Object.setPrototypeOf() 사용
+  </CardContent>
+</Card>
+
+<Tabs defaultValue="create" className="w-full">
+  <TabsList>
+    <TabsTrigger value="create">Object.create</TabsTrigger>
+    <TabsTrigger value="class">클래스</TabsTrigger>
+    <TabsTrigger value="setProto">setPrototypeOf</TabsTrigger>
+  </TabsList>
+  <TabsContent value="create">
+    ```javascript
+    const a = { a: 1 };
+    const b = Object.create(a);
+    // b -> a -> Object.prototype -> null
+    
+    const c = Object.create(b);
+    // c -> b -> a -> Object.prototype -> null
+    
+    const d = Object.create(null);
+    // d -> null (프로토타입이 없는 객체 생성)
+    ```
+  </TabsContent>
+  <TabsContent value="class">
+    ```javascript
+    class Rectangle {
+      constructor(height, width) {
+        this.height = height;
+        this.width = width;
+      }
+    }
+
+    class FilledRectangle extends Rectangle {
+      constructor(height, width, color) {
+        super(height, width);
+        this.color = color;
+      }
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="setProto">
+    ```javascript
+    const obj = { a: 1 };
+    const anotherObj = { b: 2 };
+    
+    Object.setPrototypeOf(obj, anotherObj);
+    // obj -> anotherObj -> Object.prototype -> null
+    ```
+  </TabsContent>
+</Tabs>
+
+## 성능 고려사항
+
+<Alert>
+  <AlertTitle>프로토타입 체인과 성능</AlertTitle>
+  <AlertDescription>
+    프로토타입 체인이 길어질수록 속성을 찾는 시간이 길어질 수 있습니다.
+    성능이 중요한 코드에서는 이 점을 고려해야 합니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>hasOwnProperty 사용</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    function Graph() {
+      this.vertices = [];
+      this.edges = [];
+    }
+
+    const g = new Graph();
+    
+    // 직접 소유한 속성인지 확인
+    console.log(g.hasOwnProperty("vertices")); // true
+    console.log(g.hasOwnProperty("toString")); // false
+
+    // 더 안전한 방법
+    console.log(Object.hasOwn(g, "vertices")); // true
+    ```
+  </CardContent>
+</Card>
+
+## 정리 및 결론
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>프로토타입 상속의 핵심 개념</CardTitle>
+    <CardDescription>
+      자바스크립트의 모든 것은 객체(인스턴스)이거나 함수(생성자)입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2">
+      <li>
+        모든 생성자 함수는 prototype이라는 특별한 속성을 가지며, 
+        new 연산자와 함께 동작합니다.
+      </li>
+      <li>
+        new 연산자로 인스턴스를 생성할 때, 생성자의 prototype이 
+        인스턴스의 [[Prototype]]에 연결됩니다.
+      </li>
+      <li>
+        prototype에 정의된 모든 속성은 모든 인스턴스가 공유하며, 
+        prototype을 수정하면 이미 생성된 모든 인스턴스에도 
+        변경사항이 반영됩니다.
+      </li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Tabs defaultValue="example" className="w-full">
+  <TabsList>
+    <TabsTrigger value="example">예시</TabsTrigger>
+    <TabsTrigger value="comparison">클래스와의 비교</TabsTrigger>
+  </TabsList>
+  <TabsContent value="example">
+    ```javascript
+    function A() {
+      this.name = "instance";
+    }
+    
+    A.prototype.greet = function() {
+      return `Hello from ${this.name}`;
+    };
+
+    const a1 = new A();
+    const a2 = new A();
+    
+    // 두 인스턴스는 같은 메서드를 공유
+    console.log(a1.greet() === a2.greet()); // true
+    ```
+  </TabsContent>
+  <TabsContent value="comparison">
+    ```javascript
+    class A {
+      constructor() {
+        this.name = "instance";
+      }
+      
+      greet() {
+        return `Hello from ${this.name}`;
+      }
+    }
+    
+    // 클래스 문법도 내부적으로는 
+    // 동일한 프로토타입 메커니즘을 사용
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>프로토타입 체인 최적화</AlertTitle>
+  <AlertDescription>
+    복잡한 프로토타입 체인은 성능에 영향을 줄 수 있습니다. 
+    필요한 경우 체인을 분리하고, 깊이를 줄이는 것이 좋습니다. 
+    또한 네이티브 프로토타입은 호환성을 위한 경우가 아니라면 
+    확장하지 않는 것이 좋습니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>프로토타입 상속의 장점</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2">
+      <li>동적인 상속 구조를 구현할 수 있습니다.</li>
+      <li>메모리를 효율적으로 사용할 수 있습니다.</li>
+      <li>런타임에서 객체의 동작을 수정할 수 있습니다.</li>
+      <li>유연한 객체 확장이 가능합니다.</li>
+    </ul>
+  </CardContent>
+</Card>

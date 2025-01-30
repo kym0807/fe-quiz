@@ -1,0 +1,309 @@
+---
+title: "DOM 크기가 상호작용성에 미치는 영향과 해결 방법"
+description: "큰 DOM 크기가 웹 페이지 성능에 미치는 영향과 이를 개선하는 방법에 대해 알아봅니다"
+---
+
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>DOM의 기본 이해</CardTitle>
+</CardHeader>
+<CardContent>
+웹 페이지를 만들 때 피할 수 없는 것이 있습니다: 바로 문서 객체 모델(DOM)입니다. DOM은 페이지의 HTML 구조를 표현하며, JavaScript와 CSS가 페이지의 구조와 내용에 접근할 수 있게 해줍니다.
+
+그러나 DOM의 크기는 브라우저가 페이지를 빠르고 효율적으로 렌더링하는 능력에 영향을 미칩니다. 일반적으로 DOM이 클수록 초기 페이지 렌더링과 이후의 렌더링 업데이트가 더 많은 비용을 필요로 합니다.
+</CardContent>
+</Card>
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>DOM이 너무 크다는 것은 무엇을 의미할까요?</CardTitle>
+</CardHeader>
+<CardContent>
+**중요 용어**: DOM 요소와 DOM 노드의 차이를 이해하는 것이 중요합니다:
+- DOM 요소: DOM 트리의 특정 HTML 요소를 지칭
+- DOM 노드: DOM 요소와 비슷하지만, 주석, 공백, 텍스트도 포함하는 더 넓은 개념
+
+Lighthouse에 따르면:
+- 1,400개 이상의 노드: 과도한 DOM 크기로 간주
+- 800개 이상의 노드: 경고 발생 시작
+
+예시 코드:
+```html
+<ul>
+  <li>첫 번째 항목</li>
+  <li>두 번째 항목</li>
+  <li>세 번째 항목</li>
+</ul>
+```
+
+위 코드에는 4개의 DOM 요소가 있습니다: `<ul>` 요소와 세 개의 `<li>` 자식 요소들입니다.
+</CardContent>
+</Card>
+
+## 큰 DOM이 페이지 성능에 미치는 영향
+
+<Card className="my-6 space-y-4">
+<CardHeader>
+<CardTitle>성능 영향의 세 가지 측면</CardTitle>
+</CardHeader>
+<CardContent>
+1. **초기 페이지 렌더링 시**:
+   - CSS가 적용될 때 CSSOM(CSS Object Model)이라는 DOM과 유사한 구조가 생성됩니다
+   - CSS 선택자가 더 구체적일수록 CSSOM이 더 복잡해지고, 필요한 레이아웃/스타일링/합성/페인트 작업에 더 많은 시간이 필요합니다
+   - 이는 페이지 로드 초기에 발생하는 상호작용의 지연을 증가시킵니다
+
+2. **상호작용으로 인한 DOM 수정 시**:
+   - 요소 삽입/삭제 또는 DOM 내용과 스타일 수정 시
+   - 업데이트를 렌더링하는 데 필요한 작업이 매우 많은 비용을 발생시킬 수 있습니다
+   - CSS 선택자의 구체성이 증가하면 상호작용으로 인해 HTML 요소가 DOM에 삽입될 때 렌더링 작업이 추가됩니다
+
+3. **JavaScript가 DOM을 쿼리할 때**:
+   - DOM 요소에 대한 참조가 메모리에 저장됩니다
+   - 예: `document.querySelectorAll`로 모든 `<div>` 요소를 선택할 때, 결과가 많은 DOM 요소를 반환하면 상당한 메모리 비용이 발생할 수 있습니다
+
+<div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+**특히 중요**: 두 번째 항목이 가장 중요합니다. 상호작용으로 인해 DOM이 변경되면 많은 작업이 발생하여 페이지의 INP(Interaction to Next Paint)가 저하될 수 있습니다.
+</div>
+</CardContent>
+</Card>
+
+## DOM 크기 측정 방법
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>DOM 크기 측정 도구</CardTitle>
+</CardHeader>
+<CardContent>
+1. **Lighthouse 사용**:
+   - 감사 실행 시 'Avoid an excessive DOM size' 섹션에서 확인
+   - 전체 DOM 요소 수, 가장 많은 자식 요소를 포함하는 DOM 요소, 가장 깊은 DOM 요소 정보 제공
+
+2. **JavaScript 콘솔 사용**:
+   ```javascript
+   document.querySelectorAll('*').length;
+   ```
+   - 페이지 로드 후 전체 HTML 요소 수 확인 가능
+   - 주의: HTML 요소만 포함하며 모든 DOM 노드를 포함하지는 않습니다
+
+3. **성능 모니터 도구 사용**:
+   - 실시간으로 DOM 크기 업데이트 확인 가능
+   - 레이아웃 및 스타일링 작업과 현재 DOM 크기를 함께 모니터링 가능
+</CardContent>
+</Card>
+
+# DOM 크기가 상호작용성에 미치는 영향과 해결 방법
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>DOM의 기본 이해</CardTitle>
+</CardHeader>
+<CardContent>
+웹 페이지를 만들 때 피할 수 없는 것이 있습니다: 바로 문서 객체 모델(DOM)입니다. DOM은 페이지의 HTML 구조를 표현하며, JavaScript와 CSS가 페이지의 구조와 내용에 접근할 수 있게 해줍니다.
+
+그러나 DOM의 크기는 브라우저가 페이지를 빠르고 효율적으로 렌더링하는 능력에 영향을 미칩니다. 일반적으로 DOM이 클수록 초기 페이지 렌더링과 이후의 렌더링 업데이트가 더 많은 비용을 필요로 합니다.
+</CardContent>
+</Card>
+
+## 상호작용으로 인해 영향을 받는 DOM 요소 수 측정하기
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>성능 프로파일링</CardTitle>
+</CardHeader>
+<CardContent>
+느린 상호작용이 페이지의 DOM 크기와 관련이 있다고 의심되는 경우, 프로파일러에서 "Recalculate Style"로 표시된 활동을 선택하여 아래 패널의 컨텍스트 데이터에서 영향을 받은 DOM 요소의 수를 확인할 수 있습니다.
+
+이 진단 정보는 DOM 크기가 상호작용에 대한 응답으로 다음 프레임을 그리는 데 걸리는 시간에 영향을 미치는지 판단하는 데 유용합니다.
+</CardContent>
+</Card>
+
+## DOM 크기를 줄이는 방법
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>DOM 깊이 줄이기</CardTitle>
+</CardHeader>
+<CardContent>
+불필요한 마크업을 제거하는 것 외에도, DOM 크기를 줄이는 주요 방법은 DOM 깊이를 줄이는 것입니다. DOM이 불필요하게 깊다는 신호는 다음과 같은 마크업 패턴을 볼 때입니다:
+
+```html
+<div>
+  <div>
+    <div>
+      <div>
+        <!-- 내용 -->
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+이러한 패턴을 발견하면, DOM 구조를 평탄화하여 단순화할 수 있습니다. 이렇게 하면 DOM 요소의 수가 줄어들고 페이지 스타일을 단순화할 기회도 얻을 수 있습니다.
+
+### 프레임워크 관련 고려사항
+
+DOM 깊이는 사용하는 프레임워크의 영향을 받을 수 있습니다. 특히 JSX를 사용하는 컴포넌트 기반 프레임워크에서는 여러 컴포넌트를 부모 컨테이너에 중첩해야 하는 경우가 많습니다.
+
+하지만 많은 프레임워크에서 'fragments'라는 기능을 사용하여 컴포넌트 중첩을 피할 수 있습니다:
+- React
+- Preact
+- Vue
+- Svelte
+
+프레임워크의 fragments 기능을 활용하면 DOM 깊이를 줄일 수 있습니다. DOM 구조를 평탄화하면서 스타일링에 미치는 영향이 걱정된다면, flexbox나 grid와 같은 더 현대적이고 빠른 레이아웃 모드를 사용하는 것이 도움이 될 수 있습니다.
+</CardContent>
+</Card>
+
+## 추가적인 최적화 전략들
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>점진적 접근 방식 고려하기</CardTitle>
+</CardHeader>
+<CardContent>
+페이지의 큰 부분이 초기에 사용자에게 보이지 않는 경우, HTML을 지연 로드하는 방법을 고려할 수 있습니다:
+
+1. **시작 시 DOM 최소화**:
+   - 초기에는 필요한 부분만 포함
+   - 사용자 상호작용 시 필요한 부분 추가
+   - 초기 HTML 페이로드가 가벼워지고 더 빠르게 렌더링
+
+2. **장점**:
+   - 초기 로드 시 렌더링 작업 감소
+   - 중요한 초기 상호작용에 메인 스레드의 주의를 더 집중
+   - 초기에 숨겨진 페이지 부분이 많은 경우 다른 상호작용의 재렌더링 작업도 가속화
+
+3. **주의사항**:
+   - 네트워크 요청으로 인한 지연 발생 가능
+   - 가능한 경우 로딩 스피너 등으로 데이터 가져오기 상태 표시
+</CardContent>
+</Card>
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>CSS 선택자 복잡성 제한하기</CardTitle>
+<CardDescription>브라우저의 CSS 파싱 최적화</CardDescription>
+</CardHeader>
+<CardContent>
+브라우저가 CSS의 선택자를 파싱할 때 DOM 트리를 탐색하여 해당 선택자가 현재 레이아웃에 어떻게 적용되는지 이해해야 합니다.
+
+1. **선택자가 복잡할수록**:
+   - 브라우저의 초기 페이지 렌더링에 더 많은 작업 필요
+   - 상호작용으로 인한 변경 시 스타일 재계산과 레이아웃 작업 증가
+
+2. **최적화 방법**:
+   - CSS 선택자를 단순화
+   - 특정성(specificity)을 낮게 유지
+   - 계층 구조를 단순하게 유지
+</CardContent>
+</Card>
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>content-visibility 속성 활용</CardTitle>
+</CardHeader>
+<CardContent>
+CSS의 content-visibility 속성을 사용하면 화면 밖 DOM 요소의 렌더링을 지연시킬 수 있습니다:
+
+- 요소가 뷰포트에 접근할 때 필요한 시점에 렌더링
+- 초기 페이지 렌더링 시 상당한 렌더링 작업 감소
+- 사용자 상호작용으로 인한 DOM 변경 시 화면 밖 요소의 렌더링 작업 생략
+</CardContent>
+</Card>
+
+## 결론
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>DOM 크기 최적화의 중요성</CardTitle>
+</CardHeader>
+<CardContent>
+DOM 크기를 필요한 만큼만 유지하는 것은 웹사이트의 INP를 최적화하는 좋은 방법입니다:
+
+- DOM이 업데이트될 때 브라우저의 레이아웃 및 렌더링 작업 시간 감소
+- DOM 크기를 의미 있게 줄일 수 없는 경우에도 CSS containment와 content-visibility 속성을 사용하여 렌더링 작업을 DOM 하위 트리로 격리 가능
+- 렌더링 작업을 최소화하고 상호작용에 대한 렌더링 작업을 줄이면 웹사이트가 사용자에게 더 반응적으로 느껴짐
+- 결과적으로 더 낮은 INP와 더 나은 사용자 경험 제공
+</CardContent>
+</Card>
+
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>DOM이 너무 크다는 것은 무엇을 의미할까요?</CardTitle>
+</CardHeader>
+<CardContent>
+**중요 용어**: DOM 요소와 DOM 노드의 차이를 이해하는 것이 중요합니다:
+- DOM 요소: DOM 트리의 특정 HTML 요소를 지칭
+- DOM 노드: DOM 요소와 비슷하지만, 주석, 공백, 텍스트도 포함하는 더 넓은 개념
+
+Lighthouse에 따르면:
+- 1,400개 이상의 노드: 과도한 DOM 크기로 간주
+- 800개 이상의 노드: 경고 발생 시작
+
+예시 코드:
+```html
+<ul>
+  <li>첫 번째 항목</li>
+  <li>두 번째 항목</li>
+  <li>세 번째 항목</li>
+</ul>
+```
+
+위 코드에는 4개의 DOM 요소가 있습니다: `<ul>` 요소와 세 개의 `<li>` 자식 요소들입니다.
+</CardContent>
+</Card>
+
+## 큰 DOM이 페이지 성능에 미치는 영향
+
+<Card className="my-6 space-y-4">
+<CardHeader>
+<CardTitle>성능 영향의 세 가지 측면</CardTitle>
+</CardHeader>
+<CardContent>
+1. **초기 페이지 렌더링 시**:
+   - CSS가 적용될 때 CSSOM(CSS Object Model)이라는 DOM과 유사한 구조가 생성됩니다
+   - CSS 선택자가 더 구체적일수록 CSSOM이 더 복잡해지고, 필요한 레이아웃/스타일링/합성/페인트 작업에 더 많은 시간이 필요합니다
+   - 이는 페이지 로드 초기에 발생하는 상호작용의 지연을 증가시킵니다
+
+2. **상호작용으로 인한 DOM 수정 시**:
+   - 요소 삽입/삭제 또는 DOM 내용과 스타일 수정 시
+   - 업데이트를 렌더링하는 데 필요한 작업이 매우 많은 비용을 발생시킬 수 있습니다
+   - CSS 선택자의 구체성이 증가하면 상호작용으로 인해 HTML 요소가 DOM에 삽입될 때 렌더링 작업이 추가됩니다
+
+3. **JavaScript가 DOM을 쿼리할 때**:
+   - DOM 요소에 대한 참조가 메모리에 저장됩니다
+   - 예: `document.querySelectorAll`로 모든 `<div>` 요소를 선택할 때, 결과가 많은 DOM 요소를 반환하면 상당한 메모리 비용이 발생할 수 있습니다
+
+<div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+**특히 중요**: 두 번째 항목이 가장 중요합니다. 상호작용으로 인해 DOM이 변경되면 많은 작업이 발생하여 페이지의 INP(Interaction to Next Paint)가 저하될 수 있습니다.
+</div>
+</CardContent>
+</Card>
+
+## DOM 크기 측정 방법
+
+<Card className="my-6">
+<CardHeader>
+<CardTitle>DOM 크기 측정 도구</CardTitle>
+</CardHeader>
+<CardContent>
+1. **Lighthouse 사용**:
+   - 감사 실행 시 'Avoid an excessive DOM size' 섹션에서 확인
+   - 전체 DOM 요소 수, 가장 많은 자식 요소를 포함하는 DOM 요소, 가장 깊은 DOM 요소 정보 제공
+
+2. **JavaScript 콘솔 사용**:
+   ```javascript
+   document.querySelectorAll('*').length;
+   ```
+   - 페이지 로드 후 전체 HTML 요소 수 확인 가능
+   - 주의: HTML 요소만 포함하며 모든 DOM 노드를 포함하지는 않습니다
+
+3. **성능 모니터 도구 사용**:
+   - 실시간으로 DOM 크기 업데이트 확인 가능
+   - 레이아웃 및 스타일링 작업과 현재 DOM 크기를 함께 모니터링 가능
+</CardContent>
+</Card>

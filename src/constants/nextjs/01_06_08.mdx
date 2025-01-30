@@ -1,0 +1,199 @@
+---
+title: "Next.js 성능 분석"
+description: "웹 바이탈 지표 측정과 보고 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Next.js 성능 분석
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>성능 측정 시스템</CardTitle>
+    <CardDescription>
+      Next.js는 성능 지표를 측정하고 보고하는 내장 기능을 제공합니다. useReportWebVitals 훅을 사용하여 직접 관리하거나, 
+      Vercel의 관리형 서비스를 통해 자동으로 지표를 수집하고 시각화할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 기본 구현
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>직접 구현하기</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // app/_components/web-vitals.js
+    'use client'
+    
+    import { useReportWebVitals } from 'next/web-vitals'
+    
+    export function WebVitals() {
+      useReportWebVitals((metric) => {
+        console.log(metric)
+      })
+    }
+    
+    // app/layout.js
+    import { WebVitals } from './_components/web-vitals'
+    
+    export default function Layout({ children }) {
+      return (
+        <html>
+          <body>
+            <WebVitals />
+            {children}
+          </body>
+        </html>
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertTitle>성능 최적화 팁</AlertTitle>
+  <AlertDescription>
+    useReportWebVitals는 "use client" 지시어가 필요하므로, 별도의 컴포넌트로 분리하여 클라이언트 영역을 WebVitals 컴포넌트로만 제한하는 것이 좋습니다.
+  </AlertDescription>
+</Alert>
+
+## 웹 바이탈 지표
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>주요 성능 지표</CardTitle>
+    <CardDescription>
+      웹 바이탈은 웹 페이지의 사용자 경험을 측정하는 중요한 지표들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">로딩 성능</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>TTFB (Time to First Byte)</li>
+          <li>FCP (First Contentful Paint)</li>
+          <li>LCP (Largest Contentful Paint)</li>
+        </ul>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">상호작용 성능</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>FID (First Input Delay)</li>
+          <li>CLS (Cumulative Layout Shift)</li>
+          <li>INP (Interaction to Next Paint)</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 성능 지표 처리
+
+<Tabs defaultValue="switch" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="switch">지표별 처리</TabsTrigger>
+    <TabsTrigger value="external">외부 시스템 전송</TabsTrigger>
+  </TabsList>
+  <TabsContent value="switch">
+    ```tsx
+    'use client'
+    
+    import { useReportWebVitals } from 'next/web-vitals'
+    
+    export function WebVitals() {
+      useReportWebVitals((metric) => {
+        switch (metric.name) {
+          case 'FCP': {
+            // FCP 결과 처리
+          }
+          case 'LCP': {
+            // LCP 결과 처리
+          }
+          // 기타 지표 처리
+        }
+      })
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="external">
+    ```tsx
+    useReportWebVitals((metric) => {
+      const body = JSON.stringify(metric)
+      const url = 'https://example.com/analytics'
+    
+      // navigator.sendBeacon()을 우선 사용하고, 
+      // 지원하지 않는 경우 fetch() 사용
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(url, body)
+      } else {
+        fetch(url, { 
+          body, 
+          method: 'POST', 
+          keepalive: true 
+        })
+      }
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+## Google Analytics 연동
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Google Analytics로 지표 전송</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    useReportWebVitals((metric) => {
+      // Google Analytics가 초기화된 경우 window.gtag 사용
+      window.gtag('event', metric.name, {
+        value: Math.round(
+          metric.name === 'CLS' ? metric.value * 1000 : metric.value
+        ), // 정수값으로 반올림
+        event_label: metric.id, // 현재 페이지 로드의 고유 ID
+        non_interaction: true, // 이탈률에 영향을 주지 않음
+      })
+    })
+    ```
+    
+    <Alert className="mt-4">
+      <AlertTitle>팁</AlertTitle>
+      <AlertDescription>
+        metric.id 값을 사용하면 지표 분포를 수동으로 구성할 수 있습니다(백분위수 계산 등).
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모범 사례</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">데이터 수집</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>실제 사용자 데이터(RUM) 수집</li>
+          <li>지표별 임계값 설정</li>
+          <li>주기적인 성능 모니터링</li>
+        </ul>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">최적화 전략</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>핵심 웹 바이탈 최적화 우선</li>
+          <li>사용자 경험 중심의 개선</li>
+          <li>지속적인 성능 추적과 개선</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>

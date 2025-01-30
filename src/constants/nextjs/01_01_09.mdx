@@ -1,0 +1,136 @@
+---
+title: "Intercepting Routes"
+description: "Next.js에서 현재 레이아웃 내에서 다른 경로의 콘텐츠를 불러오는 방법"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Intercepting Routes란?</CardTitle>
+    <CardDescription>
+      현재 레이아웃을 유지하면서 다른 경로의 콘텐츠를 불러올 수 있게 해주는 라우팅 기능입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        예를 들어, 피드에서 사진을 클릭할 때 모달로 표시하고 싶다면:
+      </p>
+      <ul className="list-disc pl-6">
+        <li>Next.js가 `/photo/123` 경로를 가로채서</li>
+        <li>URL을 마스킹하고</li>
+        <li>`/feed` 위에 오버레이로 표시합니다</li>
+      </ul>
+      <p className="text-sm text-muted-foreground">
+        단, URL을 직접 방문하거나 페이지를 새로고침할 때는 전체 사진 페이지가 렌더링됩니다.
+      </p>
+    </div>
+  </CardContent>
+</Card>
+
+## 경로 가로채기 규칙
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>경로 매칭 규칙</CardTitle>
+    <CardDescription>
+      `(..)` 규칙을 사용하여 다양한 레벨의 세그먼트를 매칭할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <table className="w-full">
+      <thead>
+        <tr className="border-b">
+          <th className="text-left p-2">규칙</th>
+          <th className="text-left p-2">설명</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr className="border-b">
+          <td className="p-2 font-mono">(.</td>
+          <td className="p-2">같은 레벨의 세그먼트 매칭</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2 font-mono">(..)</td>
+          <td className="p-2">한 레벨 위 세그먼트 매칭</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2 font-mono">(..)(..)</td>
+          <td className="p-2">두 레벨 위 세그먼트 매칭</td>
+        </tr>
+        <tr className="border-b">
+          <td className="p-2 font-mono">(...)</td>
+          <td className="p-2">루트 app 디렉토리부터 매칭</td>
+        </tr>
+      </tbody>
+    </table>
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>중요한 점</AlertTitle>
+  <AlertDescription>
+    `(..)` 규칙은 파일 시스템이 아닌 라우트 세그먼트를 기준으로 동작합니다.
+    예를 들어, `@modal`은 슬롯이므로 세그먼트로 취급되지 않습니다.
+  </AlertDescription>
+</Alert>
+
+## 모달 구현하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Intercepting Routes로 모달 구현하기</CardTitle>
+    <CardDescription>
+      Parallel Routes와 함께 사용하여 강력한 모달 기능을 구현할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <h3 className="font-semibold">주요 장점</h3>
+      <ul className="list-disc pl-6 space-y-2">
+        <li>
+          <span className="font-medium">URL 공유 가능:</span>
+          <br />
+          모달 콘텐츠를 URL을 통해 직접 공유할 수 있습니다
+        </li>
+        <li>
+          <span className="font-medium">상태 유지:</span>
+          <br />
+          페이지 새로고침 시에도 모달이 닫히지 않고 컨텍스트가 유지됩니다
+        </li>
+        <li>
+          <span className="font-medium">네비게이션 통합:</span>
+          <br />
+          뒤로 가기 시 모달이 자연스럽게 닫히고, 앞으로 가기 시 다시 열립니다
+        </li>
+      </ul>
+    </div>
+  </CardContent>
+</Card>
+
+## 활용 예시
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>다양한 활용 사례</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-semibold">이미지 갤러리</h3>
+        <p>갤러리에서 이미지 클릭 시 모달로 표시, URL로 직접 접근 시 전체 페이지로 표시</p>
+      </div>
+      <div>
+        <h3 className="font-semibold">로그인 모달</h3>
+        <p>상단 네비바에서 로그인 모달을 열면서도 별도의 `/login` 페이지 유지</p>
+      </div>
+      <div>
+        <h3 className="font-semibold">장바구니</h3>
+        <p>사이드 모달로 장바구니를 표시하면서 현재 페이지 컨텍스트 유지</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>

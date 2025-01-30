@@ -1,0 +1,184 @@
+---
+title: "Partial Prerendering (PPR)"
+description: "동일한 라우트에서 정적 및 동적 컴포넌트를 함께 사용하는 방법"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Alert className="mb-6" variant="destructive">
+  <AlertTitle>실험적 기능</AlertTitle>
+  <AlertDescription>
+    Partial Prerendering은 현재 canary 버전에서만 사용 가능한 실험적 기능이며,
+    변경될 수 있습니다. 프로덕션 환경에서는 아직 사용하지 않는 것이 좋습니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Partial Prerendering이란?</CardTitle>
+    <CardDescription>
+      하나의 라우트 내에서 정적 컴포넌트와 동적 컴포넌트를 함께 사용할 수 있게 해주는 기능입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <h3 className="font-semibold">작동 방식</h3>
+      <ul className="list-disc pl-6 space-y-2">
+        <li>빌드 시 라우트의 가능한 많은 부분을 미리 렌더링</li>
+        <li>동적 코드는 React Suspense 경계로 래핑</li>
+        <li>Suspense의 fallback이 미리 렌더링된 HTML에 포함</li>
+      </ul>
+    </div>
+  </CardContent>
+</Card>
+
+## 기본 구현 방법
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>PPR 활성화하기</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// next.config.ts
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  experimental: {
+    ppr: 'incremental',
+  },
+}
+
+export default nextConfig
+
+// app/page.tsx
+import { Suspense } from 'react'
+import { StaticComponent, DynamicComponent, Fallback } from '@/app/ui'
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return (
+    <>
+      <StaticComponent />
+      <Suspense fallback={<Fallback />}>
+        <DynamicComponent />
+      </Suspense>
+    </>
+  )
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>주요 특징</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6">
+      <li>각 라우트에서 명시적으로 PPR 활성화 필요</li>
+      <li>하위 세그먼트에 자동으로 적용됨</li>
+      <li>하위 세그먼트에서 비활성화 가능</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+  </CardContent>
+</Card>
+
+## 동적 컴포넌트 처리
+
+<Tabs defaultValue="cookies" className="w-full">
+  <TabsList>
+    <TabsTrigger value="cookies">쿠키 사용</TabsTrigger>
+    <TabsTrigger value="searchParams">검색 파라미터</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="cookies">
+    <Card>
+      <CardHeader>
+        <CardTitle>쿠키를 사용하는 동적 컴포넌트</CardTitle>
+      </CardHeader>
+      <CardContent>
+```typescript
+// app/user.tsx
+import { cookies } from 'next/headers'
+
+export async function User() {
+  const session = (await cookies()).get('session')?.value
+  return '...'
+}
+
+// app/page.tsx
+import { Suspense } from 'react'
+import { User, AvatarSkeleton } from './user'
+
+export const experimental_ppr = true
+
+export default function Page() {
+  return (
+    <section>
+      <h1>이 부분은 미리 렌더링됩니다</h1>
+      <Suspense fallback={<AvatarSkeleton />}>
+        <User />
+      </Suspense>
+    </section>
+  )
+}
+```
+      </CardContent>
+    </Card>
+  </TabsContent>
+
+  <TabsContent value="searchParams">
+    <Card>
+      <CardHeader>
+        <CardTitle>검색 파라미터 처리</CardTitle>
+      </CardHeader>
+      <CardContent>
+```typescript
+// app/page.tsx
+import { Table } from './table'
+
+export default function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort: string }>
+}) {
+  return (
+    <section>
+      <h1>이 부분은 미리 렌더링됩니다</h1>
+      <Table searchParams={searchParams} />
+    </section>
+  )
+}
+
+// app/table.tsx
+export async function Table({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort: string }>
+}) {
+  // searchParams 값에 접근할 때 동적 렌더링 시작
+  const sort = (await searchParams).sort === 'true'
+  return '...'
+}
+```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>PPR의 성능 이점</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <ul className="list-disc pl-6">
+        <li>서버가 즉시 미리 렌더링된 콘텐츠 전송 가능</li>
+        <li>클라이언트-서버 워터폴 방지를 위한 병렬 스트리밍</li>
+        <li>정적/동적 컴포넌트를 단일 HTTP 요청으로 결합</li>
+        <li>네트워크 라운드트립 최소화</li>
+      </ul>
+    </div>
+  </CardContent>
+</Card>

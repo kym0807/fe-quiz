@@ -1,0 +1,217 @@
+---
+title: "Next.js의 비디오 최적화"
+description: "Next.js 애플리케이션에서 비디오를 효율적으로 사용하는 방법"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Next.js의 비디오 구현 가이드
+
+## 기본 비디오 구현 방식
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>비디오 구현의 두 가지 방식</CardTitle>
+    <CardDescription>
+      Next.js에서는 HTML의 video 태그와 iframe 태그를 사용하여 비디오를 구현할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">video 태그 사용</h3>
+        <p>자체 호스팅 비디오나 직접 제공되는 비디오 콘텐츠를 삽입할 때 사용</p>
+        <p className="text-sm text-gray-600">재생과 외관을 완전히 제어 가능</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">iframe 태그 사용</h3>
+        <p>YouTube나 Vimeo 같은 외부 플랫폼의 비디오를 삽입할 때 사용</p>
+        <p className="text-sm text-gray-600">플랫폼 제공 기능 활용 가능</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## video 태그 구현
+
+<Tabs defaultValue="basic" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본 구현</TabsTrigger>
+    <TabsTrigger value="attributes">주요 속성</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```tsx
+    export function Video() {
+      return (
+        <video width="320" height="240" controls preload="none">
+          <source src="/path/to/video.mp4" type="video/mp4" />
+          <track
+            src="/path/to/captions.vtt"
+            kind="subtitles"
+            srcLang="en"
+            label="English"
+          />
+          이 브라우저는 비디오 태그를 지원하지 않습니다.
+        </video>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="attributes">
+    <div className="space-y-2">
+      <div className="p-2 bg-gray-50 rounded">
+        <code>src</code>: 비디오 파일의 경로 지정
+      </div>
+      <div className="p-2 bg-gray-50 rounded">
+        <code>controls</code>: 재생 컨트롤 표시
+      </div>
+      <div className="p-2 bg-gray-50 rounded">
+        <code>autoPlay</code>: 자동 재생 설정 (muted 필요)
+      </div>
+      <div className="p-2 bg-gray-50 rounded">
+        <code>preload</code>: 비디오 프리로드 방식 지정
+      </div>
+      <div className="p-2 bg-gray-50 rounded">
+        <code>playsInline</code>: iOS에서 인라인 재생 지원
+      </div>
+    </div>
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>모범 사례</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>대체 콘텐츠를 항상 포함하세요</li>
+      <li>자막이나 캡션을 제공하세요</li>
+      <li>접근성 있는 컨트롤을 사용하세요</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 외부 호스팅 비디오 구현
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>React Suspense를 활용한 비디오 스트리밍</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import { Suspense } from 'react'
+    import VideoComponent from '../ui/VideoComponent'
+    import VideoSkeleton from '../ui/VideoSkeleton'
+    
+    export default function Page() {
+      return (
+        <section>
+          <Suspense fallback={<VideoSkeleton />}>
+            <VideoComponent />
+          </Suspense>
+          {/* 페이지의 다른 콘텐츠 */}
+        </section>
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+## Vercel Blob을 사용한 자체 호스팅
+
+<Tabs defaultValue="upload" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="upload">업로드</TabsTrigger>
+    <TabsTrigger value="display">표시</TabsTrigger>
+    <TabsTrigger value="subtitles">자막 추가</TabsTrigger>
+  </TabsList>
+  <TabsContent value="upload">
+    <div className="p-4 bg-gray-50 rounded-lg">
+      <h4 className="font-bold mb-2">Vercel 대시보드 사용</h4>
+      <ol className="list-decimal list-inside">
+        <li>Storage 탭으로 이동</li>
+        <li>Blob 스토어 선택</li>
+        <li>Upload 버튼 클릭</li>
+        <li>비디오 파일 선택</li>
+      </ol>
+    </div>
+  </TabsContent>
+  <TabsContent value="display">
+    ```tsx
+    async function VideoComponent({ fileName }) {
+      const { blobs } = await list({
+        prefix: fileName,
+        limit: 1,
+      })
+      const { url } = blobs[0]
+    
+      return (
+        <video controls preload="none" aria-label="비디오 플레이어">
+          <source src={url} type="video/mp4" />
+          이 브라우저는 비디오 태그를 지원하지 않습니다.
+        </video>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="subtitles">
+    ```tsx
+    async function VideoComponent({ fileName }) {
+      const { blobs } = await list({
+        prefix: fileName,
+        limit: 2,
+      })
+      const { url } = blobs[0]
+      const { url: captionsUrl } = blobs[1]
+    
+      return (
+        <video controls preload="none" aria-label="비디오 플레이어">
+          <source src={url} type="video/mp4" />
+          <track src={captionsUrl} kind="subtitles" srcLang="ko" label="한국어" />
+          이 브라우저는 비디오 태그를 지원하지 않습니다.
+        </video>
+      )
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 비디오 최적화 팁
+
+<Card className="mb-6">
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">포맷 선택</h3>
+        <p>MP4: 호환성</p>
+        <p>WebM: 웹 최적화</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">압축 최적화</h3>
+        <p>FFmpeg 활용</p>
+        <p>화질과 파일 크기 균형</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">해상도 조정</h3>
+        <p>기기별 최적화</p>
+        <p>모바일 대응</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">CDN 활용</h3>
+        <p>전송 속도 향상</p>
+        <p>트래픽 관리</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>추천 비디오 서비스</AlertTitle>
+  <AlertDescription>
+    - next-video 컴포넌트
+    - Cloudinary
+    - Mux Video API
+    - Fastly
+    - ImageKit.io
+  </AlertDescription>
+</Alert>

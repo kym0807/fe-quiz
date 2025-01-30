@@ -1,0 +1,154 @@
+---
+title: "useOptimistic"
+description: "UI를 낙관적으로 업데이트할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useOptimistic이란?</CardTitle>
+    <CardDescription>
+      비동기 작업이 진행되는 동안 다른 상태를 보여줄 수 있게 해주는 React Hook입니다.
+      사용자에게 즉각적인 피드백을 제공하면서 실제 작업은 백그라운드에서 처리할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const [optimisticState, addOptimistic] = useOptimistic(state, updateFn);
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **state**: 초기값과 액션이 진행 중이지 않을 때 반환될 값
+    - **updateFn(currentState, optimisticValue)**: 현재 상태와 낙관적 값을 받아 결과 상태를 반환하는 함수
+  </CardContent>
+</Card>
+
+### 반환값
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **optimisticState**: 결과 상태. 액션이 진행 중이 아니면 state와 동일
+    - **addOptimistic**: 낙관적 업데이트를 트리거하는 함수
+  </CardContent>
+</Card>
+
+## 실제 사용 예시
+
+### 폼 낙관적 업데이트
+
+```tsx
+function Thread({ messages, sendMessage }) {
+  const formRef = useRef();
+  
+  const [optimisticMessages, addOptimisticMessage] = useOptimistic(
+    messages,
+    (state, newMessage) => [
+      ...state,
+      {
+        text: newMessage,
+        sending: true // 메시지가 전송 중임을 표시
+      }
+    ]
+  );
+
+  async function formAction(formData) {
+    // 즉시 UI 업데이트
+    addOptimisticMessage(formData.get("message"));
+    // 폼 초기화
+    formRef.current.reset();
+    // 실제 전송 처리
+    await sendMessage(formData);
+  }
+
+  return (
+    <>
+      {optimisticMessages.map((message, index) => (
+        <div key={index}>
+          {message.text}
+          {message.sending && <small> (전송 중...)</small>}
+        </div>
+      ))}
+      <form action={formAction} ref={formRef}>
+        <input type="text" name="message" placeholder="메시지 입력..." />
+        <button type="submit">전송</button>
+      </form>
+    </>
+  );
+}
+```
+
+## 사용 패턴
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 패턴</TabsTrigger>
+    <TabsTrigger value="advanced">고급 패턴</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="basic">
+    ```tsx
+    // 1. 기본 상태 정의
+    const [messages, setMessages] = useState([
+      { text: "안녕하세요!", sending: false }
+    ]);
+
+    // 2. 낙관적 업데이트 로직 정의
+    const [optimisticMessages, addOptimistic] = useOptimistic(
+      messages,
+      (state, newMessage) => [...state, { text: newMessage, sending: true }]
+    );
+
+    // 3. 실제 업데이트 처리
+    async function handleSubmit(data) {
+      addOptimistic(data.message); // 즉시 UI 업데이트
+      await sendToServer(data.message); // 실제 처리
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="advanced">
+    ```tsx
+    // 오류 처리를 포함한 패턴
+    const [optimisticState, addOptimistic] = useOptimistic(
+      state,
+      (current, optimisticValue) => ({
+        ...current,
+        items: [...current.items, {
+          ...optimisticValue,
+          status: 'pending'
+        }]
+      })
+    );
+
+    async function handleAction(data) {
+      addOptimistic(data);
+      try {
+        await processData(data);
+      } catch (error) {
+        // 오류 처리 로직
+        showError(error);
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>모범 사례</AlertTitle>
+  <AlertDescription>
+    1. 낙관적 업데이트는 빠른 피드백이 중요한 상황에서 사용하세요.
+    2. 실패할 가능성이 낮은 작업에 적합합니다.
+    3. 항상 오류 상황을 고려하여 구현하세요.
+    4. 네트워크 요청은 가능한 한 빨리 시작하세요.
+  </AlertDescription>
+</Alert>

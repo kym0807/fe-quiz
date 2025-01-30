@@ -1,0 +1,193 @@
+---
+title: "createContext"
+description: "컴포넌트 간에 값을 공유할 수 있게 해주는 Context API의 핵심 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>createContext란?</CardTitle>
+    <CardDescription>
+      컴포넌트 트리 전체에 걸쳐 데이터를 공유할 수 있게 해주는 Context를 생성하는 함수입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const SomeContext = createContext(defaultValue);
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+### Context 생성하기
+
+```tsx
+import { createContext } from 'react';
+
+// 기본값과 함께 Context 생성
+const ThemeContext = createContext('light');
+const AuthContext = createContext(null);
+```
+
+### Context 사용하기
+
+```tsx
+function App() {
+  const [theme, setTheme] = useState('dark');
+  const [currentUser, setCurrentUser] = useState({ name: '홍길동' });
+
+  return (
+    <ThemeContext.Provider value={theme}>
+      <AuthContext.Provider value={currentUser}>
+        <Page />
+      </AuthContext.Provider>
+    </ThemeContext.Provider>
+  );
+}
+
+function Button() {
+  const theme = useContext(ThemeContext);
+  return <button className={theme}>버튼</button>;
+}
+
+function Profile() {
+  const currentUser = useContext(AuthContext);
+  return <div>안녕하세요, {currentUser.name}님!</div>;
+}
+```
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>Context 객체의 주요 속성</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2">
+      <p>
+        <code>SomeContext.Provider</code>: Context의 값을 하위 컴포넌트에 제공
+      </p>
+      <p>
+        <code>SomeContext.Consumer</code>: Context 값을 읽는 레거시 방식 (권장하지 않음)
+      </p>
+    </div>
+  </CardContent>
+</Card>
+
+## Context 모듈화
+
+실제 애플리케이션에서는 Context를 별도의 파일로 분리하여 관리하는 것이 일반적입니다:
+
+```tsx
+// contexts.ts
+import { createContext } from 'react';
+
+export const ThemeContext = createContext('light');
+export const AuthContext = createContext(null);
+
+// Button.tsx
+import { ThemeContext } from './contexts';
+
+function Button() {
+  const theme = useContext(ThemeContext);
+  // ...
+}
+
+// App.tsx
+import { ThemeContext, AuthContext } from './contexts';
+
+function App() {
+  // ...
+  return (
+    <ThemeContext.Provider value={theme}>
+      <AuthContext.Provider value={currentUser}>
+        <Page />
+      </AuthContext.Provider>
+    </ThemeContext.Provider>
+  );
+}
+```
+
+## 주요 사용 패턴
+
+### Provider 컴포넌트 래핑
+
+```tsx
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState('light');
+  
+  return (
+    <ThemeContext.Provider value={{ 
+      theme, 
+      setTheme,
+      toggleTheme: () => setTheme(t => t === 'light' ? 'dark' : 'light')
+    }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+```
+
+<Alert className="my-4">
+  <AlertTitle>Context 사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    <div className="space-y-2">
+      <p>1. <code>createContext()</code>로 설정한 기본값은 Provider가 없을 때만 사용됩니다.</p>
+      <p>2. Provider 없이는 Context 값을 동적으로 변경할 수 없습니다.</p>
+      <p>3. Context 값이 변경되면 해당 Context를 구독하는 모든 하위 컴포넌트가 리렌더링됩니다.</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+## Context vs Props
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>언제 Context를 사용해야 할까요?</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2">
+      <p>Context 사용이 좋은 경우:</p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>테마 (다크 모드/라이트 모드)</li>
+        <li>현재 로그인한 사용자 정보</li>
+        <li>언어 설정</li>
+        <li>라우터 정보</li>
+      </ul>
+      <p className="mt-4">Props를 사용하는 것이 좋은 경우:</p>
+      <ul className="list-disc pl-6 space-y-1">
+        <li>특정 컴포넌트에만 필요한 데이터</li>
+        <li>얕은 깊이의 데이터 전달</li>
+        <li>명시적인 데이터 흐름이 필요한 경우</li>
+      </ul>
+    </div>
+  </CardContent>
+</Card>
+
+## 문제 해결
+
+### Context 값이 변경되지 않는 경우
+
+```tsx
+// ❌ 잘못된 방법: 기본값만 설정
+const ThemeContext = createContext('light');
+
+// ✅ 올바른 방법: Provider와 상태 관리 추가
+function App() {
+  const [theme, setTheme] = useState('light');
+  return (
+    <ThemeContext.Provider value={theme}>
+      <Page />
+    </ThemeContext.Provider>
+  );
+}
+```
+
+<Alert className="mt-4" variant="default">
+  <AlertTitle>팁</AlertTitle>
+  <AlertDescription>
+    복잡한 상태 관리가 필요한 경우, Context와 함께 useReducer를 사용하는 것을 고려해보세요.
+  </AlertDescription>
+</Alert>

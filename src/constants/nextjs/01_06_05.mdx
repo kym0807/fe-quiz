@@ -1,0 +1,202 @@
+---
+title: "Next.js의 스크립트 최적화"
+description: "next/script를 사용한 효율적인 써드파티 스크립트 관리"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Next.js 스크립트 최적화
+
+## 스크립트 적용 범위
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>스크립트 구현 위치에 따른 적용 범위</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">레이아웃 스크립트</h3>
+        <p>특정 레이아웃에 포함된 모든 라우트에서 스크립트가 로드됩니다.</p>
+        ```tsx
+        // app/dashboard/layout.tsx
+        import Script from 'next/script'
+        
+        export default function DashboardLayout({
+          children,
+        }: {
+          children: React.ReactNode
+        }) {
+          return (
+            <>
+              <section>{children}</section>
+              <Script src="https://example.com/script.js" />
+            </>
+          )
+        }
+        ```
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">애플리케이션 스크립트</h3>
+        <p>모든 라우트에서 스크립트가 로드됩니다.</p>
+        ```tsx
+        // app/layout.tsx
+        import Script from 'next/script'
+        
+        export default function RootLayout({
+          children,
+        }: {
+          children: React.ReactNode
+        }) {
+          return (
+            <html lang="ko">
+              <body>{children}</body>
+              <Script src="https://example.com/script.js" />
+            </html>
+          )
+        }
+        ```
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertTitle>권장사항</AlertTitle>
+  <AlertDescription>
+    성능 최적화를 위해 써드파티 스크립트는 필요한 페이지나 레이아웃에만 포함하는 것이 좋습니다.
+  </AlertDescription>
+</Alert>
+
+## 로딩 전략
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>스크립트 로딩 전략</CardTitle>
+    <CardDescription>strategy 속성을 통해 스크립트 로딩 동작을 세밀하게 제어할 수 있습니다.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">beforeInteractive</h4>
+        <p>Next.js 코드와 페이지 하이드레이션 이전에 스크립트 로드</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">afterInteractive (기본값)</h4>
+        <p>페이지 하이드레이션이 일부 발생한 후 빠르게 로드</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">lazyOnload</h4>
+        <p>브라우저 유휴 시간에 지연 로드</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">worker (실험적)</h4>
+        <p>웹 워커에서 스크립트 로드</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 인라인 스크립트
+
+<Tabs defaultValue="curly" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="curly">중괄호 사용</TabsTrigger>
+    <TabsTrigger value="dangerous">dangerouslySetInnerHTML</TabsTrigger>
+  </TabsList>
+  <TabsContent value="curly">
+    ```tsx
+    <Script id="show-banner">
+      {`document.getElementById('banner').classList.remove('hidden')`}
+    </Script>
+    ```
+  </TabsContent>
+  <TabsContent value="dangerous">
+    ```tsx
+    <Script
+      id="show-banner"
+      dangerouslySetInnerHTML={{
+        __html: `document.getElementById('banner').classList.remove('hidden')`,
+      }}
+    />
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    Next.js가 스크립트를 추적하고 최적화할 수 있도록 인라인 스크립트에는 반드시 id 속성을 지정해야 합니다.
+  </AlertDescription>
+</Alert>
+
+## 이벤트 핸들링
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>스크립트 이벤트 처리</CardTitle>
+    <CardDescription>
+      클라이언트 컴포넌트에서 스크립트의 생명주기 이벤트를 처리할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    'use client'
+    
+    import Script from 'next/script'
+    
+    export default function Page() {
+      return (
+        <Script
+          src="https://example.com/script.js"
+          onLoad={() => {
+            console.log('스크립트 로드 완료')
+          }}
+          onReady={() => {
+            console.log('스크립트 준비 완료')
+          }}
+          onError={() => {
+            console.log('스크립트 로드 실패')
+          }}
+        />
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 추가 속성 지정
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    import Script from 'next/script'
+    
+    export default function Page() {
+      return (
+        <Script
+          src="https://example.com/script.js"
+          id="example-script"
+          nonce="XUENAJFW"
+          data-test="script"
+        />
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>이벤트 핸들러 사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>클라이언트 컴포넌트에서만 사용 가능합니다.</li>
+      <li>파일 첫 줄에 'use client'를 선언해야 합니다.</li>
+      <li>onLoad: 스크립트 로드 완료 후 실행</li>
+      <li>onReady: 로드 완료 및 컴포넌트 마운트마다 실행</li>
+      <li>onError: 스크립트 로드 실패 시 실행</li>
+    </ul>
+  </AlertDescription>
+</Alert>

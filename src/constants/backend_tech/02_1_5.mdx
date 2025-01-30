@@ -1,0 +1,431 @@
+---
+title: "Fastify Reply"
+description: "Fastify의 응답 객체와 그 기능에 대한 완벽 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Reply 객체</CardTitle>
+    <CardDescription>
+      핸들러 함수의 두 번째 매개변수인 Reply는 HTTP 응답을 관리하는 핵심 Fastify 객체입니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 기본 메서드
+
+<Tabs defaultValue="status" className="w-full">
+  <TabsList>
+    <TabsTrigger value="status">상태 관리</TabsTrigger>
+    <TabsTrigger value="headers">헤더 관리</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="status">
+    ```typescript
+    fastify.get('/', (request, reply) => {
+      // 상태 코드 설정
+      reply.code(200)        // 또는
+      reply.status(200)      // 또는
+      reply.statusCode = 200
+
+      // 경과 시간 확인
+      const ms = reply.elapsedTime
+
+      return { hello: 'world' }
+    })
+    ```
+  </TabsContent>
+
+  <TabsContent value="headers">
+    ```typescript
+    fastify.get('/', (request, reply) => {
+      // 단일 헤더 설정
+      reply.header('Content-Type', 'application/json')
+
+      // 여러 헤더 설정
+      reply.headers({
+        'Cache-Control': 'no-cache',
+        'X-Custom-Header': 'value'
+      })
+
+      // 헤더 조회
+      const contentType = reply.getHeader('Content-Type')
+      const allHeaders = reply.getHeaders()
+
+      return { hello: 'world' }
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+## 응답 제어
+
+### 리다이렉션
+```typescript
+// 기본 리다이렉션 (302)
+reply.redirect('/home')
+
+// 상태 코드 지정 리다이렉션
+reply.redirect('/login', 303)
+
+// 체이닝 가능
+reply.code(301).redirect('/new-location')
+```
+
+<Alert>
+  <AlertTitle>URL 인코딩 주의</AlertTitle>
+  <AlertDescription>
+    리다이렉션 URL은 반드시 encodeURI()나 유사한 함수로 인코딩되어야 합니다. 
+    잘못된 URL은 500 에러를 발생시킵니다.
+  </AlertDescription>
+</Alert>
+
+## 콘텐츠 전송
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>다양한 유형의 응답 전송</CardTitle>
+    <CardDescription>
+      Fastify는 문자열, JSON, 스트림, 버퍼 등 다양한 형식의 응답을 지원합니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+### JSON 응답
+
+```typescript
+fastify.get('/json', async (request, reply) => {
+  // 자동으로 JSON으로 직렬화됨
+  return { 
+    message: 'Hello',
+    timestamp: new Date()
+  }
+})
+
+// 또는 명시적으로 send 호출
+fastify.get('/json-explicit', (request, reply) => {
+  reply.send({ message: 'Hello' })
+})
+```
+
+### 스트림 전송
+
+```typescript
+const fs = require('node:fs')
+
+fastify.get('/stream', (request, reply) => {
+  const stream = fs.createReadStream('large-file.txt')
+  reply
+    .header('Content-Type', 'application/octet-stream')
+    .send(stream)
+})
+```
+
+### 버퍼 전송
+
+```typescript
+fastify.get('/buffer', async (request, reply) => {
+  const buffer = await fs.promises.readFile('image.png')
+  reply
+    .header('Content-Type', 'image/png')
+    .send(buffer)
+})
+```
+
+<Alert>
+  <AlertTitle>콘텐츠 타입 자동 설정</AlertTitle>
+  <AlertDescription>
+    스트림이나 버퍼 전송 시 Content-Type 헤더를 설정하지 않으면,
+    자동으로 'application/octet-stream'으로 설정됩니다.
+  </AlertDescription>
+</Alert>
+
+## 에러 처리
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 에러</TabsTrigger>
+    <TabsTrigger value="custom">커스텀 에러</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="basic">
+    ```typescript
+    fastify.get('/error', (request, reply) => {
+      const error = new Error('Something went wrong')
+      error.statusCode = 500
+      reply.send(error)
+      // 자동으로 다음과 같은 JSON으로 변환됨:
+      // {
+      //   error: "Internal Server Error",
+      //   message: "Something went wrong",
+      //   statusCode: 500
+      // }
+    })
+    ```
+  </TabsContent>
+
+  <TabsContent value="custom">
+    ```typescript
+    fastify.get('/custom-error', {
+      schema: {
+        response: {
+          400: {
+            type: 'object',
+            properties: {
+              code: { type: 'string' },
+              message: { type: 'string' },
+              time: { type: 'string' }
+            }
+          }
+        }
+      }
+    }, (request, reply) => {
+      const error = new Error('Invalid input')
+      error.statusCode = 400
+      error.time = new Date().toISOString()
+      reply.send(error)
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+## 직렬화 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>응답 직렬화</CardTitle>
+    <CardDescription>
+      응답 데이터를 전송하기 전에 직렬화하는 다양한 방법을 제공합니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+### 직렬화 함수 사용
+
+```typescript
+// 커스텀 직렬화 함수 설정
+fastify.get('/custom', (request, reply) => {
+  reply
+    .header('Content-Type', 'application/x-custom')
+    .serializer(data => {
+      return customStringify(data)
+    })
+    .send({ hello: 'world' })
+})
+
+// 스키마 기반 직렬화
+const serialize = reply.getSerializationFunction({
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    age: { type: 'number' }
+  }
+})
+
+const result = serialize({ name: '홍길동', age: 20 })
+```
+
+### 스키마 컴파일
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 사용</TabsTrigger>
+    <TabsTrigger value="advanced">고급 설정</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="basic">
+    ```typescript
+    const serialize = reply.compileSerializationSchema({
+      type: 'object',
+      properties: {
+        status: { type: 'string' },
+        data: { type: 'object' }
+      }
+    })
+    ```
+  </TabsContent>
+
+  <TabsContent value="advanced">
+    ```typescript
+    const serialize = reply.compileSerializationSchema({
+      '2xx': {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                success: { type: 'boolean' },
+                data: { type: 'object' }
+              }
+            }
+          }
+        }
+      }
+    }, '2xx', 'application/json')
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert>
+  <AlertTitle>스키마 캐싱 주의사항</AlertTitle>
+  <AlertDescription>
+    스키마 객체를 직접 수정하면 캐시된 직렬화 함수가 변경사항을 감지하지 못합니다.
+    항상 새로운 스키마 객체를 생성하여 사용하세요.
+  </AlertDescription>
+</Alert>
+
+## 비동기 처리
+
+### Promise 지원
+
+```typescript
+fastify.get('/async', async (request, reply) => {
+  const data = await fetchData()
+  return data // 자동으로 send() 호출
+})
+
+// reply 객체 대기
+fastify.get('/await-reply', async (request, reply) => {
+  reply.send({ status: 'pending' })
+  await someAsyncOperation()
+  await reply // 응답이 완전히 전송될 때까지 대기
+})
+```
+
+### 수명 주기 제어
+
+```typescript
+fastify.get('/hijack', (request, reply) => {
+  reply.hijack() // 일반적인 응답 수명 주기 중단
+  
+  // 직접 응답 제어
+  reply.raw.writeHead(200, { 'Content-Type': 'text/plain' })
+  reply.raw.end('Custom response')
+})
+```
+
+<Alert className="mt-4">
+  <AlertTitle>응답 관리 주의사항</AlertTitle>
+  <AlertDescription>
+    reply.raw를 사용하면 Fastify의 응답 처리 로직을 우회하게 됩니다.
+    특별한 이유가 없다면 Fastify의 기본 응답 메커니즘을 사용하는 것이 좋습니다.
+  </AlertDescription>
+</Alert>
+
+## 응답 유형 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>가능한 최종 응답 유형</CardTitle>
+    <CardDescription>
+      직렬화와 onSend 훅을 거친 후의 최종 응답은 다음 중 하나여야 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-2">
+    - 문자열 (string)
+    - 버퍼 (Buffer)
+    - 스트림 (stream)
+    - undefined
+    - null
+  </CardContent>
+</Card>
+
+## 고급 응답 기능
+
+### 초기 힌트 전송
+
+```typescript
+fastify.get('/hints', (request, reply) => {
+  // 클라이언트에게 초기 힌트 전송
+  reply.writeEarlyHints({
+    Link: '</styles.css>; rel=preload; as=style'
+  })
+
+  // 실제 응답 전송
+  return { data: 'actual response' }
+})
+```
+
+### 응답 트레일러 설정
+
+```typescript
+fastify.get('/trailer', (request, reply) => {
+  // 트레일러 헤더 설정
+  reply.trailer('Server-Timing', () => {
+    return 'db;dur=53, app;dur=47.2'
+  })
+
+  // 동적 트레일러 설정
+  reply.trailer('Content-MD5', async (reply, payload) => {
+    const hash = createHash('md5')
+    hash.update(payload)
+    return hash.digest('hex')
+  })
+
+  return { message: 'Response with trailers' }
+})
+```
+
+### 웹 스트림 지원
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 사용</TabsTrigger>
+    <TabsTrigger value="response">Response 객체</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="basic">
+    ```typescript
+    const { ReadableStream } = require('node:stream/web')
+
+    fastify.get('/stream', (request, reply) => {
+      const stream = fs.createReadStream('large-file')
+      reply
+        .header('Content-Type', 'application/octet-stream')
+        .send(ReadableStream.from(stream))
+    })
+    ```
+  </TabsContent>
+
+  <TabsContent value="response">
+    ```typescript
+    fastify.get('/web-response', (request, reply) => {
+      const stream = fs.createReadStream('file')
+      const readableStream = ReadableStream.from(stream)
+      
+      const response = new Response(readableStream, {
+        status: 200,
+        headers: { 
+          'content-type': 'application/octet-stream' 
+        }
+      })
+      
+      reply.send(response)
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert>
+  <AlertTitle>Response 객체 사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    Response 객체 사용 시 상태 코드와 헤더는 reply.statusCode와 reply.getHeaders()에 직접 반영되지 않습니다.
+    Response 객체는 읽기 전용 상태 코드와 헤더만 허용하기 때문입니다.
+  </AlertDescription>
+</Alert>
+
+## 성능 최적화 팁
+
+<Card className="mt-4">
+  <CardContent>
+    1. 큰 객체는 스트림으로 전송하기
+    2. 가능한 경우 사전 정의된 스키마 사용하기
+    3. 불필요한 직렬화/역직렬화 피하기
+    4. 적절한 캐싱 헤더 설정하기
+    5. 응답 압축 활용하기
+  </CardContent>
+</Card>

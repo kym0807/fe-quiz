@@ -1,0 +1,254 @@
+---
+title: "createRoot"
+description: "브라우저 DOM 노드 내에서 React 컴포넌트를 렌더링하기 위한 React DOM 클라이언트 API"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>createRoot란?</CardTitle>
+    <CardDescription>
+      브라우저 DOM 노드 내에서 React 컴포넌트를 표시하기 위한 루트를 생성합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const root = createRoot(domNode, options?)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### createRoot(domNode, options?)
+
+<Card className="mb-4">
+  <CardContent className="pt-6">
+    ```tsx
+    import { createRoot } from 'react-dom/client';
+
+    const domNode = document.getElementById('root');
+    const root = createRoot(domNode);
+    root.render(<App />);
+    ```
+  </CardContent>
+</Card>
+
+### 매개변수
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    - **domNode**: DOM 엘리먼트. React는 이 DOM 엘리먼트에 대한 루트를 생성하여 렌더링된 React 컴포넌트를 표시합니다.
+    
+    - **options**: (선택사항) React 루트에 대한 설정 객체
+      - `onCaughtError`: Error Boundary에서 에러 발생 시 호출되는 콜백
+      - `onUncaughtError`: Error Boundary에서 잡히지 않은 에러 발생 시 호출되는 콜백
+      - `onRecoverableError`: React가 자동으로 에러를 복구할 때 호출되는 콜백
+      - `identifierPrefix`: useId로 생성되는 ID에 사용될 문자열 접두사
+  </CardContent>
+</Card>
+
+### 반환값
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    createRoot는 다음 두 메서드를 가진 객체를 반환합니다:
+    - **render**: JSX를 DOM에 렌더링
+    - **unmount**: React 트리를 DOM에서 제거
+  </CardContent>
+</Card>
+
+<Alert variant="destructive" className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    - 서버 사이드 렌더링(SSR)을 사용하는 경우 createRoot() 대신 hydrateRoot()를 사용해야 합니다.
+    - 일반적으로 앱에서 createRoot 호출은 한 번만 필요합니다.
+    - DOM 트리의 다른 부분에 렌더링하려면 createPortal을 사용하세요.
+  </AlertDescription>
+</Alert>
+
+## 기본 사용법
+
+<Tabs defaultValue="basic" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본 예제</TabsTrigger>
+    <TabsTrigger value="html">HTML 구조</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```tsx
+    import { createRoot } from 'react-dom/client';
+    import App from './App.js';
+    import './styles.css';
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+    ```
+  </TabsContent>
+  <TabsContent value="html">
+    ```html
+    <!DOCTYPE html>
+    <html>
+      <head><title>My App</title></head>
+      <body>
+        <div id="root"></div>
+      </body>
+    </html>
+    ```
+  </TabsContent>
+</Tabs>
+
+## 다양한 사용 사례
+
+### React로 부분적으로 구현된 페이지
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>여러 개의 React 루트 사용하기</CardTitle>
+    <CardDescription>
+      페이지의 일부분만 React로 구현하는 경우, 여러 개의 독립적인 React 루트를 생성할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import { createRoot } from 'react-dom/client';
+    import { Comments, Navigation } from './Components.js';
+
+    // 네비게이션용 React 루트
+    const navRoot = createRoot(document.getElementById('navigation')); 
+    navRoot.render(<Navigation />);
+
+    // 댓글 섹션용 React 루트
+    const commentRoot = createRoot(document.getElementById('comments')); 
+    commentRoot.render(<Comments />);
+    ```
+  </CardContent>
+</Card>
+
+## 에러 처리
+
+### 에러 경계 처리하기
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    const root = createRoot(container, {
+      onCaughtError: (error, errorInfo) => {
+        console.error(
+          '에러 경계에서 잡은 에러:',
+          error,
+          '컴포넌트 스택:',
+          errorInfo.componentStack
+        );
+      },
+      onUncaughtError: (error, errorInfo) => {
+        showErrorDialog({
+          title: '예상치 못한 오류가 발생했습니다',
+          error,
+          componentStack: errorInfo.componentStack
+        });
+      }
+    });
+    ```
+  </CardContent>
+</Card>
+
+## 회복 가능한 에러 처리
+
+<Alert className="mb-6">
+  <AlertTitle>자동 복구</AlertTitle>
+  <AlertDescription>
+    React는 렌더링 중 발생한 일부 에러에서 자동으로 복구를 시도합니다. 이 과정에서 onRecoverableError 콜백이 호출됩니다.
+  </AlertDescription>
+</Alert>
+
+```tsx
+const root = createRoot(container, {
+  onRecoverableError: (error, errorInfo) => {
+    logError({
+      error,
+      componentStack: errorInfo.componentStack,
+      cause: error.cause
+    });
+  }
+});
+```
+
+## 문제 해결 가이드
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>자주 발생하는 문제와 해결 방법</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h4 className="font-bold mb-2">🔍 컴포넌트가 표시되지 않는 경우</h4>
+        <p className="text-gray-700">render() 호출을 확인하세요:</p>
+        ```tsx
+        const root = createRoot(domNode);
+        // render 호출을 잊지 마세요!
+        root.render(<App />);
+        ```
+      </div>
+
+      <div>
+        <h4 className="font-bold mb-2">🔍 "Target container is not a DOM element" 에러</h4>
+        <p className="text-gray-700">DOM 노드가 제대로 선택되었는지 확인하세요:</p>
+        ```tsx
+        const domNode = document.getElementById('root');
+        console.log(domNode); // null이 아닌지 확인
+        ```
+      </div>
+
+      <div>
+        <h4 className="font-bold mb-2">🔍 서버 사이드 렌더링 문제</h4>
+        <p className="text-gray-700">SSR을 사용하는 경우 createRoot 대신 hydrateRoot를 사용하세요:</p>
+        ```tsx
+        import { hydrateRoot } from 'react-dom/client';
+        hydrateRoot(document.getElementById('root'), <App />);
+        ```
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 성능 최적화 팁
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    <div className="space-y-4">
+      <div>
+        <h4 className="font-bold">⚡ 단일 루트 사용</h4>
+        <p className="text-gray-700">가능한 한 앱당 하나의 createRoot만 사용하세요. 여러 개의 루트는 관리가 복잡해질 수 있습니다.</p>
+      </div>
+      
+      <div>
+        <h4 className="font-bold">⚡ 초기 HTML 제공</h4>
+        <p className="text-gray-700">빈 div 대신 서버 사이드 렌더링이나 정적 생성을 통해 초기 HTML을 제공하면 사용자 경험이 향상됩니다.</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 고급 사용법
+
+### 동적 루트 생성
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    // DOM 노드를 동적으로 생성하고 React 루트 추가
+    const domNode = document.createElement('div');
+    const root = createRoot(domNode);
+    root.render(<MyComponent />);
+    document.body.appendChild(domNode);
+
+    // 필요없어지면 제거
+    root.unmount();
+    domNode.remove();
+    ```
+  </CardContent>
+</Card>

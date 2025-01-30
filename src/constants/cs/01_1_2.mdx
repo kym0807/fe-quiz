@@ -1,0 +1,411 @@
+---
+title: "Fetch Priority API로 리소스 로딩 최적화하기"
+description: "브라우저의 리소스 로딩 우선순위를 제어하여 Core Web Vitals를 개선하는 방법"
+---
+
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from "@/components/ui/table"
+
+Fetch Priority API를 사용하면 브라우저에 리소스의 상대적 우선순위를 알려줄 수 있습니다. 이를 통해 최적화된 로딩과 Core Web Vitals 지표 개선이 가능합니다.
+
+## 브라우저의 리소스 우선순위 처리
+
+<Card>
+<CardHeader>
+<CardTitle>브라우저의 기본 동작</CardTitle>
+<CardDescription>브라우저가 웹 페이지의 리소스를 어떻게 처리하는지 알아봅니다.</CardDescription>
+</CardHeader>
+<CardContent>
+브라우저가 웹 페이지를 파싱하고 이미지, 스크립트, CSS 등의 리소스를 발견하면 최적의 순서로 다운로드하기 위해 각 리소스에 우선순위를 할당합니다. 리소스의 우선순위는 주로 다음 요소에 따라 결정됩니다:
+
+- 리소스의 종류
+- 문서 내 위치
+- 중요도
+
+예를 들어:
+- 뷰포트 내 이미지는 'High' 우선순위
+- `<head>` 태그 내 렌더링 차단 CSS는 'Very High' 우선순위
+
+브라우저는 대체로 잘 작동하는 우선순위를 할당하지만, 모든 상황에서 최적이지는 않을 수 있습니다.
+</CardContent>
+</Card>
+
+## Fetch Priority API의 주요 활용 사례
+
+<Card>
+<CardHeader>
+<CardTitle>성능 개선이 필요한 상황</CardTitle>
+</CardHeader>
+<CardContent className="space-y-4">
+Fetch Priority API는 다음과 같은 상황에서 특히 유용합니다:
+
+- **LCP 이미지 최적화**: `fetchpriority="high"`를 지정하여 LCP(Largest Contentful Paint) 시간을 단축
+- **비동기 스크립트 제어**: 현재 일반적으로 사용되는 `<link rel="preload">` 해킹보다 더 나은 의미론적 방법 제공
+- **후반부 스크립트 우선순위 조정**: 이미지와의 더 나은 순서 조정을 위해 우선순위 낮춤
+
+</CardContent>
+</Card>
+
+## 실제 성능 개선 사례
+
+<Card>
+<CardHeader>
+<CardTitle>Google Flights의 사례</CardTitle>
+<CardDescription>Fetch Priority 적용으로 LCP가 2.6초에서 1.9초로 개선</CardDescription>
+</CardHeader>
+<CardContent>
+Google Flights에서는 Fetch Priority API를 활용하여 주요 이미지의 로딩 우선순위를 조정했습니다. 그 결과:
+
+- LCP 시간이 2.6초에서 1.9초로 약 27% 개선
+- 사용자 경험의 실질적 향상 달성
+- 다른 중요 리소스의 로딩에 영향을 주지 않으면서 성능 최적화
+</CardContent>
+</Card>
+
+## 기존 리소스 힌트와의 관계
+
+<Alert>
+<AlertTitle>리소스 힌트의 역할</AlertTitle>
+<AlertDescription>
+기존의 개발자들은 `preload`와 `preconnect`를 통해 리소스 우선순위에 제한적인 영향을 미칠 수 있었습니다:
+
+- **preload**: 브라우저가 자연스럽게 발견하기 전에 중요 리소스를 미리 로드
+- **preconnect**: 교차 출처 서버와의 연결을 미리 준비
+
+Fetch Priority는 이러한 리소스 힌트를 보완하는 역할을 합니다.
+</AlertDescription>
+</Alert>
+
+## 리소스 우선순위의 결정 요소
+
+<Card>
+<CardHeader>
+<CardTitle>우선순위 결정 요인</CardTitle>
+<CardDescription>브라우저가 리소스의 우선순위를 결정할 때 고려하는 주요 요소들</CardDescription>
+</CardHeader>
+<CardContent>
+브라우저가 리소스의 다운로드 순서를 결정할 때는 다음과 같은 요소들을 고려합니다:
+
+- 리소스의 유형 (CSS, 폰트, 스크립트, 이미지, 서드파티 리소스 등)
+- 문서 내에서 리소스가 참조되는 위치나 순서
+- 스크립트의 경우 async 또는 defer 속성의 사용 여부
+</CardContent>
+</Card>
+
+## Chrome의 리소스 우선순위 테이블
+
+<Card className="mt-6">
+<CardHeader>
+<CardTitle>우선순위 레벨</CardTitle>
+<CardDescription>Chrome이 각 리소스 타입에 할당하는 우선순위</CardDescription>
+</CardHeader>
+<CardContent>
+
+<Table>
+<TableCaption>레이아웃 차단 단계에서의 리소스 우선순위</TableCaption>
+<TableHeader>
+<TableRow>
+  <TableHead>Blink 우선순위</TableHead>
+  <TableHead>DevTools 우선순위</TableHead>
+  <TableHead>리소스 종류</TableHead>
+</TableRow>
+</TableHeader>
+<TableBody>
+<TableRow>
+  <TableCell>VeryHigh</TableCell>
+  <TableCell>Highest</TableCell>
+  <TableCell>
+    - 메인 리소스
+    - 초기 CSS
+    - 폰트
+    - 동기식 XHR
+  </TableCell>
+</TableRow>
+<TableRow>
+  <TableCell>High</TableCell>
+  <TableCell>High</TableCell>
+  <TableCell>
+    - 초기 스크립트
+    - 뷰포트 내 이미지
+    - preload된 폰트
+    - Import
+  </TableCell>
+</TableRow>
+<TableRow>
+  <TableCell>Medium</TableCell>
+  <TableCell>Medium</TableCell>
+  <TableCell>
+    - 후기 스크립트
+    - 큰 이미지(처음 5개)
+  </TableCell>
+</TableRow>
+<TableRow>
+  <TableCell>Low</TableCell>
+  <TableCell>Low</TableCell>
+  <TableCell>
+    - 비동기 스크립트
+    - 일반 이미지
+    - 미디어(비디오/오디오)
+  </TableCell>
+</TableRow>
+<TableRow>
+  <TableCell>VeryLow</TableCell>
+  <TableCell>Lowest</TableCell>
+  <TableCell>
+    - Prefetch
+    - 미디어 쿼리 불일치 CSS
+  </TableCell>
+</TableRow>
+</TableBody>
+</Table>
+
+</CardContent>
+</Card>
+
+<Card className="mt-6">
+<CardHeader>
+<CardTitle>우선순위 규칙의 주요 포인트</CardTitle>
+</CardHeader>
+<CardContent className="space-y-4">
+
+1. **초기 CSS의 처리**
+- `<head>`에 위치한 초기 CSS는 기본적으로 최고 우선순위
+- 레이아웃 차단 단계에서 로드됨
+- 페이지 렌더링에 필수적인 요소로 취급
+
+2. **후기 CSS의 처리**
+- `<body>` 중간에 위치한 CSS는 초기 레이아웃을 차단하지 않음
+- 다른 중요 리소스와 함께 순차적으로 로드
+- 브라우저가 더 중요한 리소스에 집중할 수 있도록 함
+
+3. **이미지 처리의 특징**
+- 기본적으로 "Low" 우선순위로 시작
+- 레이아웃 완료 후 뷰포트 내 이미지는 "High"로 상승
+- Chrome 117부터는 처음 5개의 큰 이미지는 "Medium" 우선순위로 시작
+- `fetchpriority="high"`를 사용하면 즉시 "High" 우선순위로 시작 가능
+
+4. **스크립트 처리**
+- 위치와 속성에 따라 우선순위가 다르게 적용
+- async/defer 스크립트는 기본적으로 낮은 우선순위
+- 초기 스크립트는 높은 우선순위로 처리
+
+</CardContent>
+</Card>
+
+<Alert className="mt-6">
+<AlertTitle>개발자 도구에서의 확인</AlertTitle>
+<AlertDescription>
+Chrome DevTools의 Network 탭에서 각 리소스의 우선순위를 확인할 수 있습니다. Priority 열을 표시하려면 테이블 헤더를 우클릭하고 해당 옵션을 선택하세요. 우선순위가 변경되는 경우, Big request rows 설정이나 툴팁을 통해 초기 및 최종 우선순위를 모두 확인할 수 있습니다.
+</AlertDescription>
+</Alert>
+
+# fetchpriority 속성의 이해와 활용
+
+<Card>
+<CardHeader>
+<CardTitle>fetchpriority 속성 개요</CardTitle>
+<CardDescription>HTML 요소에서 사용할 수 있는 fetchpriority 속성의 기본 값들</CardDescription>
+</CardHeader>
+<CardContent className="space-y-4">
+`fetchpriority` 속성은 CSS, 폰트, 스크립트, 이미지 등의 리소스를 다운로드할 때 우선순위를 지정할 수 있습니다. 다음 세 가지 값을 사용할 수 있습니다:
+
+- `high`: 브라우저의 자체 휴리스틱이 허용하는 한 더 높은 우선순위로 처리
+- `low`: 브라우저의 자체 휴리스틱이 허용하는 한 더 낮은 우선순위로 처리
+- `auto`: 기본값으로, 브라우저가 적절한 우선순위를 선택
+
+```html
+<!-- 뷰포트 내 이미지지만 높은 우선순위가 필요하지 않은 경우 -->
+<img src="/images/in_viewport_but_not_important.svg" 
+     fetchpriority="low" 
+     alt="낮은 우선순위 이미지">
+
+<!-- 리소스를 미리 가져오되 우선순위는 낮게 설정 -->
+<link rel="preload" 
+      href="/js/script.js" 
+      as="script" 
+      fetchpriority="low">
+
+<!-- fetch API에서의 우선순위 설정 -->
+<script>
+  fetch('https://example.com/', {priority: 'low'})
+    .then(data => {
+      // 낮은 우선순위로 데이터 가져오기
+    });
+</script>
+```
+</CardContent>
+</Card>
+
+## 실제 활용 사례
+
+<Card className="mt-6">
+<CardHeader>
+<CardTitle>LCP 이미지 최적화</CardTitle>
+<CardDescription>주요 컨텐츠 페인트(LCP) 이미지의 로딩 속도 개선</CardDescription>
+</CardHeader>
+<CardContent>
+
+```html
+<img src="lcp-image.jpg" fetchpriority="high">
+```
+
+이미지에 `fetchpriority="high"`를 지정하면 LCP 시간이 크게 개선될 수 있습니다. Google Flights의 실제 사례에서는 LCP가 2.6초에서 1.9초로 단축되었습니다.
+</CardContent>
+</Card>
+
+<Card className="mt-6">
+<CardHeader>
+<CardTitle>이미지 캐러셀 최적화</CardTitle>
+<CardDescription>캐러셀의 화면 밖 이미지 우선순위 조정</CardDescription>
+</CardHeader>
+<CardContent>
+
+```html
+<ul class="carousel">
+  <img src="img/carousel-1.jpg" fetchpriority="high">
+  <img src="img/carousel-2.jpg" fetchpriority="low">
+  <img src="img/carousel-3.jpg" fetchpriority="low">
+  <img src="img/carousel-4.jpg" fetchpriority="low">
+</ul>
+```
+
+첫 번째 이미지만 높은 우선순위로 로드하고 나머지는 낮은 우선순위로 설정함으로써, Oodle 앱에서는 페이지 로드 시간을 2초 단축했습니다.
+</CardContent>
+</Card>
+
+<Card className="mt-6">
+<CardHeader>
+<CardTitle>스크립트 우선순위 최적화</CardTitle>
+<CardDescription>다양한 스크립트 상황별 우선순위 설정</CardDescription>
+</CardHeader>
+<CardContent>
+
+```html
+<!-- 중요하지만 비동기로 실행되어야 하는 스크립트 -->
+<script src="async_but_important.js" 
+        async 
+        fetchpriority="high"></script>
+
+<!-- DOM 의존성은 있지만 우선순위는 낮은 스크립트 -->
+<script src="blocking_but_unimportant.js" 
+        fetchpriority="low"></script>
+```
+
+이 방식으로 스크립트의 실행 시점과 로딩 우선순위를 독립적으로 제어할 수 있습니다.
+</CardContent>
+</Card>
+
+<Card className="mt-6">
+<CardHeader>
+<CardTitle>데이터 fetch 우선순위 제어</CardTitle>
+<CardDescription>fetch API 호출의 우선순위 조정</CardDescription>
+</CardHeader>
+<CardContent>
+
+```javascript
+// 중요한 인증 데이터 (기본값: high)
+let authenticate = await fetch('/user');
+
+// 덜 중요한 추천 컨텐츠 (낮은 우선순위 지정)
+let suggestedContent = await fetch('/content/suggested', {
+  priority: 'low'
+});
+```
+
+여러 fetch 요청이 동시에 발생할 때, 중요도에 따라 우선순위를 차등 적용할 수 있습니다.
+</CardContent>
+</Card>
+
+<Alert className="mt-6">
+<AlertTitle>Preload vs Fetch Priority</AlertTitle>
+<AlertDescription>
+Fetch Priority를 preload와 혼동하지 마세요:
+
+- preload는 힌트가 아닌 필수적인 fetch입니다
+- preload는 리소스를 일찍 발견하게 하지만, 기본 우선순위로 가져옵니다
+- Fetch Priority는 발견 시점에 영향을 주지 않고, 가져오는 우선순위만 조정합니다
+</AlertDescription>
+</Alert>
+
+# Fetch Priority 구현 시 주의사항
+
+<Card>
+<CardHeader>
+<CardTitle>주요 고려사항</CardTitle>
+<CardDescription>Fetch Priority를 효과적으로 사용하기 위해 알아야 할 점들</CardDescription>
+</CardHeader>
+<CardContent className="space-y-4">
+
+1. **힌트의 특성**
+- `fetchpriority` 속성은 지시사항이 아닌 힌트입니다
+- 브라우저는 개발자의 선호도를 존중하려 하지만, 필요한 경우 자체적인 우선순위를 적용할 수 있습니다
+
+2. **네트워크 환경의 영향**
+- 우선순위 조정의 효과는 다음과 같은 환경에서 더 두드러집니다:
+  - HTTP/1.x 연결 (병렬 다운로드 불가능)
+  - 낮은 대역폭의 HTTP/2 또는 HTTP/3 연결
+- 이러한 경우 우선순위 지정이 병목 현상 해결에 도움이 됩니다
+
+3. **CDN 구현의 차이**
+- CDN들은 HTTP/2와 HTTP/3 우선순위를 균일하게 구현하지 않습니다
+- 브라우저가 Fetch Priority를 전달해도 CDN이 지정된 순서로 재우선순위화하지 않을 수 있습니다
+- 브라우저 내부 우선순위 적용만으로도 가치가 있습니다
+
+4. **개발 주기에서의 위치**
+- 초기 설계에서 Fetch Priority를 도입하지 않아도 됩니다
+- 개발 후반에 리소스 우선순위를 분석하고 필요한 경우 도입할 수 있습니다
+</CardContent>
+</Card>
+
+## Preload 사용 시 팁
+
+<Card className="mt-6">
+<CardHeader>
+<CardTitle>효과적인 Preload 활용</CardTitle>
+</CardHeader>
+<CardContent className="space-y-4">
+
+1. **HTTP 헤더의 활용**
+- HTTP 헤더에 preload를 포함하면 로드 순서에서 가장 앞서게 됩니다
+
+2. **우선순위와 순서**
+- Medium 이상 우선순위의 preload는 일반적으로 파서가 발견한 순서대로 로드됩니다
+- HTML 시작 부분의 preload 사용 시 주의가 필요합니다
+
+3. **리소스별 권장사항**
+- 폰트 preload: head 끝이나 body 시작 부분에 배치
+- Import preload: 해당 스크립트 태그 이후에 배치
+- 이미지 preload: 기본적으로 Low/Medium 우선순위이므로 비동기 스크립트와 상대적 순서 고려
+</CardContent>
+</Card>
+
+## 역사적 배경
+
+<Alert>
+<AlertTitle>Fetch Priority의 발전 과정</AlertTitle>
+<AlertDescription>
+- 2018년: Chrome에서 최초로 Origin Trial로 실험
+- 2021년: importance 속성으로 두 번째 실험
+- 현재: 웹 표준화 과정을 거쳐 HTML에서는 fetchpriority, JavaScript의 Fetch API에서는 priority로 명칭 변경
+</AlertDescription>
+</Alert>
+
+## 결론
+
+<Card className="mt-6">
+<CardHeader>
+<CardTitle>Fetch Priority의 가치</CardTitle>
+</CardHeader>
+<CardContent>
+Fetch Priority API는 preload 동작의 개선과 함께, Core Web Vitals와 LCP에 초점을 맞춘 현대 웹 개발에서 중요한 도구가 되었습니다. 개발자들은 이제 원하는 로딩 순서를 달성하기 위한 추가적인 제어 수단을 갖게 되었습니다.
+
+주요 이점:
+- LCP 성능 개선
+- 리소스 우선순위의 세밀한 제어
+- 사용자 경험 향상
+- Core Web Vitals 지표 개선
+
+이 API를 통해 개발자들은 웹사이트의 성능을 더욱 효과적으로 최적화할 수 있게 되었습니다.
+</CardContent>
+</Card>

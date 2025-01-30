@@ -1,0 +1,196 @@
+---
+title: "Next.js 링크와 네비게이션"
+description: "Next.js에서 페이지 간 이동을 처리하는 다양한 방법과 라우팅의 작동 원리를 알아봅니다"
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+## 네비게이션 방법
+
+<Tabs defaultValue="link" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="link">Link 컴포넌트</TabsTrigger>
+    <TabsTrigger value="router">useRouter 훅</TabsTrigger>
+    <TabsTrigger value="redirect">redirect 함수</TabsTrigger>
+    <TabsTrigger value="history">History API</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="link">
+    <Card>
+      <CardHeader>
+        <CardTitle>Link 컴포넌트</CardTitle>
+        <CardDescription>
+          프리페칭과 클라이언트 사이드 네비게이션을 제공하는 기본적이고 권장되는 방법입니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        ```tsx
+        import Link from 'next/link'
+        
+        export default function Page() {
+          return <Link href="/dashboard">대시보드</Link>
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="router">
+    <Card>
+      <CardHeader>
+        <CardTitle>useRouter 훅</CardTitle>
+        <CardDescription>
+          클라이언트 컴포넌트에서 프로그래밍 방식으로 라우트를 변경할 수 있습니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        ```tsx
+        'use client'
+        
+        import { useRouter } from 'next/navigation'
+        
+        export default function Page() {
+          const router = useRouter()
+          
+          return (
+            <button onClick={() => router.push('/dashboard')}>
+              대시보드로 이동
+            </button>
+          )
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="redirect">
+    <Card>
+      <CardHeader>
+        <CardTitle>redirect 함수</CardTitle>
+        <CardDescription>
+          서버 컴포넌트에서 리다이렉션을 처리하는 방법입니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        ```tsx
+        import { redirect } from 'next/navigation'
+        
+        async function Profile({ params: { id } }) {
+          const team = await fetchTeam(id)
+          
+          if (!team) {
+            redirect('/login') // 307 임시 리다이렉트
+          }
+          
+          return <TeamProfile team={team} />
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="history">
+    <Card>
+      <CardHeader>
+        <CardTitle>History API</CardTitle>
+        <CardDescription>
+          브라우저의 네이티브 History API를 사용한 네비게이션입니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        ```tsx
+        'use client'
+        
+        export function LocaleSwitcher() {
+          const pathname = usePathname()
+          
+          function switchLocale(locale: string) {
+            // 현재 히스토리 항목 교체
+            window.history.replaceState(
+              null, 
+              '', 
+              `/${locale}${pathname}`
+            )
+          }
+          
+          return (
+            <>
+              <button onClick={() => switchLocale('ko')}>
+                한국어
+              </button>
+              <button onClick={() => switchLocale('en')}>
+                English
+              </button>
+            </>
+          )
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 라우팅과 네비게이션의 작동 원리
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    <div className="space-y-6">
+      <div>
+        <h3 className="font-medium mb-2">1. 코드 분할</h3>
+        <p>라우트 세그먼트별로 자동 코드 분할이 이루어져, 현재 라우트에 필요한 코드만 로드됩니다.</p>
+      </div>
+      
+      <div>
+        <h3 className="font-medium mb-2">2. 프리페칭</h3>
+        <p>사용자가 방문하기 전에 백그라운드에서 라우트를 미리 로드합니다:</p>
+        <ul className="list-disc pl-6 mt-2">
+          <li>Link 컴포넌트: 뷰포트에 보이는 링크 자동 프리페치</li>
+          <li>router.prefetch(): 프로그래밍 방식의 프리페치</li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3 className="font-medium mb-2">3. 라우터 캐시</h3>
+        <p>프리페치된 라우트 세그먼트와 방문한 라우트의 데이터를 메모리에 캐시하여 성능을 개선합니다.</p>
+      </div>
+      
+      <div>
+        <h3 className="font-medium mb-2">4. 부분 렌더링</h3>
+        <p>네비게이션 시 변경된 라우트 세그먼트만 다시 렌더링되고, 공유 세그먼트는 보존됩니다.</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertDescription>
+    프리페칭은 개발 환경에서는 비활성화되어 있으며, 프로덕션 환경에서만 작동합니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>소프트 네비게이션과 스크롤 관리</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        Next.js App Router는 페이지 간 "소프트 네비게이션"을 사용하여 변경된 세그먼트만 
+        리렌더링하며, 클라이언트 React 상태를 보존합니다.
+      </p>
+      <p>
+        뒤로가기/앞으로가기 네비게이션에서는 스크롤 위치가 자동으로 유지되며, 라우터 캐시의 
+        세그먼트가 재사용됩니다.
+      </p>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert className="mt-6 bg-blue-50">
+  <AlertDescription>
+    pages/와 app/ 디렉토리 간의 점진적 마이그레이션을 수행할 때는 Next.js 라우터가 자동으로 
+    하드 네비게이션을 처리합니다. 필요한 경우 next.config.js에서 이 동작을 커스터마이즈할 수 있습니다.
+  </AlertDescription>
+</Alert>

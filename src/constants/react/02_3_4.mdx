@@ -1,0 +1,367 @@
+---
+title: "renderToReadableStream"
+description: "React 트리를 Web Stream으로 렌더링하는 서버 사이드 렌더링 API"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# renderToReadableStream
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>renderToReadableStream이란?</CardTitle>
+    <CardDescription>
+      React 컴포넌트 트리를 HTML로 변환하여 Web Stream으로 전송하는 서버 사이드 렌더링 API입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const stream = await renderToReadableStream(reactNode, options?)
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertTitle>환경 요구사항</AlertTitle>
+  <AlertDescription>
+    이 API는 Web Streams를 지원하는 환경(Deno, 최신 엣지 런타임 등)에서 사용됩니다. Node.js 환경에서는 대신 renderToPipeableStream을 사용해야 합니다.
+  </AlertDescription>
+</Alert>
+
+## 기본 사용법
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    import { renderToReadableStream } from 'react-dom/server';
+
+    async function handler(request) {
+      const stream = await renderToReadableStream(<App />, {
+        bootstrapScripts: ['/main.js']
+      });
+      
+      return new Response(stream, {
+        headers: { 'content-type': 'text/html' },
+      });
+    }
+
+    // App 컴포넌트
+    function App() {
+      return (
+        <html>
+          <head>
+            <meta charSet="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <link rel="stylesheet" href="/styles.css" />
+            <title>My app</title>
+          </head>
+          <body>
+            <Router />
+          </body>
+        </html>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+## API 옵션
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>설정 옵션</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div className="space-y-2">
+      <h3 className="font-bold">스크립트 관련 옵션</h3>
+      <div className="pl-4">
+        <p>• <code>bootstrapScriptContent</code>: 인라인 &lt;script&gt; 태그에 포함될 내용</p>
+        <p>• <code>bootstrapScripts</code>: 페이지에 포함될 스크립트 URL 배열</p>
+        <p>• <code>bootstrapModules</code>: 모듈 타입 스크립트 URL 배열</p>
+        <p>• <code>nonce</code>: CSP를 위한 nonce 문자열</p>
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h3 className="font-bold">식별자와 네임스페이스</h3>
+      <div className="pl-4">
+        <p>• <code>identifierPrefix</code>: useId로 생성되는 ID의 접두사</p>
+        <p>• <code>namespaceURI</code>: 스트림의 루트 네임스페이스 URI</p>
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h3 className="font-bold">에러 처리와 성능</h3>
+      <div className="pl-4">
+        <p>• <code>onError</code>: 서버 에러 발생 시 호출되는 콜백</p>
+        <p>• <code>progressiveChunkSize</code>: 청크 크기 설정</p>
+        <p>• <code>signal</code>: 서버 렌더링 중단을 위한 AbortSignal</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 반환값
+
+<Card className="mb-6">
+  <CardContent className="space-y-4 pt-6">
+    <div>
+      <h3 className="font-bold">Promise&lt;ReadableStream&gt;</h3>
+      <p className="text-gray-700">셸 렌더링이 성공하면 ReadableStream을 반환합니다.</p>
+    </div>
+
+    <div>
+      <h3 className="font-bold">추가 프로퍼티: allReady</h3>
+      <p className="text-gray-700">모든 렌더링이 완료되었을 때 해결되는 Promise입니다. 크롤러나 정적 생성에 유용합니다.</p>
+    </div>
+  </CardContent>
+</Card>
+
+## 에셋 관리
+
+### 빌드 출력에서 에셋 경로 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동적 에셋 경로 처리</CardTitle>
+    <CardDescription>
+      해시된 파일명을 가진 CSS와 JS 파일을 효율적으로 관리하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // 에셋 맵 정의
+    const assetMap = {
+      'styles.css': '/styles.123456.css',
+      'main.js': '/main.123456.js'
+    };
+
+    // 서버 측 렌더링
+    async function handler(request) {
+      const stream = await renderToReadableStream(
+        <App assetMap={assetMap} />,
+        {
+          bootstrapScriptContent: 
+            `window.assetMap = ${JSON.stringify(assetMap)};`,
+          bootstrapScripts: [assetMap['main.js']]
+        }
+      );
+      return new Response(stream, {
+        headers: { 'content-type': 'text/html' }
+      });
+    }
+
+    // 클라이언트 하이드레이션
+    hydrateRoot(document, <App assetMap={window.assetMap} />);
+    ```
+  </CardContent>
+</Card>
+
+## 점진적 로딩
+
+### Suspense를 활용한 스트리밍
+
+<Tabs defaultValue="basic" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본 구조</TabsTrigger>
+    <TabsTrigger value="nested">중첩 구조</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="basic">
+    ```tsx
+    function ProfilePage() {
+      return (
+        <ProfileLayout>
+          <ProfileCover />
+          <Sidebar>
+            <Friends />
+            <Photos />
+          </Sidebar>
+          <Suspense fallback={<PostsGlimmer />}>
+            <Posts />
+          </Suspense>
+        </ProfileLayout>
+      );
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="nested">
+    ```tsx
+    function ProfilePage() {
+      return (
+        <ProfileLayout>
+          <ProfileCover />
+          <Suspense fallback={<BigSpinner />}>
+            <Sidebar>
+              <Friends />
+              <Photos />
+            </Sidebar>
+            <Suspense fallback={<PostsGlimmer />}>
+              <Posts />
+            </Suspense>
+          </Suspense>
+        </ProfileLayout>
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>Suspense 활용 시 주의사항</AlertTitle>
+  <AlertDescription className="space-y-2">
+    <p>• Suspense는 다음 데이터 소스에서만 작동합니다:</p>
+    <ul className="list-disc pl-6">
+      <li>Relay, Next.js 같은 Suspense 지원 프레임워크의 데이터 페칭</li>
+      <li>lazy를 사용한 컴포넌트 코드 지연 로딩</li>
+      <li>use 훅을 통한 Promise 값 읽기</li>
+    </ul>
+    <p>• Effect나 이벤트 핸들러에서의 데이터 페칭은 감지하지 않습니다.</p>
+  </AlertDescription>
+</Alert>
+
+## 에러 처리 전략
+
+### 셸 내부 에러 처리
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    async function handler(request) {
+      try {
+        const stream = await renderToReadableStream(<App />, {
+          bootstrapScripts: ['/main.js'],
+          onError(error) {
+            console.error(error);
+            logServerCrashReport(error);
+          }
+        });
+        return new Response(stream, {
+          status: 200,
+          headers: { 'content-type': 'text/html' },
+        });
+      } catch (error) {
+        return new Response(
+          '<h1>일시적인 오류가 발생했습니다</h1>', 
+          {
+            status: 500,
+            headers: { 'content-type': 'text/html' },
+          }
+        );
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+### 커스텀 에러 타입 처리
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    class NotFoundError extends Error {
+      constructor(message) {
+        super(message);
+        this.name = 'NotFoundError';
+      }
+    }
+
+    async function handler(request) {
+      let didError = false;
+      let caughtError = null;
+
+      try {
+        const stream = await renderToReadableStream(<App />, {
+          onError(error) {
+            didError = true;
+            caughtError = error;
+            console.error(error);
+          }
+        });
+
+        return new Response(stream, {
+          status: caughtError instanceof NotFoundError ? 404 : 
+                 didError ? 500 : 200,
+          headers: { 'content-type': 'text/html' },
+        });
+      } catch (error) {
+        return new Response(
+          '<h1>오류가 발생했습니다</h1>',
+          {
+            status: error instanceof NotFoundError ? 404 : 500,
+            headers: { 'content-type': 'text/html' },
+          }
+        );
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 최적화 전략
+
+### 크롤러 대응
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>크롤러와 정적 생성을 위한 최적화</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    async function handler(request) {
+      const stream = await renderToReadableStream(<App />, {
+        bootstrapScripts: ['/main.js']
+      });
+
+      // 크롤러인 경우 모든 컨텐츠가 로드될 때까지 대기
+      if (isCrawler) {
+        await stream.allReady;
+      }
+
+      return new Response(stream, {
+        status: 200,
+        headers: { 'content-type': 'text/html' },
+      });
+    }
+    ```
+  </CardContent>
+</Card>
+
+### 타임아웃 처리
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    async function handler(request) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 10000);
+
+      try {
+        const stream = await renderToReadableStream(<App />, {
+          signal: controller.signal,
+          bootstrapScripts: ['/main.js']
+        });
+        
+        clearTimeout(timeoutId);
+        return new Response(stream, {
+          headers: { 'content-type': 'text/html' },
+        });
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          // 타임아웃 발생 시 클라이언트 렌더링으로 폴백
+          return new Response(
+            '<!DOCTYPE html><div id="root"></div><script src="/main.js"></script>',
+            { headers: { 'content-type': 'text/html' } }
+          );
+        }
+        throw error;
+      }
+    }
+    ```
+  </CardContent>
+</Card>

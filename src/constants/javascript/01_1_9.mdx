@@ -1,0 +1,355 @@
+---
+title: "JavaScript 객체"
+description: "JavaScript에서 객체를 생성하고 사용하는 방법에 대해 알아봅니다"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>객체의 기본 개념</CardTitle>
+    <CardDescription>
+      JavaScript의 핵심 개념인 객체에 대해 알아봅니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    객체는 관련된 데이터와 기능(메서드)을 하나로 묶은 데이터 구조입니다. 
+    실생활의 물건처럼, 객체는 여러 특성(속성)을 가질 수 있습니다.
+    
+    ```js
+    // 커피잔 객체의 예시
+    const cup = {
+      color: "하얀색",
+      material: "도자기",
+      capacity: 350,
+      isFull: false,
+      fill() {
+        this.isFull = true;
+      }
+    };
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>객체 생성하기</CardTitle>
+    <CardDescription>
+      객체를 생성하는 다양한 방법들을 알아봅니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="literal" className="mb-6">
+      <TabsList>
+        <TabsTrigger value="literal">객체 리터럴</TabsTrigger>
+        <TabsTrigger value="constructor">생성자 함수</TabsTrigger>
+        <TabsTrigger value="create">Object.create</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="literal">
+        ```js
+        // 객체 리터럴 방식 (가장 일반적)
+        const car = {
+          brand: "현대",
+          model: "아반떼",
+          year: 2023,
+          start() {
+            console.log("시동을 겁니다");
+          }
+        };
+        ```
+      </TabsContent>
+      
+      <TabsContent value="constructor">
+        ```js
+        // 생성자 함수 방식
+        function Car(brand, model, year) {
+          this.brand = brand;
+          this.model = model;
+          this.year = year;
+          this.start = function() {
+            console.log("시동을 겁니다");
+          };
+        }
+
+        const myCar = new Car("현대", "아반떼", 2023);
+        ```
+      </TabsContent>
+      
+      <TabsContent value="create">
+        ```js
+        // Object.create() 방식
+        const carPrototype = {
+          start() {
+            console.log("시동을 겁니다");
+          }
+        };
+
+        const newCar = Object.create(carPrototype);
+        newCar.brand = "현대";
+        newCar.model = "아반떼";
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>속성 다루기</CardTitle>
+    <CardDescription>
+      객체의 속성에 접근하고 수정하는 방법을 알아봅니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="access" className="mb-6">
+      <TabsList>
+        <TabsTrigger value="access">속성 접근</TabsTrigger>
+        <TabsTrigger value="modify">속성 수정</TabsTrigger>
+        <TabsTrigger value="special">특수한 경우</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="access">
+        ```js
+        const person = {
+          name: "홍길동",
+          age: 25
+        };
+
+        // 점 표기법
+        console.log(person.name);  // "홍길동"
+
+        // 대괄호 표기법
+        console.log(person["age"]); // 25
+        ```
+      </TabsContent>
+      
+      <TabsContent value="modify">
+        ```js
+        // 속성 추가
+        person.job = "개발자";
+
+        // 속성 수정
+        person.age = 26;
+
+        // 속성 삭제
+        delete person.job;
+        ```
+      </TabsContent>
+      
+      <TabsContent value="special">
+        ```js
+        // 특수한 속성 이름
+        const obj = {
+          "my-name": "홍길동",     // 하이픈 포함
+          "1": "첫번째",           // 숫자로 시작
+          "space here": "공백"     // 공백 포함
+        };
+
+        // 반드시 대괄호 표기법 사용
+        console.log(obj["my-name"]);
+        console.log(obj["1"]);
+        console.log(obj["space here"]);
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Getter와 Setter</CardTitle>
+    <CardDescription>
+      객체의 속성을 더 세밀하게 제어하는 방법입니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    const account = {
+      _balance: 1000,  // 관례상 앞에 _를 붙여 private 표시
+      
+      // getter
+      get balance() {
+        return this._balance;
+      },
+      
+      // setter
+      set balance(value) {
+        if (value >= 0) {
+          this._balance = value;
+        } else {
+          console.log("잔액은 0보다 작을 수 없습니다");
+        }
+      }
+    };
+
+    console.log(account.balance);  // 1000
+    account.balance = 2000;        // 정상 작동
+    account.balance = -500;        // 오류 메시지 출력
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>객체와 메서드</CardTitle>
+    <CardDescription>
+      객체에 함수를 추가하여 행동을 정의하는 방법입니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    const calculator = {
+      result: 0,
+      
+      add(number) {
+        this.result += number;
+        return this;  // 메서드 체이닝을 위해 this 반환
+      },
+      
+      subtract(number) {
+        this.result -= number;
+        return this;
+      },
+      
+      getResult() {
+        return this.result;
+      }
+    };
+
+    // 메서드 체이닝 예시
+    calculator
+      .add(5)
+      .subtract(2)
+      .add(10);
+      
+    console.log(calculator.getResult()); // 13
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>객체 열거와 순회</CardTitle>
+    <CardDescription>
+      객체의 속성들을 나열하고 순회하는 방법입니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    const car = {
+      brand: "현대",
+      model: "아반떼",
+      year: 2023
+    };
+
+    // 1. Object.keys(): 속성 이름만 배열로
+    console.log(Object.keys(car));
+    // ['brand', 'model', 'year']
+
+    // 2. Object.values(): 속성 값만 배열로
+    console.log(Object.values(car));
+    // ['현대', '아반떼', 2023]
+
+    // 3. Object.entries(): [키, 값] 쌍의 배열
+    for (const [key, value] of Object.entries(car)) {
+      console.log(`${key}: ${value}`);
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>객체 비교하기</CardTitle>
+    <CardDescription>
+      JavaScript에서 객체를 비교하는 방법과 주의사항을 알아봅니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // 서로 다른 두 객체
+    const apple1 = { name: "사과" };
+    const apple2 = { name: "사과" };
+
+    console.log(apple1 === apple2);        // false
+    console.log(apple1.name === apple2.name); // true
+
+    // 같은 객체를 참조
+    const fruit1 = { name: "바나나" };
+    const fruit2 = fruit1;
+
+    console.log(fruit1 === fruit2);        // true
+    
+    fruit1.name = "딸기";
+    console.log(fruit2.name);              // "딸기"
+    ```
+
+    주의사항:
+    - 객체는 참조 타입이므로 내용이 같아도 다른 객체면 일치하지 않습니다
+    - 객체 비교는 참조를 비교하는 것입니다
+    - 객체의 내용을 비교하려면 속성을 각각 비교해야 합니다
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>객체 복사와 병합</CardTitle>
+    <CardDescription>
+      객체를 복사하고 여러 객체를 병합하는 방법입니다
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    const original = { 
+      name: "홍길동", 
+      age: 25,
+      info: { city: "서울" }
+    };
+
+    // 얕은 복사
+    const shallowCopy = { ...original };
+    
+    // 깊은 복사
+    const deepCopy = JSON.parse(JSON.stringify(original));
+
+    // 객체 병합
+    const defaults = { theme: "light", language: "ko" };
+    const userSettings = { theme: "dark" };
+    
+    const settings = {
+      ...defaults,
+      ...userSettings
+    };
+    // { theme: "dark", language: "ko" }
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모범 사례</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-semibold mb-2">1. 객체 생성</h3>
+        - 단순한 객체는 객체 리터럴 사용
+        - 인스턴스가 필요한 경우 클래스나 생성자 함수 사용
+      </div>
+      
+      <div>
+        <h3 className="font-semibold mb-2">2. 속성 접근</h3>
+        - 가능한 점 표기법 사용
+        - 동적 속성이나 특수 문자가 있는 경우만 대괄호 표기법 사용
+      </div>
+      
+      <div>
+        <h3 className="font-semibold mb-2">3. 메서드 정의</h3>
+        - 간단한 메서드는 단축 구문 사용
+        - this를 사용할 때는 화살표 함수 사용 주의
+      </div>
+    </div>
+  </CardContent>
+</Card>

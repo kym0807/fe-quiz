@@ -1,0 +1,408 @@
+---
+title: "Socket.IO 클라이언트"
+description: "Socket.IO 클라이언트 초기화와 사용 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Socket.IO 클라이언트 시작하기
+
+## 클라이언트 설치 방법
+
+<Tabs defaultValue="npm" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="npm">NPM</TabsTrigger>
+    <TabsTrigger value="script">Script 태그</TabsTrigger>
+    <TabsTrigger value="esm">ESM</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="npm">
+    ```bash
+    npm install socket.io-client
+    ```
+    
+    ```typescript
+    import { io } from "socket.io-client";
+    ```
+  </TabsContent>
+
+  <TabsContent value="script">
+    ```html
+    <script src="/socket.io/socket.io.js"></script>
+    ```
+  </TabsContent>
+
+  <TabsContent value="esm">
+    ```html
+    <script type="module">
+      import { io } from "https://cdn.socket.io/4.8.1/socket.io.esm.min.js";
+    </script>
+    ```
+  </TabsContent>
+</Tabs>
+
+## 기본 연결 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동일 도메인 연결</CardTitle>
+    <CardDescription>
+      프론트엔드와 서버가 같은 도메인에서 제공되는 경우입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    const socket = io();
+    ```
+    
+    <Alert>
+      <AlertTitle>자동 URL 감지</AlertTitle>
+      <AlertDescription>
+        URL을 지정하지 않으면 window.location 객체를 기반으로 서버 URL이 자동 감지됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>다른 도메인 연결</CardTitle>
+    <CardDescription>
+      프론트엔드와 서버가 다른 도메인에서 호스팅되는 경우입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    const socket = io("https://server-domain.com");
+    ```
+
+    <Alert variant="warning">
+      <AlertTitle>CORS 설정 필요</AlertTitle>
+      <AlertDescription>
+        다른 도메인 연결 시 서버에서 CORS(Cross-Origin Resource Sharing)를 활성화해야 합니다.
+      </AlertDescription>
+    </Alert>
+
+    프로토콜은 https/http 또는 wss/ws를 사용할 수 있습니다:
+    ```typescript
+    // 모두 동일한 결과
+    const socket = io("https://server-domain.com");
+    const socket = io("wss://server-domain.com");
+    const socket = io("server-domain.com"); // HTTPS 페이지에서만 가능
+    ```
+  </CardContent>
+</Card>
+
+## Socket 인스턴스 활용
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>주요 속성과 이벤트</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ### Socket ID
+    ```typescript
+    socket.on("connect", () => {
+      console.log(socket.id); // 연결 시 생성되는 고유 ID
+    });
+    ```
+
+    <Alert>
+      <AlertTitle>Socket ID 사용 시 주의사항</AlertTitle>
+      <AlertDescription>
+        - 재연결 시마다 ID가 새로 생성됩니다
+        - 브라우저 탭마다 다른 ID가 부여됩니다
+        - 서버에 메시지 큐가 없어 연결 해제 시 메시지가 유실됩니다
+      </AlertDescription>
+    </Alert>
+
+    ### 연결 상태 확인
+    ```typescript
+    socket.on("connect", () => {
+      console.log(socket.connected); // true
+    });
+
+    socket.on("disconnect", () => {
+      console.log(socket.connected); // false
+    });
+    ```
+  </CardContent>
+</Card>
+
+## 이벤트 처리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 이벤트</CardTitle>
+    <CardDescription>
+      Socket.IO 클라이언트에서 제공하는 주요 이벤트들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 연결 성공
+    socket.on("connect", () => {
+      console.log("서버와 연결됨");
+    });
+
+    // 연결 오류
+    socket.on("connect_error", (error) => {
+      if (socket.active) {
+        console.log("일시적인 연결 오류, 자동 재연결 시도");
+      } else {
+        console.log("서버에서 연결이 거부됨");
+      }
+    });
+
+    // 연결 해제
+    socket.on("disconnect", (reason) => {
+      if (socket.active) {
+        console.log("일시적인 연결 해제, 자동 재연결 시도");
+      } else {
+        console.log("영구적인 연결 해제:", reason);
+      }
+    });
+    ```
+
+    <Alert variant="warning">
+      <AlertTitle>예약된 이벤트 이름</AlertTitle>
+      <AlertDescription>
+        다음 이벤트 이름은 Socket.IO가 사용하므로 직접 발생시키면 안됩니다:
+        - connect
+        - connect_error
+        - disconnect
+        - disconnecting
+        - newListener
+        - removeListener
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 오프라인 동작 처리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>이벤트 버퍼링</CardTitle>
+    <CardDescription>
+      연결이 끊어진 상태에서의 이벤트 처리 방법입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 연결 상태 확인 후 이벤트 발생
+    ```typescript
+    if (socket.connected) {
+      socket.emit("event", data);
+    } else {
+      console.log("연결되지 않음");
+    }
+    ```
+
+    ### Volatile 이벤트 사용
+    ```typescript
+    // 연결이 끊어진 상태에서는 이벤트가 버퍼링되지 않음
+    socket.volatile.emit("event", data);
+    ```
+  </CardContent>
+</Card>
+
+# 번들러 설정 가이드
+
+## Webpack 5 설정
+
+<Tabs defaultValue="browser" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="browser">브라우저</TabsTrigger>
+    <TabsTrigger value="node">Node.js</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="browser">
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>브라우저 환경 설정</CardTitle>
+      </CardHeader>
+      <CardContent>
+        ### 필요한 패키지 설치
+        ```bash
+        npm install -D socket.io-client webpack webpack-cli babel-loader @babel/core \
+          @babel/preset-env @babel/plugin-transform-object-assign webpack-remove-debug
+        ```
+
+        ### webpack.config.js
+        ```javascript
+        module.exports = {
+          entry: "./index.js",
+          output: {
+            filename: "bundle.js",
+          },
+          mode: "production",
+          node: false,
+          module: {
+            rules: [
+              {
+                test: /\.m?js$/,
+                use: {
+                  loader: "babel-loader",
+                  options: {
+                    presets: ["@babel/preset-env"],
+                    plugins: ["@babel/plugin-transform-object-assign"],
+                  },
+                },
+              },
+              {
+                test: /\.js$/,
+                loader: "webpack-remove-debug",
+              },
+            ],
+          },
+        };
+        ```
+
+        <Alert>
+          <AlertTitle>설정 설명</AlertTitle>
+          <AlertDescription>
+            - @babel/preset-env: 구형 브라우저 호환성 보장
+            - @babel/plugin-transform-object-assign: IE 11 지원
+            - webpack-remove-debug: 디버그 코드 제거
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  </TabsContent>
+
+  <TabsContent value="node">
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Node.js 환경 설정</CardTitle>
+      </CardHeader>
+      <CardContent>
+        ### 필요한 패키지 설치
+        ```bash
+        npm install -D socket.io-client webpack webpack-cli
+        ```
+
+        ### webpack.config.js
+        ```javascript
+        module.exports = {
+          entry: "./index.js",
+          output: {
+            filename: "bundle.js",
+          },
+          mode: "production",
+          target: "node",
+          externals: {
+            bufferutil: "bufferutil",
+            "utf-8-validate": "utf-8-validate",
+          },
+        };
+        ```
+
+        <Alert>
+          <AlertTitle>주의사항</AlertTitle>
+          <AlertDescription>
+            target: "node"를 설정하지 않으면 'document is not defined' 오류가 발생할 수 있습니다.
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## Rollup.js 설정
+
+<Tabs defaultValue="browser-rollup" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="browser-rollup">브라우저</TabsTrigger>
+    <TabsTrigger value="node-rollup">Node.js</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="browser-rollup">
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>브라우저 환경 설정</CardTitle>
+      </CardHeader>
+      <CardContent>
+        ### 필요한 패키지 설치
+        ```bash
+        npm install -D socket.io-client rollup @rollup/plugin-node-resolve \
+          @rollup/plugin-commonjs @rollup/plugin-babel rollup-plugin-uglify \
+          @babel/core @babel/preset-env
+        ```
+
+        ### rollup.config.js
+        ```javascript
+        import resolve from "@rollup/plugin-node-resolve";
+        import commonjs from "@rollup/plugin-commonjs";
+        import babel from "@rollup/plugin-babel";
+        import { uglify } from "rollup-plugin-uglify";
+
+        export default {
+          input: "index.js",
+          output: {
+            file: "bundle.js",
+            format: "cjs",
+          },
+          plugins: [
+            resolve({
+              browser: true,
+            }),
+            commonjs(),
+            babel({
+              include: ["**.js", "node_modules/**"],
+              babelHelpers: "bundled",
+              presets: ["@babel/preset-env"],
+            }),
+            uglify(),
+          ],
+        };
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+
+  <TabsContent value="node-rollup">
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>Node.js 환경 설정</CardTitle>
+      </CardHeader>
+      <CardContent>
+        ### 필요한 패키지 설치
+        ```bash
+        npm install -D socket.io-client rollup @rollup/plugin-node-resolve \
+          @rollup/plugin-commonjs rollup-plugin-uglify
+        ```
+
+        ### rollup.config.js
+        ```javascript
+        import resolve from "@rollup/plugin-node-resolve";
+        import commonjs from "@rollup/plugin-commonjs";
+        import { uglify } from "rollup-plugin-uglify";
+
+        export default {
+          input: "index.js",
+          output: {
+            file: "bundle.js",
+            format: "cjs",
+          },
+          plugins: [
+            resolve({
+              preferBuiltins: true,
+            }),
+            commonjs(),
+            uglify(),
+          ],
+        };
+        ```
+
+        <Alert>
+          <AlertTitle>설정 차이점</AlertTitle>
+          <AlertDescription>
+            Node.js 환경에서는 babel 설정이 필요 없고, resolve 플러그인에서 preferBuiltins 옵션을 사용합니다.
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>

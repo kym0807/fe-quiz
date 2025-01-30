@@ -1,0 +1,202 @@
+---
+title: "JavaScript 프로토타입"  
+description: "자바스크립트 객체의 상속 메커니즘인 프로토타입에 대한 이해"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"  
+
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>프로토타입이란?</CardTitle>  
+    <CardDescription>  
+      자바스크립트 객체가 다른 객체로부터 기능을 상속받을 수 있도록 해주는 메커니즘입니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    모든 자바스크립트 객체는 프로토타입이라는 내장 속성을 가지며, 이는 객체 간 상속 체인을 형성합니다. 이 체인을 통해 객체가 없는 속성을 다른 객체에서 찾아 사용할 수 있습니다.  
+  </CardContent>  
+</Card>  
+
+## 프로토타입 체인  
+<Tabs defaultValue="example">  
+  <TabsList>  
+    <TabsTrigger value="example">예제</TabsTrigger>  
+    <TabsTrigger value="description">설명</TabsTrigger>  
+  </TabsList>  
+  <TabsContent value="example">  
+    ```javascript  
+    const myObject = {  
+      city: "Madrid",  
+      greet() {  
+        console.log(`Greetings from ${this.city}`);  
+      },  
+    };  
+
+    myObject.greet(); // Greetings from Madrid  
+    console.log(myObject.toString()); // [object Object]  
+    ```  
+  </TabsContent>  
+  <TabsContent value="description">  
+    위 코드에서 객체는 직접 정의한 `city`와 `greet` 속성뿐 아니라, `toString` 같은 추가 속성을 가집니다. 이 속성들은 객체의 프로토타입에서 상속됩니다.  
+  </TabsContent>  
+</Tabs>  
+
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>프로토타입 체인의 동작 방식</CardTitle>  
+    <CardDescription>  
+      객체가 없는 속성을 찾으려 할 때, 프로토타입 체인을 따라 검색합니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    const obj = {};  
+    console.log(Object.getPrototypeOf(obj)); // Object.prototype  
+    ```  
+    `Object.prototype`은 기본 프로토타입이며, 이 프로토타입의 프로토타입은 `null`입니다.  
+  </CardContent>  
+</Card>  
+
+## 프로토타입 설정 방법  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>Object.create()</CardTitle>  
+    <CardDescription>  
+      새로운 객체를 생성하면서 원하는 객체를 프로토타입으로 설정할 수 있습니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    const personPrototype = {  
+      greet() {  
+        console.log("hello!");  
+      },  
+    };  
+
+    const carl = Object.create(personPrototype);  
+    carl.greet(); // hello!  
+    ```  
+  </CardContent>  
+</Card>  
+
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>생성자와 프로토타입</CardTitle>  
+    <CardDescription>  
+      생성자의 `prototype` 속성을 활용해 객체의 프로토타입을 설정할 수 있습니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    function Person(name) {  
+      this.name = name;  
+    }  
+
+    Person.prototype.greet = function () {  
+      console.log(`Hello, my name is ${this.name}!`);  
+    };  
+
+    const reuben = new Person("Reuben");  
+    reuben.greet(); // Hello, my name is Reuben!  
+    ```  
+  </CardContent>  
+</Card>  
+
+계속 필요한 내용을 추가하여 다음 채팅으로 이어갑니다.
+
+---  
+
+## 프로토타입 체인과 Shadowing  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>Shadowing: 속성 재정의</CardTitle>  
+    <CardDescription>  
+      객체에 동일한 이름의 속성을 정의하면 프로토타입의 속성이 가려지게 됩니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    const myDate = new Date(1995, 11, 17);  
+
+    console.log(myDate.getTime()); // 819129600000  
+
+    myDate.getTime = function () {  
+      console.log("재정의된 메서드!");  
+    };  
+
+    myDate.getTime(); // "재정의된 메서드!"  
+    ```  
+    객체의 `getTime` 속성을 직접 재정의하면 프로토타입 체인에 있는 메서드는 호출되지 않습니다. 이를 Shadowing이라고 합니다.  
+  </CardContent>  
+</Card>  
+
+## 프로토타입과 상속  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>상속의 활용</CardTitle>  
+    <CardDescription>  
+      프로토타입을 통해 객체가 공통 기능을 공유하고, 특화된 기능을 추가할 수 있습니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    const personPrototype = {  
+      greet() {  
+        console.log(`Hello, my name is ${this.name}`);  
+      },  
+    };  
+
+    function Student(name, grade) {  
+      this.name = name;  
+      this.grade = grade;  
+    }  
+
+    Student.prototype = Object.create(personPrototype);  
+    Student.prototype.getGrade = function () {  
+      console.log(`My grade is ${this.grade}`);  
+    };  
+
+    const student = new Student("Alice", "A");  
+    student.greet(); // Hello, my name is Alice  
+    student.getGrade(); // My grade is A  
+    ```  
+    상속은 공통 속성을 공유하면서 각 객체의 고유 속성을 추가할 수 있게 합니다.  
+  </CardContent>  
+</Card>  
+
+## `hasOwnProperty`와 `Object.hasOwn`  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>객체의 고유 속성 확인</CardTitle>  
+    <CardDescription>  
+      객체 자체에 정의된 속성과 프로토타입에서 상속된 속성을 구분할 수 있습니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    const obj = Object.create({ inherited: true });  
+    obj.own = true;  
+
+    console.log(Object.hasOwn(obj, "own")); // true  
+    console.log(Object.hasOwn(obj, "inherited")); // false  
+    ```  
+    `Object.hasOwn()`은 프로토타입 체인을 무시하고 객체의 고유 속성만 확인합니다.  
+  </CardContent>  
+</Card>  
+
+## 요약  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>프로토타입 정리</CardTitle>  
+    <CardDescription>  
+      자바스크립트 프로토타입의 핵심 개념  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    - 프로토타입은 객체 간 상속을 가능하게 하는 메커니즘입니다.  
+    - 프로토타입 체인을 통해 객체가 존재하지 않는 속성을 검색합니다.  
+    - 객체의 고유 속성과 프로토타입 속성을 구분할 수 있습니다.  
+    - 프로토타입을 활용하면 코드 재사용성과 구조화를 개선할 수 있습니다.  
+  </CardContent>  
+</Card>  

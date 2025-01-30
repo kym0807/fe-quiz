@@ -1,0 +1,335 @@
+---
+title: "JavaScript 비동기 흐름 제어의 이해"
+description: "JavaScript의 비동기 프로그래밍과 콜백 패턴에 대한 심층 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JavaScript의 비동기 특성</CardTitle>
+    <CardDescription>
+      JavaScript가 메인 스레드에서 논블로킹 방식을 채택한 이유와 그 중요성
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    JavaScript는 본질적으로 메인 스레드에서 논블로킹(non-blocking) 방식으로 동작하도록 설계되었습니다. 
+    이는 특히 브라우저 환경에서 매우 중요한데, 메인 스레드가 차단되면 사용자들이 겪게 되는 
+    화면 멈춤 현상이 발생하고 다른 이벤트 처리도 불가능해지기 때문입니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>콜백 지옥의 문제</CardTitle>
+    <CardDescription>
+      복잡한 비동기 처리 과정에서 발생하는 콜백 중첩 문제
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    async1(function (input, result1) {
+      async2(function (result2) {
+        async3(function (result3) {
+          async4(function (result4) {
+            async5(function (output) {
+              // output 처리
+            });
+          });
+        });
+      });
+    });
+    ```
+    
+    실제 프로덕션 환경에서는 각각의 결과(result1, result2 등)를 처리하는 
+    추가적인 코드들이 포함되어, 위 예제보다 훨씬 더 복잡한 구조가 됩니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>함수의 구성 요소</CardTitle>
+    <CardDescription>
+      복잡한 비동기 작업을 구조화하는 세 가지 핵심 컴포넌트
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    1. **시작 함수 (Initiator)**
+       - 작업의 시작점
+       - 초기 입력값 처리
+       - 입력 소스: 전역 변수, 직접 호출, 파일시스템/네트워크 요청
+
+    2. **미들웨어 함수 (Middleware)**
+       - 다른 함수를 반환
+       - 데이터 가공 및 변환 담당
+
+    3. **종료 함수 (Terminator)**
+       - 콜백 실행
+       - 최종 결과 처리
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>실제 함수 흐름의 예시</CardTitle>
+    <CardDescription>
+      각 단계별 함수 실행 과정을 보여주는 실제 구현 예제
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    function final(someInput, callback) {
+      callback(`${someInput} 콜백 실행으로 종료됨`);
+    }
+    
+    function middleware(someInput, callback) {
+      return final(`${someInput} 미들웨어 처리됨`, callback);
+    }
+    
+    function initiate() {
+      const someInput = '함수 시작';
+      middleware(someInput, function (result) {
+        console.log(result);
+        // 결과를 '반환'하려면 콜백이 필요함
+      });
+    }
+    
+    initiate();
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>상태 관리</CardTitle>
+    <CardDescription>
+      함수의 상태 의존성과 관리 전략
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    함수는 상태 의존적일 수도, 아닐 수도 있습니다. 상태 의존성은 함수의 입력이나 
+    변수가 외부 함수에 의존할 때 발생합니다.
+
+    **주요 상태 관리 전략:**
+
+    1. 함수에 직접 변수 전달
+    2. 캐시, 세션, 파일, 데이터베이스, 네트워크 등 외부 소스에서 변수값 획득
+
+    <Alert variant="warning" className="mt-4">
+      <AlertTitle>중요 참고사항</AlertTitle>
+      <AlertDescription>
+        전역 변수를 통한 상태 관리는 상태 보장이 어렵거나 불가능한 안티패턴이 될 수 있습니다.
+        복잡한 프로그램에서는 가능한 한 전역 변수 사용을 피해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>제어 흐름의 차이</CardTitle>
+    <CardDescription>
+      메모리 내 데이터와 외부 데이터 처리의 차이점
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="memory" className="w-full">
+      <TabsList>
+        <TabsTrigger value="memory">메모리 내 처리</TabsTrigger>
+        <TabsTrigger value="external">외부 데이터 처리</TabsTrigger>
+      </TabsList>
+      <TabsContent value="memory">
+        ```javascript
+        function getSong() {
+          let _song = '';
+          let i = 100;
+          for (i; i > 0; i -= 1) {
+            _song += `${i} 병의 맥주가 있네, 하나를 마시고 건네주면, ${i - 1} 병의 맥주가 남네\n`;
+            if (i === 1) {
+              _song += "자 이제 맥주를 더 사와야겠네";
+            }
+          }
+          return _song;
+        }
+
+        function singSong(_song) {
+          if (!_song) throw new Error("노래가 비어있어요, 노래를 넣어주세요!");
+          console.log(_song);
+        }
+
+        const song = getSong();
+        singSong(song); // 정상 작동
+        ```
+      </TabsContent>
+      <TabsContent value="external">
+        ```javascript
+        function getSong() {
+          let _song = '';
+          let i = 100;
+          for (i; i > 0; i -= 1) {
+            setTimeout(function () {
+              _song += `${i} 병의 맥주가 있네...\n`;
+              if (i === 1) {
+                _song += "자 이제 맥주를 더 사와야겠네";
+              }
+            }, 0);
+          }
+          return _song;
+        }
+
+        const song = getSong();
+        singSong(song); // 에러 발생!
+        // Error: 노래가 비어있어요, 노래를 넣어주세요!
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>비동기 처리 패턴</CardTitle>
+    <CardDescription>
+      실제 애플리케이션에서 사용할 수 있는 세 가지 핵심 비동기 처리 패턴
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="series" className="w-full">
+      <TabsList>
+        <TabsTrigger value="series">직렬 처리</TabsTrigger>
+        <TabsTrigger value="parallel">완전 병렬</TabsTrigger>
+        <TabsTrigger value="limited">제한적 병렬</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="series">
+        ```javascript
+        // 실행할 함수들과 인자들이 미리 정의되어 있음
+        const operations = [
+          { func: function1, args: args1 },
+          { func: function2, args: args2 },
+          { func: function3, args: args3 },
+        ];
+
+        function executeFunctionWithArgs(operation, callback) {
+          const { args, func } = operation;
+          func(args, callback);
+        }
+
+        function serialProcedure(operation) {
+          if (!operation) process.exit(0); // 완료
+          executeFunctionWithArgs(operation, function (result) {
+            // 콜백 완료 후 계속
+            serialProcedure(operations.shift());
+          });
+        }
+
+        serialProcedure(operations.shift());
+        ```
+        for 루프와 가장 유사한 방식으로, 작업들이 순차적으로 실행됩니다.
+      </TabsContent>
+
+      <TabsContent value="parallel">
+        <Card className="mb-4">
+          <CardContent>
+            순서가 중요하지 않은 경우에 사용합니다. 예를 들어, 100만 명의 수신자에게 이메일을 보내는 경우입니다.
+          </CardContent>
+        </Card>
+
+        ```javascript
+        const recipients = [
+          { name: '철수', email: 'cheolsu@mail.com' },
+          { name: '영희', email: 'younghee@mail.com' },
+          { name: '민수', email: 'minsu@mail.com' }
+        ];
+
+        let count = 0;
+        let success = 0;
+        const failed = [];
+
+        function dispatch(recipient, callback) {
+          sendMail({
+            subject: '오늘 저녁 식사',
+            message: '오늘 저녁 식사 어떠세요?',
+            smtp: recipient.email
+          }, callback);
+        }
+
+        function final(result) {
+          console.log(`결과: ${result.count}번 시도, ${result.success}번 성공`);
+          if (result.failed.length)
+            console.log(`전송 실패: \n${result.failed.join('\n')}\n`);
+        }
+
+        recipients.forEach(function(recipient) {
+          dispatch(recipient, function(err) {
+            if (!err) success += 1;
+            else failed.push(recipient.name);
+            
+            count += 1;
+            if (count === recipients.length) {
+              final({ count, success, failed });
+            }
+          });
+        });
+        ```
+      </TabsContent>
+
+      <TabsContent value="limited">
+        <Card className="mb-4">
+          <CardContent>
+            제한이 있는 병렬 처리입니다. 예를 들어, 1000만 명의 사용자 목록 중에서 100만 명에게만 
+            성공적으로 이메일을 보내는 경우입니다.
+          </CardContent>
+        </Card>
+
+        ```javascript
+        let successCount = 0;
+
+        function final() {
+          console.log(`${successCount}개의 이메일 발송 완료`);
+          console.log('작업 종료');
+        }
+
+        function dispatch(recipient, callback) {
+          sendMail({
+            subject: '오늘 저녁 식사',
+            message: '오늘 저녁 식사 어떠세요?',
+            smtp: recipient.email
+          }, callback);
+        }
+
+        function sendOneMillionEmailsOnly() {
+          getListOfTenMillionGreatEmails(function(err, bigList) {
+            if (err) throw err;
+
+            function serial(recipient) {
+              if (!recipient || successCount >= 1000000) 
+                return final();
+              
+              dispatch(recipient, function(_err) {
+                if (!_err) successCount += 1;
+                serial(bigList.pop());
+              });
+            }
+
+            serial(bigList.pop());
+          });
+        }
+
+        sendOneMillionEmailsOnly();
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>핵심 참고사항</AlertTitle>
+  <AlertDescription>
+    각 패턴은 고유한 사용 사례, 장점 및 주의사항이 있습니다. 가장 중요한 것은 작업을 
+    모듈화하고 콜백을 적절히 활용하는 것입니다. 확신이 서지 않는다면, 모든 것을 미들웨어처럼 
+    다루는 것이 좋습니다.
+  </AlertDescription>
+</Alert>

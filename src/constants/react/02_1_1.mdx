@@ -1,0 +1,218 @@
+---
+title: "useFormStatus"
+description: "폼 제출의 상태 정보를 제공하는 React 훅"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useFormStatus란?</CardTitle>
+    <CardDescription>
+      가장 최근 폼 제출의 상태 정보를 제공하는 React 훅입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const { pending, data, method, action } = useFormStatus();
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+```tsx
+import { useFormStatus } from "react-dom";
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending}>
+      {pending ? "제출 중..." : "제출하기"}
+    </button>
+  );
+}
+
+function Form({ action }) {
+  return (
+    <form action={action}>
+      <SubmitButton />
+    </form>
+  );
+}
+```
+
+## 반환값
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>상태 객체 속성</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <code className="font-bold">pending</code>
+        <p>부모 <code>&lt;form&gt;</code>이 제출 중인지 나타내는 불리언 값</p>
+      </div>
+      <div>
+        <code className="font-bold">data</code>
+        <p>제출 중인 폼 데이터를 포함하는 FormData 객체</p>
+      </div>
+      <div>
+        <code className="font-bold">method</code>
+        <p>폼의 HTTP 메서드('get' 또는 'post')</p>
+      </div>
+      <div>
+        <code className="font-bold">action</code>
+        <p>폼의 action prop에 전달된 함수 참조</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 사용 예제
+
+### 1. 폼 제출 중 상태 표시
+
+```tsx
+function SignUpForm() {
+  return (
+    <form action={submitForm} className="space-y-4">
+      <input
+        type="email"
+        name="email"
+        placeholder="이메일"
+        className="w-full px-3 py-2 border rounded"
+      />
+      <SubmitButton />
+    </form>
+  );
+}
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button 
+      type="submit" 
+      disabled={pending}
+      className={`w-full py-2 rounded ${
+        pending ? 'bg-gray-400' : 'bg-blue-500'
+      } text-white`}
+    >
+      {pending ? (
+        <div className="flex items-center justify-center gap-2">
+          <span>처리 중</span>
+          <span className="animate-spin">⟳</span>
+        </div>
+      ) : (
+        '가입하기'
+      )}
+    </button>
+  );
+}
+```
+
+### 2. 제출 중인 폼 데이터 읽기
+
+```tsx
+function UsernameForm() {
+  const { pending, data } = useFormStatus();
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-bold">사용자 이름 요청</h3>
+      <input
+        type="text"
+        name="username"
+        disabled={pending}
+        className="px-3 py-2 border rounded"
+      />
+      <button 
+        type="submit" 
+        disabled={pending}
+        className="px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        제출
+      </button>
+      
+      {data && (
+        <p className="text-sm text-gray-600">
+          요청한 사용자 이름: {data.get("username")}
+        </p>
+      )}
+    </div>
+  );
+}
+```
+
+<Alert className="my-4" variant="warning">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    <div className="space-y-2">
+      <p>useFormStatus는 다음과 같은 제한사항이 있습니다:</p>
+      <ul className="list-disc pl-6">
+        <li><code>&lt;form&gt;</code> 내부의 컴포넌트에서만 호출 가능</li>
+        <li>같은 컴포넌트에서 렌더링된 폼의 상태는 추적 불가</li>
+        <li>자식 컴포넌트에서 렌더링된 폼의 상태는 추적 불가</li>
+      </ul>
+    </div>
+  </AlertDescription>
+</Alert>
+
+## 올바른 사용법과 잘못된 사용법
+
+<Tabs defaultValue="wrong" className="w-full">
+  <TabsList>
+    <TabsTrigger value="wrong">잘못된 사용</TabsTrigger>
+    <TabsTrigger value="correct">올바른 사용</TabsTrigger>
+  </TabsList>
+  <TabsContent value="wrong">
+    ```tsx
+    function Form() {
+      // 🚫 이 컴포넌트에서 렌더링된 폼의 상태를 추적할 수 없음
+      const { pending } = useFormStatus();
+      return <form action={submit}></form>;
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="correct">
+    ```tsx
+    function SubmitButton() {
+      // ✅ 부모 form의 상태를 올바르게 추적
+      const { pending } = useFormStatus();
+      return <button disabled={pending}>제출</button>;
+    }
+
+    function Form() {
+      return (
+        <form action={submit}>
+          <SubmitButton />
+        </form>
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 문제 해결
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>일반적인 문제</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <h4 className="font-bold">status.pending이 항상 false인 경우</h4>
+      <div className="pl-4 space-y-2">
+        <p>다음 사항을 확인하세요:</p>
+        <ul className="list-disc pl-6">
+          <li>컴포넌트가 <code>&lt;form&gt;</code> 내부에 있는지 확인</li>
+          <li>같은 컴포넌트에서 폼을 렌더링하고 있지 않은지 확인</li>
+          <li>부모-자식 관계가 올바르게 설정되어 있는지 확인</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>

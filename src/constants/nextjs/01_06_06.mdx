@@ -1,0 +1,140 @@
+---
+title: "Next.js의 패키지 번들링 최적화"
+description: "애플리케이션 성능 향상을 위한 패키지 번들링 관리 방법"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# 패키지 번들링 최적화
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>패키지 번들링이란?</CardTitle>
+    <CardDescription>
+      서버 컴포넌트와 라우트 핸들러에서 임포트된 패키지는 Next.js에 의해 자동으로 번들링됩니다. 
+      이를 분석하고 최적화하는 방법을 알아보겠습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 번들 분석기 설정
+
+<Tabs defaultValue="install" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="install">설치</TabsTrigger>
+    <TabsTrigger value="config">설정</TabsTrigger>
+    <TabsTrigger value="analyze">분석</TabsTrigger>
+  </TabsList>
+  <TabsContent value="install">
+    ```bash
+    # npm
+    npm i @next/bundle-analyzer
+    
+    # yarn
+    yarn add @next/bundle-analyzer
+    
+    # pnpm
+    pnpm add @next/bundle-analyzer
+    ```
+  </TabsContent>
+  <TabsContent value="config">
+    ```js
+    // next.config.js
+    /** @type {import('next').NextConfig} */
+    const nextConfig = {}
+    
+    const withBundleAnalyzer = require('@next/bundle-analyzer')({
+      enabled: process.env.ANALYZE === 'true',
+    })
+    
+    module.exports = withBundleAnalyzer(nextConfig)
+    ```
+  </TabsContent>
+  <TabsContent value="analyze">
+    ```bash
+    # npm
+    ANALYZE=true npm run build
+    
+    # yarn
+    ANALYZE=true yarn build
+    
+    # pnpm
+    ANALYZE=true pnpm build
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>팁</AlertTitle>
+  <AlertDescription>
+    주기적으로 애플리케이션의 번들을 분석하여 성능을 지속적으로 모니터링하는 것이 좋습니다.
+  </AlertDescription>
+</Alert>
+
+## 패키지 임포트 최적화
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>아이콘 라이브러리와 같은 대규모 패키지 최적화</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // next.config.js
+    /** @type {import('next').NextConfig} */
+    const nextConfig = {
+      experimental: {
+        optimizePackageImports: ['icon-library'],
+      },
+    }
+    
+    module.exports = nextConfig
+    ```
+    
+    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+      <h4 className="font-bold">작동 방식</h4>
+      <ul className="list-disc list-inside mt-2">
+        <li>실제로 사용되는 모듈만 로드</li>
+        <li>많은 named exports가 있는 임포트 문 작성 가능</li>
+        <li>일부 라이브러리는 자동으로 최적화됨</li>
+      </ul>
+    </div>
+  </CardContent>
+</Card>
+
+## 번들링 제외 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>특정 패키지를 번들링에서 제외</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // next.config.js
+    /** @type {import('next').NextConfig} */
+    const nextConfig = {
+      serverExternalPackages: ['package-name'],
+    }
+    
+    module.exports = nextConfig
+    ```
+    
+    <Alert variant="info" className="mt-4">
+      <AlertDescription>
+        Next.js는 현재 호환성 작업 중인 많은 인기 있는 패키지들을 자동으로 번들링에서 제외합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>최적화 체크리스트</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc list-inside">
+      <li>번들 분석기로 정기적인 크기 모니터링</li>
+      <li>대규모 패키지는 optimizePackageImports 사용</li>
+      <li>필요한 경우 serverExternalPackages로 번들링 제외</li>
+    </ul>
+  </AlertDescription>
+</Alert>

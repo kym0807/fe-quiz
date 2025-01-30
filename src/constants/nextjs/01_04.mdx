@@ -1,0 +1,186 @@
+---
+title: "Next.js 캐싱의 이해"
+description: "Next.js의 캐싱 메커니즘과 성능 최적화 방법에 대한 상세 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Next.js의 캐싱 시스템
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>캐싱의 필요성</CardTitle>
+    <CardDescription>
+      Next.js는 애플리케이션의 성능을 향상시키고 비용을 절감하기 위해 렌더링 작업과 데이터 요청을 캐싱합니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 캐싱 메커니즘 개요
+
+Next.js는 네 가지 주요 캐싱 메커니즘을 제공합니다:
+
+<Card className="mb-6">
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 border rounded-lg">
+        <h3 className="font-bold mb-2">요청 메모이제이션</h3>
+        <p>단일 렌더링 사이클 동안 함수의 반환값을 재사용</p>
+        <p className="text-sm text-gray-600">위치: 서버</p>
+        <p className="text-sm text-gray-600">지속시간: 요청 생명주기</p>
+      </div>
+      <div className="p-4 border rounded-lg">
+        <h3 className="font-bold mb-2">데이터 캐시</h3>
+        <p>요청과 배포 사이에 데이터를 저장</p>
+        <p className="text-sm text-gray-600">위치: 서버</p>
+        <p className="text-sm text-gray-600">지속시간: 영구 (재검증 가능)</p>
+      </div>
+      <div className="p-4 border rounded-lg">
+        <h3 className="font-bold mb-2">전체 경로 캐시</h3>
+        <p>HTML과 RSC 페이로드를 저장</p>
+        <p className="text-sm text-gray-600">위치: 서버</p>
+        <p className="text-sm text-gray-600">지속시간: 영구 (재검증 가능)</p>
+      </div>
+      <div className="p-4 border rounded-lg">
+        <h3 className="font-bold mb-2">라우터 캐시</h3>
+        <p>RSC 페이로드를 클라이언트에 저장</p>
+        <p className="text-sm text-gray-600">위치: 클라이언트</p>
+        <p className="text-sm text-gray-600">지속시간: 세션 또는 시간 기반</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 요청 메모이제이션
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>React의 fetch 요청 최적화</CardTitle>
+    <CardDescription>
+      React는 동일한 URL과 옵션을 가진 fetch 요청을 자동으로 메모이제이션합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```tsx
+async function getItem() {
+  // fetch 함수는 자동으로 메모이제이션되고 결과가 캐시됩니다
+  const res = await fetch('https://.../item/1')
+  return res.json()
+}
+
+// 이 함수는 두 번 호출되지만, 실제로는 한 번만 실행됩니다
+const item = await getItem() // 캐시 MISS
+const item = await getItem() // 캐시 HIT
+```
+  </CardContent>
+</Card>
+
+## 데이터 캐시
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>영구적인 데이터 저장소</CardTitle>
+    <CardDescription>
+      서버 요청과 배포 사이에 데이터를 지속적으로 유지하는 캐시 시스템입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```tsx
+// 1시간마다 재검증
+fetch('https://...', { next: { revalidate: 3600 } })
+
+// 캐시하지 않음
+fetch('https://...', { cache: 'no-store' })
+```
+  </CardContent>
+</Card>
+
+## 전체 경로 캐시
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>정적 렌더링을 위한 캐시</CardTitle>
+    <CardDescription>
+      빌드 시점에 라우트를 렌더링하고 캐시하여 서버 부하를 줄이고 성능을 향상시킵니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">작동 방식</h4>
+        <ol className="list-decimal list-inside space-y-2 mt-2">
+          <li>React가 서버 컴포넌트를 RSC 페이로드로 렌더링</li>
+          <li>RSC 페이로드와 HTML을 기반으로 서버에서 HTML 생성</li>
+          <li>결과물을 서버에 캐시하여 재사용</li>
+        </ol>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 라우터 캐시
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클라이언트 측 성능 최적화</CardTitle>
+    <CardDescription>
+      브라우저 메모리에 RSC 페이로드를 저장하여 네비게이션 성능을 향상시킵니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Alert>
+      <AlertTitle>주의사항</AlertTitle>
+      <AlertDescription>
+        라우터 캐시는 페이지 새로고침 시 초기화되며, 자동 무효화 기간이 존재합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 캐시 무효화 방법
+
+<Card className="mb-6">
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 border rounded-lg">
+        <h3 className="font-bold mb-2">시간 기반 재검증</h3>
+        <code className="block p-2 bg-gray-50 rounded">
+          revalidate: 3600 // 1시간
+        </code>
+      </div>
+      <div className="p-4 border rounded-lg">
+        <h3 className="font-bold mb-2">온디맨드 재검증</h3>
+        <code className="block p-2 bg-gray-50 rounded">
+          revalidatePath('/') // 경로 기반
+          revalidateTag('blog') // 태그 기반
+        </code>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 캐시 제어 API
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    // 캐시 태그 설정
+    fetch('https://...', { next: { tags: ['blog'] } })
+
+    // 캐시 비활성화
+    fetch('https://...', { cache: 'no-store' })
+
+    // 동적 렌더링 강제
+    export const dynamic = 'force-dynamic'
+
+    // 정적 파라미터 생성
+    export async function generateStaticParams() {
+      return [{ id: '1' }, { id: '2' }]
+    }
+    ```
+  </CardContent>
+</Card>
+
+위의 내용은 Next.js의 캐싱 시스템에 대한 핵심적인 내용을 담고 있습니다. 각 캐싱 메커니즘의 특성과 사용 방법, 그리고 실제 적용 예시를 통해 이해하기 쉽게 구성했습니다.

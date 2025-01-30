@@ -1,0 +1,312 @@
+---
+title: "클로저(Closure)"
+description: "자바스크립트의 핵심 개념인 클로저에 대한 상세한 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클로저란?</CardTitle>
+    <CardDescription>
+      함수와 그 함수가 선언된 렉시컬 환경의 조합을 클로저라고 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    클로저는 함수가 자신이 선언될 당시의 환경(렉시컬 환경)을 기억하여 함수가 나중에 호출되어도 
+    해당 환경에 접근할 수 있게 해주는 특성입니다.
+  </CardContent>
+</Card>
+
+## 렉시컬 스코핑 이해하기
+
+<Tabs defaultValue="example" className="w-full">
+  <TabsList>
+    <TabsTrigger value="example">예시 코드</TabsTrigger>
+    <TabsTrigger value="explanation">설명</TabsTrigger>
+  </TabsList>
+  <TabsContent value="example">
+    ```javascript
+    function init() {
+      const name = "Mozilla"; // init에서 생성된 로컬 변수
+      function displayName() {
+        // 내부 함수인 displayName()은 클로저를 형성합니다
+        console.log(name); // 부모 함수에서 선언된 변수를 사용
+      }
+      displayName();
+    }
+    init();
+    ```
+  </TabsContent>
+  <TabsContent value="explanation">
+    <Card>
+      <CardContent className="pt-6">
+        위 예시에서 `displayName()` 함수는 자신의 외부 함수인 `init()`의 변수에 접근할 수 있습니다.
+        이것이 바로 렉시컬 스코핑의 예시입니다. 여기서 '렉시컬'이란 변수가 코드 내 어디에서 
+        선언되었는지를 기준으로 그 변수의 사용 범위가 결정된다는 것을 의미합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>ES6의 let과 const</AlertTitle>
+  <AlertDescription>
+    ES6에서 도입된 `let`과 `const`는 블록 스코프를 생성합니다. 이는 `var`와 달리 
+    중괄호(`{}`)로 둘러싸인 블록 내에서만 접근 가능한 변수를 선언할 수 있게 해줍니다.
+  </AlertDescription>
+</Alert>
+
+## 클로저의 실제 동작
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 클로저 예제</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    function makeFunc() {
+      const name = "Mozilla";
+      function displayName() {
+        console.log(name);
+      }
+      return displayName;
+    }
+
+    const myFunc = makeFunc();
+    myFunc(); // "Mozilla" 출력
+    ```
+    
+    위 코드에서 `makeFunc()`이 실행을 마친 후에도 반환된 `displayName` 함수는 
+    `name` 변수에 접근할 수 있습니다. 이것이 바로 클로저의 강력한 특성입니다.
+  </CardContent>
+</Card>
+
+## 실용적인 클로저 예제
+
+<Tabs defaultValue="counter" className="w-full">
+  <TabsList>
+    <TabsTrigger value="counter">카운터 예제</TabsTrigger>
+    <TabsTrigger value="adder">덧셈 함수 예제</TabsTrigger>
+  </TabsList>
+  <TabsContent value="counter">
+    ```javascript
+    const counter = (function() {
+      let privateCounter = 0;
+      
+      function changeBy(val) {
+        privateCounter += val;
+      }
+
+      return {
+        increment() { changeBy(1); },
+        decrement() { changeBy(-1); },
+        value() { return privateCounter; }
+      };
+    })();
+
+    console.log(counter.value()); // 0
+    counter.increment();
+    counter.increment();
+    console.log(counter.value()); // 2
+    ```
+  </TabsContent>
+  <TabsContent value="adder">
+    ```javascript
+    function makeAdder(x) {
+      return function(y) {
+        return x + y;
+      };
+    }
+
+    const add5 = makeAdder(5);
+    const add10 = makeAdder(10);
+
+    console.log(add5(2));  // 7
+    console.log(add10(2)); // 12
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>프라이빗 메서드 구현</AlertTitle>
+  <AlertDescription>
+    클로저를 사용하면 자바스크립트에서 프라이빗 메서드와 변수를 구현할 수 있습니다. 
+    이는 데이터 은닉과 캡슐화를 가능하게 하여 객체지향 프로그래밍의 주요 이점을 제공합니다.
+  </AlertDescription>
+</Alert>
+
+## 클로저 스코프 체인
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>중첩된 스코프의 이해</CardTitle>
+    <CardDescription>
+      클로저는 모든 외부 함수의 스코프에 접근할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // 전역 스코프
+    const e = 10;
+    function sum(a) {
+      return function(b) {
+        return function(c) {
+          return function(d) {
+            // 모든 외부 스코프의 변수에 접근 가능
+            return a + b + c + d + e;
+          };
+        };
+      };
+    }
+
+    console.log(sum(1)(2)(3)(4)); // 20
+    ```
+  </CardContent>
+</Card>
+
+## 모듈에서의 클로저
+
+<Tabs defaultValue="module" className="w-full">
+  <TabsList>
+    <TabsTrigger value="module">모듈 예제</TabsTrigger>
+    <TabsTrigger value="import">임포트 예제</TabsTrigger>
+  </TabsList>
+  <TabsContent value="module">
+    ```javascript
+    // myModule.js
+    let x = 5;
+    export const getX = () => x;
+    export const setX = (val) => {
+      x = val;
+    };
+    ```
+  </TabsContent>
+  <TabsContent value="import">
+    ```javascript
+    import { getX, setX } from "./myModule.js";
+
+    console.log(getX()); // 5
+    setX(6);
+    console.log(getX()); // 6
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>모듈과 클로저</AlertTitle>
+  <AlertDescription>
+    모듈에서 클로저를 사용하면 모듈 스코프의 변수를 캡슐화하면서도, 
+    외부에서 해당 변수를 제어할 수 있는 인터페이스를 제공할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 루프에서의 클로저 사용시 주의사항
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>일반적인 실수와 해결방법</CardTitle>
+    <CardDescription>
+      루프 내부에서 클로저를 생성할 때는 특별한 주의가 필요합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // 잘못된 예시
+    function setupHelp() {
+      const helpText = [
+        { id: "email", help: "이메일 주소를 입력하세요" },
+        { id: "name", help: "이름을 입력하세요" },
+        { id: "age", help: "나이를 입력하세요" }
+      ];
+
+      for (var i = 0; i < helpText.length; i++) {
+        var item = helpText[i];
+        document.getElementById(item.id).onfocus = function() {
+          showHelp(item.help);
+        };
+      }
+    }
+
+    // 올바른 예시 (let 사용)
+    function setupHelp() {
+      const helpText = [
+        { id: "email", help: "이메일 주소를 입력하세요" },
+        { id: "name", help: "이름을 입력하세요" },
+        { id: "age", help: "나이를 입력하세요" }
+      ];
+
+      for (let i = 0; i < helpText.length; i++) {
+        const item = helpText[i];
+        document.getElementById(item.id).onfocus = () => {
+          showHelp(item.help);
+        };
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 성능 고려사항
+
+<Tabs defaultValue="bad" className="w-full">
+  <TabsList>
+    <TabsTrigger value="bad">비효율적인 방식</TabsTrigger>
+    <TabsTrigger value="good">효율적인 방식</TabsTrigger>
+  </TabsList>
+  <TabsContent value="bad">
+    ```javascript
+    function MyObject(name, message) {
+      this.name = name.toString();
+      this.message = message.toString();
+      // 매번 새로운 함수가 생성됨
+      this.getName = function() {
+        return this.name;
+      };
+      this.getMessage = function() {
+        return this.message;
+      };
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="good">
+    ```javascript
+    function MyObject(name, message) {
+      this.name = name.toString();
+      this.message = message.toString();
+    }
+    // 프로토타입을 통해 메서드를 한 번만 정의
+    MyObject.prototype.getName = function() {
+      return this.name;
+    };
+    MyObject.prototype.getMessage = function() {
+      return this.message;
+    };
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertTitle>성능 최적화</AlertTitle>
+  <AlertDescription>
+    불필요한 클로저 생성을 피하고 프로토타입을 활용하면 메모리 사용량과 
+    실행 속도를 개선할 수 있습니다. 특히 객체를 많이 생성하는 경우에는 
+    프로토타입 체인을 활용하는 것이 효율적입니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>클로저 사용 시 핵심 포인트</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>클로저는 데이터 프라이버시를 구현하는 강력한 방법입니다.</li>
+      <li>ES6의 let과 const를 사용하여 블록 스코프를 적절히 활용하세요.</li>
+      <li>루프에서 클로저를 사용할 때는 블록 스코프 변수를 사용하세요.</li>
+      <li>성능을 고려할 때는 프로토타입을 활용하세요.</li>
+    </ul>
+  </CardContent>
+</Card>

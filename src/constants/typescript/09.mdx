@@ -1,0 +1,1962 @@
+---
+title: "TSConfig 루트 필드"
+description: "TSConfig의 루트 필드 옵션들에 대해 알아봅니다"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# Files
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Files 옵션이란?</CardTitle>
+    <CardDescription>
+      프로그램에 포함할 파일들의 허용 목록을 지정하는 옵션입니다. 지정된 파일을 찾을 수 없는 경우 오류가 발생합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```json
+    {
+      "compilerOptions": {},
+      "files": [
+        "core.ts",
+        "sys.ts",
+        "types.ts",
+        "scanner.ts",
+        "parser.ts",
+        "utilities.ts",
+        "binder.ts",
+        "checker.ts",
+        "tsc.ts"
+      ]
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertDescription>
+    파일 수가 적고 glob 패턴이 필요하지 않은 경우에 유용합니다. 많은 파일을 참조해야 하는 경우 include를 사용하세요.
+  </AlertDescription>
+</Alert>
+
+# Extends
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Extends 옵션이란?</CardTitle>
+    <CardDescription>
+      다른 설정 파일의 설정을 상속받을 수 있게 해주는 옵션입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    - 기본 파일의 설정이 먼저 로드된 후, 현재 파일의 설정으로 덮어씁니다
+    - 모든 상대 경로는 해당 설정 파일이 위치한 디렉토리를 기준으로 합니다
+    - files, include, exclude는 기본 설정을 덮어쓰며, references는 상속되지 않습니다
+    
+    #### 예시 구조:
+    ```json 
+    // configs/base.json
+    {
+      "compilerOptions": {
+        "noImplicitAny": true,
+        "strictNullChecks": true
+      }
+    }
+
+    // tsconfig.json
+    {
+      "extends": "./configs/base",
+      "files": ["main.ts", "supplemental.ts"]
+    }
+    ```
+  </CardContent>
+</Card>
+
+# Include
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Include 옵션이란?</CardTitle>
+    <CardDescription>
+      프로그램에 포함할 파일 이름이나 패턴을 배열로 지정하는 옵션입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```json
+    {
+      "include": ["src/**/*", "tests/**/*"]
+    }
+    ```
+
+    ### 와일드카드 패턴 설명
+    - `*`: 디렉토리 구분자를 제외한 모든 문자와 매칭
+    - `?`: 디렉토리 구분자를 제외한 단일 문자와 매칭
+    - `**/`: 모든 수준의 중첩 디렉토리와 매칭
+    
+    ### 패턴 처리 방식
+    - 파일 확장자나 와일드카드가 없는 마지막 경로는 디렉토리로 처리
+    - 지원되는 확장자(.ts, .tsx, .d.ts)를 가진 파일이 포함됨
+    - allowJs가 true인 경우 .js와 .jsx도 포함
+  </CardContent>
+</Card>
+
+# Exclude
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Exclude 옵션이란?</CardTitle>
+    <CardDescription>
+      Include 설정 시 제외할 파일이나 패턴을 지정하는 옵션입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Alert>
+      <AlertTitle>중요</AlertTitle>
+      <AlertDescription>
+        Exclude는 단순히 include의 결과에서 파일을 제외하는 것이며, 다음의 경우에는 파일이 여전히 프로젝트에 포함될 수 있습니다:
+        - import 구문으로 참조되는 경우
+        - types에 포함된 경우
+        - /// &lt;reference 지시자로 참조되는 경우
+        - files 목록에 지정된 경우
+      </AlertDescription>
+    </Alert>
+
+    ### 기본 제외 항목
+    - node_modules
+    - bower_components
+    - jspm_packages
+    - outDir
+  </CardContent>
+</Card>
+
+# References
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>References 옵션이란?</CardTitle>
+    <CardDescription>
+      TypeScript 프로그램을 작은 단위로 구조화하는 방법을 제공하는 옵션입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 이점
+    - 빌드 및 에디터 상호작용 시간 개선
+    - 컴포넌트 간 논리적 분리 강화
+    - 코드를 새롭고 개선된 방식으로 구성 가능
+    
+    <Alert>
+      <AlertDescription>
+        자세한 내용은 TypeScript 핸드북의 Project References 섹션을 참고하세요.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 도달할 수 없는 코드 체크 (allowUnreachableCode)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>도달할 수 없는 코드 처리 방식</CardTitle>
+    <CardDescription>
+      JavaScript 문법상 절대 실행될 수 없는 코드에 대한 처리를 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    function fn(n: number) {
+      if (n > 5) {
+        return true;
+      } else {
+        return false;
+      }
+      return true; // 도달할 수 없는 코드
+    }
+    ```
+
+    ### 설정 옵션
+    - `undefined` (기본값): 에디터에 경고 표시
+    - `true`: 도달할 수 없는 코드 무시
+    - `false`: 컴파일러 에러 발생
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertDescription>
+    이 옵션은 타입 분석으로 인해 도달할 수 없는 코드가 아닌, JavaScript 문법상 명백하게 도달할 수 없는 코드만 검사합니다.
+  </AlertDescription>
+</Alert>
+
+# 사용되지 않는 레이블 체크 (allowUnusedLabels)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>사용되지 않는 레이블 처리 방식</CardTitle>
+    <CardDescription>
+      코드에서 사용되지 않는 레이블에 대한 처리를 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    function verifyAge(age: number) {
+      if (age > 18) {
+        verified: true; // 사용되지 않은 레이블
+      }
+    }
+    ```
+
+    ### 설정 옵션
+    - `undefined` (기본값): 에디터에 경고 표시
+    - `true`: 사용되지 않는 레이블 무시
+    - `false`: 컴파일러 에러 발생
+  </CardContent>
+</Card>
+
+# Strict 모드 강제 (alwaysStrict)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>ECMAScript strict 모드 강제</CardTitle>
+    <CardDescription>
+      모든 소스 파일에 "use strict"를 적용하고 strict 모드로 파싱합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 특징
+    - strict 모드는 JavaScript 엔진의 성능을 향상시킵니다
+    - 일반적으로 무시되는 에러들을 throw 하도록 만듭니다
+    - strict가 true일 때 기본값은 true입니다
+
+    <Alert>
+      <AlertDescription>
+        이 옵션은 TypeScript의 strict 옵션을 활성화했을 때 자동으로 켜지는 옵션 중 하나입니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 엄격한 Null 체크 (strictNullChecks)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>null과 undefined 타입 체크 강화</CardTitle>
+    <CardDescription>
+      null과 undefined를 별도의 타입으로 처리하여 더 안전한 코드를 작성할 수 있게 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    const users = [
+      { name: "Oby", age: 12 },
+      { name: "Heera", age: 32 },
+    ];
+
+    const loggedInUser = users.find((u) => u.name === loggedInUsername);
+    console.log(loggedInUser.age); // strictNullChecks가 true면 에러
+    ```
+
+    ### 특징
+    - `false`일 때: null과 undefined가 모든 타입에 할당 가능
+    - `true`일 때: 명시적으로 null/undefined를 처리해야 함
+  </CardContent>
+</Card>
+
+# 암묵적 any 방지 (noImplicitAny)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>타입 추론 실패 시 any 사용 방지</CardTitle>
+    <CardDescription>
+      타입을 추론할 수 없을 때 암묵적으로 any 타입이 되는 것을 방지합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    function fn(s) { // noImplicitAny가 true면 에러
+      console.log(s.subtr(3));
+    }
+    ```
+
+    <Alert>
+      <AlertDescription>
+        이 옵션을 활성화하면 모든 변수와 파라미터에 명시적인 타입 선언이 필요할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 엄격한 속성 초기화 (strictPropertyInitialization)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클래스 속성 초기화 체크</CardTitle>
+    <CardDescription>
+      클래스의 속성이 생성자에서 반드시 초기화되어야 하는지 체크합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    class UserAccount {
+      name: string;      // OK (생성자에서 초기화)
+      email: string;     // Error (초기화되지 않음)
+      address?: string;  // OK (옵셔널 속성)
+
+      constructor(name: string) {
+        this.name = name;
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertDescription>
+    모든 strict 관련 옵션들은 `strict: true` 설정 시 자동으로 활성화됩니다. 개별적으로 끄고 싶은 옵션이 있다면 해당 옵션을 명시적으로 false로 설정할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+# 암묵적 오버라이드 방지 (noImplicitOverride)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>메서드 오버라이드 명시적 선언</CardTitle>
+    <CardDescription>
+      부모 클래스의 메서드를 오버라이드할 때 override 키워드 사용을 강제합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    class Album {
+      setup() {}
+    }
+
+    class MLAlbum extends Album {
+      override setup() {} // OK
+    }
+
+    class SharedAlbum extends Album {
+      setup() {} // Error: override 키워드 필요
+    }
+    ```
+  </CardContent>
+</Card>
+
+# 미사용 변수 체크 (noUnusedLocals, noUnusedParameters)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>미사용 변수와 파라미터 체크</CardTitle>
+    <CardDescription>
+      사용되지 않는 지역 변수와 함수 파라미터를 감지합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    function createKeyboard(modelID: number) { // Error: modelID 미사용
+      const defaultModelID = 23;               // Error: defaultModelID 미사용
+      return { type: "keyboard" };
+    }
+    ```
+    
+    <Alert>
+      <AlertDescription>
+        이 옵션들은 코드 정리와 유지보수에 도움이 되지만, 개발 중인 코드에서는 일시적으로 비활성화할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# switch문 fallthrough 체크 (noFallthroughCasesInSwitch)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>switch문의 case fallthrough 방지</CardTitle>
+    <CardDescription>
+      switch문에서 break나 return이 없는 case를 감지합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    const value: number = 6;
+    
+    switch (value) {
+      case 0:
+        console.log("even"); // Error: fallthrough case
+      case 1:
+        console.log("odd");
+        break;
+    }
+    ```
+
+    ### 필수 종료 구문
+    - break
+    - return
+    - throw
+  </CardContent>
+</Card>
+
+# 인덱스 시그니처 접근 제한 (noPropertyAccessFromIndexSignature)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>인덱스 시그니처 속성 접근 방식 제한</CardTitle>
+    <CardDescription>
+      인덱스 시그니처로 정의된 속성은 반드시 대괄호로 접근하도록 강제합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    interface GameSettings {
+      speed: "fast" | "medium" | "slow";
+      [key: string]: string;
+    }
+
+    const settings: GameSettings = getSettings();
+    settings.speed;      // OK (명시적 속성)
+    settings.username;   // Error: 대괄호 구문 사용 필요
+    settings["username"]; // OK
+    ```
+  </CardContent>
+</Card>
+
+# Module
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 시스템 설정</CardTitle>
+    <CardDescription>
+      프로그램에서 사용할 모듈 시스템을 설정합니다. 번들러나 Node.js 프로젝트에 따라 적절한 설정이 다릅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 옵션
+    ```typescript
+    {
+      "compilerOptions": {
+        "module": "nodenext" // 또는 "esnext", "commonjs" 등
+      }
+    }
+    ```
+
+    #### 자주 사용되는 값들
+    - `nodenext`: 최신 Node.js 프로젝트
+    - `esnext`: 번들러를 사용하는 프로젝트
+    - `commonjs`: 레거시 Node.js 프로젝트
+    - `es2022`: Top-level await 지원 필요시
+    
+    <Alert>
+      <AlertDescription>
+        번들러를 사용하는 경우 대부분 'esnext'나 'es2022'를 사용하며, 
+        현대의 Node.js 프로젝트는 'nodenext'를 권장합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Module Resolution
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 해석 전략</CardTitle>
+    <CardDescription>
+      TypeScript가 모듈을 찾고 해석하는 방식을 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 전략
+    ```typescript
+    {
+      "compilerOptions": {
+        "moduleResolution": "bundler" // 또는 "node16", "nodenext"
+      }
+    }
+    ```
+
+    - `bundler`: 번들러 사용시 권장
+    - `node16`/`nodenext`: 최신 Node.js 프로젝트용
+    - `node10`: 레거시 Node.js 프로젝트용 (구 'node')
+
+    <Alert>
+      <AlertDescription>
+        현대의 프로젝트에서는 'classic'을 사용하지 않습니다. 
+        번들러를 사용한다면 'bundler', Node.js를 사용한다면 'nodenext'를 권장합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Allow Importing TS Extensions
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>TypeScript 확장자 임포트 허용</CardTitle>
+    <CardDescription>
+      .ts, .mts, .tsx 등 TypeScript 전용 확장자로 파일을 임포트할 수 있게 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "allowImportingTsExtensions": true,
+        "noEmit": true // 또는 "emitDeclarationOnly": true
+      }
+    }
+    ```
+
+    <Alert>
+      <AlertTitle>주의사항</AlertTitle>
+      <AlertDescription>
+        이 옵션은 noEmit이나 emitDeclarationOnly가 true일 때만 사용할 수 있습니다.
+        번들러나 런타임이 TypeScript 확장자를 처리할 수 있다고 가정합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Base URL
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 URL 설정</CardTitle>
+    <CardDescription>
+      모듈 이름을 해석할 때 시작점이 되는 기본 디렉토리를 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "baseUrl": "./"
+      }
+    }
+    ```
+
+    ### 활용 예시
+    ```plaintext
+    project/
+    ├── src/
+    │   ├── components/
+    │   │   └── Button.ts
+    │   └── utils/
+    │       └── format.ts
+    └── tsconfig.json
+    ```
+
+    baseUrl을 설정하면 절대 경로로 임포트할 수 있습니다:
+    ```typescript
+    import { Button } from 'components/Button';
+    import { format } from 'utils/format';
+    ```
+  </CardContent>
+</Card>
+
+# Paths
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>경로 별칭 설정</CardTitle>
+    <CardDescription>
+      모듈 임포트시 사용할 경로 별칭을 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "baseUrl": "./",
+        "paths": {
+          "@components/*": ["src/components/*"],
+          "@utils/*": ["src/utils/*"],
+          "jquery": ["./vendor/jquery/dist/jquery"]
+        }
+      }
+    }
+    ```
+
+    ### 사용 예시
+    ```typescript
+    import { Button } from '@components/Button';
+    import { format } from '@utils/format';
+    import jQuery from 'jquery';
+    ```
+
+    <Alert>
+      <AlertDescription>
+        paths는 TypeScript의 타입 체킹에만 영향을 줍니다.
+        실제 번들링을 위해서는 번들러(webpack, vite 등)에도 동일한 별칭을 설정해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Root Dirs
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>가상 루트 디렉토리 설정</CardTitle>
+    <CardDescription>
+      여러 디렉토리를 하나의 루트처럼 취급하여 상대 경로 임포트를 가능하게 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "rootDirs": [
+          "src/views",
+          "generated/templates/views"
+        ]
+      }
+    }
+    ```
+
+    ### 활용 사례
+    - 생성된 코드와 소스 코드의 통합
+    - CSS 모듈이나 그래픽 리소스의 타입 선언 통합
+    - 멀티플랫폼 프로젝트에서 플랫폼별 소스 통합
+
+    <Alert>
+      <AlertDescription>
+        rootDirs는 컴파일 결과물의 디렉토리 구조에는 영향을 주지 않습니다.
+        오직 타입 체크 시 모듈 해석에만 영향을 줍니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Types와 Type Roots
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>타입 정의 파일 설정</CardTitle>
+    <CardDescription>
+      @types 패키지와 타입 정의 파일의 위치를 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "typeRoots": ["./typings", "./vendor/types"],
+        "types": ["node", "jest", "express"]
+      }
+    }
+    ```
+
+    ### typeRoots vs types
+    - `typeRoots`: 타입 정의 파일을 찾을 디렉토리 지정
+    - `types`: 특정 @types 패키지만 포함
+
+    <Alert>
+      <AlertDescription>
+        types를 지정하면 나열된 패키지만 전역 타입으로 포함됩니다.
+        하지만 import로 직접 사용하는 패키지의 타입은 영향받지 않습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Resolve JSON Module
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JSON 모듈 해석 설정</CardTitle>
+    <CardDescription>
+      .json 파일을 모듈로 임포트할 수 있게 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "resolveJsonModule": true
+      }
+    }
+    ```
+
+    ### 사용 예시
+    ```typescript
+    // settings.json
+    {
+      "port": 3000,
+      "debug": true
+    }
+
+    // index.ts
+    import settings from './settings.json';
+    console.log(settings.port); // 타입 체크 가능
+    ```
+
+    <Alert>
+      <AlertDescription>
+        이 옵션을 활성화하면 JSON 파일의 구조에 기반한 타입이 자동으로 생성됩니다.
+        설정 파일이나 데이터 파일을 타입 안전하게 임포트할 때 유용합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Allow Arbitrary Extensions
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>임의 확장자 허용</CardTitle>
+    <CardDescription>
+      TypeScript/JavaScript가 아닌 파일 확장자의 임포트를 허용합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "allowArbitraryExtensions": true
+      }
+    }
+    ```
+
+    ### 활용 예시
+    ```typescript
+    // styles.css.d.ts
+    declare const styles: {
+      container: string;
+      button: string;
+    };
+    export default styles;
+
+    // App.tsx
+    import styles from './styles.css';
+    ```
+
+    <Alert>
+      <AlertTitle>주의사항</AlertTitle>
+      <AlertDescription>
+        이 설정은 번들러나 런타임이 해당 확장자 파일을 처리할 수 있을 때만 사용해야 합니다.
+        일반적으로 Webpack이나 Vite 같은 번들러의 로더 설정과 함께 사용됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Declaration (선언 파일 생성)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Declaration 옵션이란?</CardTitle>
+    <CardDescription>
+      TypeScript/JavaScript 파일에 대한 .d.ts 선언 파일을 생성합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 소스 코드
+    export let helloWorld = "hi";
+
+    // 생성되는 .d.ts 파일
+    export declare let helloWorld: string;
+    ```
+
+    <Alert>
+      <AlertDescription>
+        JavaScript 파일에 대한 선언 파일을 생성할 때는 emitDeclarationOnly나 outDir 설정을 함께 사용하여
+        원본 JS 파일이 덮어써지지 않도록 주의해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Declaration Dir (선언 파일 출력 디렉토리)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>선언 파일 저장 위치 설정</CardTitle>
+    <CardDescription>
+      .d.ts 파일이 생성될 루트 디렉토리를 지정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "declaration": true,
+        "declarationDir": "./types"
+      }
+    }
+    ```
+
+    ### 디렉토리 구조 예시
+    ```plaintext
+    project/
+    ├── src/
+    │   └── index.ts
+    ├── types/      // 선언 파일이 여기에 생성됨
+    │   └── index.d.ts
+    └── tsconfig.json
+    ```
+  </CardContent>
+</Card>
+
+# Declaration Map (선언 파일 소스맵)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>선언 파일 소스맵 생성</CardTitle>
+    <CardDescription>
+      .d.ts 파일에 대한 소스맵을 생성하여 원본 .ts 파일로의 이동을 가능하게 합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 특징
+    - VS Code 같은 에디터에서 "정의로 이동" 기능 사용 가능
+    - 프로젝트 참조(project references)를 사용할 때 특히 유용
+    - 디버깅과 개발 경험 향상에 도움
+
+    <Alert>
+      <AlertDescription>
+        프로젝트 참조를 사용하는 경우 이 옵션을 켜는 것을 강력히 권장합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Out Dir (출력 디렉토리)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>컴파일된 파일의 출력 위치 설정</CardTitle>
+    <CardDescription>
+      컴파일된 .js 파일과 관련 파일들(.d.ts, .js.map 등)이 생성될 디렉토리를 지정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "outDir": "./dist"
+      }
+    }
+    ```
+
+    ### 특징
+    - 원본 소스 파일의 디렉토리 구조가 유지됨
+    - 지정하지 않으면 소스 파일과 같은 위치에 출력됨
+    - rootDir 설정과 함께 사용하여 출력 구조를 더 세밀하게 제어 가능
+  </CardContent>
+</Card>
+
+# No Emit (출력 없음)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>컴파일 출력 파일 생성 방지</CardTitle>
+    <CardDescription>
+      TypeScript를 타입 체크 도구로만 사용하고 컴파일된 파일을 생성하지 않습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 사용 사례
+    - Babel이나 swc 같은 다른 도구로 컴파일하는 경우
+    - TypeScript를 타입 체크와 IDE 지원용으로만 사용하는 경우
+    
+    <Alert>
+      <AlertDescription>
+        noEmit: true로 설정하면 타입 체크만 수행하고 어떤 파일도 생성하지 않습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# No Emit On Error (에러 시 출력 방지)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>에러 발생 시 출력 중단</CardTitle>
+    <CardDescription>
+      타입 체크 중 에러가 발생하면 컴파일 출력을 중단합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 기본값: false
+    - 개발 중에는 false로 두어 에러가 있어도 결과를 확인 가능
+    - 배포 환경에서는 true로 설정하여 타입 안전성 보장
+    
+    ```typescript
+    {
+      "compilerOptions": {
+        "noEmitOnError": true
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+# Remove Comments (주석 제거)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>출력 시 주석 제거</CardTitle>
+    <CardDescription>
+      JavaScript 변환 시 모든 주석을 제거합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    /** 한국어로 '안녕하세요'를 반환합니다 */
+    export const hello = "안녕하세요";
+
+    // removeComments: true 시 출력
+    export const hello = "안녕하세요";
+    ```
+
+    <Alert>
+      <AlertDescription>
+        배포용 빌드에서 코드 크기를 줄이고 싶을 때 유용하지만,
+        JSDoc 문서화를 위해서는 false로 유지해야 할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Source Map (소스맵 생성)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>소스맵 파일 생성 설정</CardTitle>
+    <CardDescription>
+      디버깅 시 원본 TypeScript 코드를 참조할 수 있게 하는 소스맵 파일을 생성합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "sourceMap": true
+      }
+    }
+    ```
+
+    ### 생성되는 파일들
+    - `.js.map` 파일 생성
+    - `.js` 파일 하단에 sourceMappingURL 주석 추가
+    
+    <Alert>
+      <AlertDescription>
+        소스맵은 프로덕션 환경에서는 제외하는 것이 좋지만, 
+        개발 환경에서는 디버깅을 위해 필수적입니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Inline Source Map (인라인 소스맵)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>소스맵 인라인 포함</CardTitle>
+    <CardDescription>
+      별도의 .map 파일 대신 JavaScript 파일 내에 소스맵을 직접 포함시킵니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 사용 사례
+    - .map 파일을 제공할 수 없는 웹서버 환경
+    - 단일 파일로 배포가 필요한 경우
+    
+    <Alert>
+      <AlertDescription>
+        sourceMap과 함께 사용할 수 없으며, JavaScript 파일 크기가 커진다는 점에 주의해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Source Root (소스 루트 설정)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>소스 파일 경로 기준점 설정</CardTitle>
+    <CardDescription>
+      디버거가 TypeScript 소스 파일을 찾을 때 사용할 기준 경로를 지정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "sourceMap": true,
+        "sourceRoot": "https://my-website.com/source/"
+      }
+    }
+    ```
+
+    ### 활용 예시
+    - 웹 서버에서 소스 파일 제공
+    - 소스맵이 참조할 소스 파일의 기본 URL 지정
+  </CardContent>
+</Card>
+
+# Map Root (맵 루트 설정)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>소스맵 파일 경로 설정</CardTitle>
+    <CardDescription>
+      디버거가 소스맵 파일을 찾을 위치를 지정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "sourceMap": true,
+        "mapRoot": "https://my-website.com/sourcemaps/"
+      }
+    }
+    ```
+
+    <Alert>
+      <AlertDescription>
+        mapRoot는 소스맵 파일이 소스 파일과 다른 위치에 있을 때 유용합니다.
+        CDN이나 별도 서버에서 소스맵을 제공할 때 주로 사용됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# JavaScript 허용 (allowJs)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JavaScript 파일 임포트 허용</CardTitle>
+    <CardDescription>
+      TypeScript 프로젝트 내에서 .js와 .jsx 파일의 사용을 허용합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // card.js
+    export const defaultCardDeck = "Heart";
+
+    // index.ts
+    import { defaultCardDeck } from "./card"; // allowJs가 true일 때만 동작
+    console.log(defaultCardDeck);
+    ```
+
+    ### 주요 활용 사례
+    - 점진적으로 JavaScript 프로젝트를 TypeScript로 마이그레이션
+    - 기존 JavaScript 파일과 새로운 TypeScript 파일의 공존
+    - JavaScript 파일에 대한 타입 선언(.d.ts) 파일 생성
+
+    <Alert>
+      <AlertDescription>
+        declaration과 emitDeclarationOnly 옵션과 함께 사용하면 
+        JavaScript 파일에 대한 타입 선언 파일을 생성할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# JavaScript 체크 (checkJs)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JavaScript 파일 타입 체크</CardTitle>
+    <CardDescription>
+      JavaScript 파일에 대한 타입 검사를 활성화합니다. // @ts-check 주석과 동일한 효과입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    // constants.js
+    module.exports.pi = parseFloat(3.142); // checkJs가 true일 때 타입 에러 발생
+    ```
+
+    ### 타입 체크 예시
+    ```typescript
+    // index.ts
+    import { pi } from "./constants";
+    console.log(pi);
+    ```
+
+    <Alert>
+      <AlertTitle>주의사항</AlertTitle>
+      <AlertDescription>
+        allowJs가 true일 때만 사용 가능하며, JavaScript 파일의 
+        타입 오류를 더 엄격하게 검사하고 싶을 때 유용합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# node_modules JavaScript 분석 깊이 (maxNodeModuleJsDepth)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>node_modules 내 JavaScript 파일 분석 설정</CardTitle>
+    <CardDescription>
+      node_modules 내 JavaScript 파일의 타입을 추론할 때 검색할 최대 깊이를 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 기본값과 권장사항
+    - 기본값: 0 (비활성화)
+    - 성능과 정확성을 위해 .d.ts 파일 사용을 권장
+    - 특별한 경우에만 값을 변경하여 사용
+
+    <Alert>
+      <AlertDescription>
+        이 값을 높이면 타입 추론의 정확도와 성능에 영향을 줄 수 있으므로,
+        가능하면 명시적인 타입 선언을 사용하는 것이 좋습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 메모리 제한 해제 (disableSizeLimit)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>TypeScript 메모리 제한 비활성화</CardTitle>
+    <CardDescription>
+      대규모 JavaScript 프로젝트에서 TypeScript가 사용할 수 있는 메모리 제한을 해제합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 사용 시나리오
+    - 매우 큰 JavaScript 프로젝트 작업 시
+    - 메모리 부족 오류 발생 시
+    - 복잡한 타입 분석이 필요한 경우
+
+    <Alert>
+      <AlertTitle>주의사항</AlertTitle>
+      <AlertDescription>
+        메모리 사용량이 크게 증가할 수 있으므로, 반드시 필요한 경우에만 활성화하세요.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 언어 서비스 플러그인 (plugins)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>에디터 플러그인 설정</CardTitle>
+    <CardDescription>
+      TypeScript 언어 서비스에 추가 기능을 제공하는 플러그인을 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 플러그인 예시
+    ```typescript
+    {
+      "compilerOptions": {
+        "plugins": [
+          { "name": "typescript-styled-plugin" },
+          { "name": "ts-sql-plugin" },
+          { "name": "typescript-eslint-language-service" }
+        ]
+      }
+    }
+    ```
+
+    ### 대표적인 플러그인들
+    - typescript-styled-plugin: 템플릿 문자열 내 CSS 린팅
+    - ts-sql-plugin: SQL 템플릿 문자열 린팅
+    - ts-graphql-plugin: GraphQL 쿼리 자동완성
+    - typescript-eslint-language-service: ESLint 통합
+
+    <Alert>
+      <AlertDescription>
+        VS Code의 경우 확장 프로그램이 자동으로 언어 서비스 플러그인을 포함할 수 있어,
+        tsconfig.json에 직접 정의하지 않아도 될 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 다운레벨 반복문 (downlevelIteration)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>ES5 환경의 반복문 동작 개선</CardTitle>
+    <CardDescription>
+      최신 JavaScript의 반복 기능을 구버전 환경에서 더 정확하게 구현합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 원본 코드
+    const str = "Hello!";
+    for (const s of str) {
+      console.log(s);
+    }
+
+    // downlevelIteration: false일 때 (기본값)
+    for (var _i = 0; _i < str.length; _i++) {
+      var s = str[_i];
+      console.log(s);
+    }
+    ```
+
+    ### 지원하는 기능들
+    - for...of 반복문
+    - 배열 스프레드 연산자
+    - 인자 스프레드
+    - Symbol.iterator 활용
+
+    <Alert>
+      <AlertDescription>
+        이모지와 같은 특수 문자 처리가 필요하거나 정확한 ES6 반복 동작이 
+        필요한 경우에 특히 유용합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# ES Module Interop
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>ES 모듈 상호 운용성</CardTitle>
+    <CardDescription>
+      CommonJS/AMD/UMD 모듈과 ES6 모듈 간의 호환성을 개선합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // esModuleInterop: false
+    import * as moment from "moment";
+    
+    // esModuleInterop: true
+    import moment from "moment";
+    ```
+
+    ### 주요 개선사항
+    - namespace 임포트(import * as)의 올바른 처리
+    - default 임포트의 정확한 동작
+    - CommonJS 모듈과의 더 나은 호환성
+
+    <Alert>
+      <AlertDescription>
+        이 옵션을 활성화하면 allowSyntheticDefaultImports도 자동으로 활성화됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Allow Synthetic Default Imports
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>합성 기본 임포트 허용</CardTitle>
+    <CardDescription>
+      명시적인 default export가 없는 모듈에서도 default import 문법 사용을 허용합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // utilFunctions.js
+    const getStringLength = (str) => str.length;
+    module.exports = { getStringLength };
+
+    // 사용 시 (allowSyntheticDefaultImports: true)
+    import utils from "./utilFunctions";
+    const length = utils.getStringLength("test");
+    ```
+
+    <Alert>
+      <AlertDescription>
+        이 설정은 타입 검사에만 영향을 주며, 실제 JavaScript 출력은 변경하지 않습니다.
+        Babel과 같은 트랜스파일러의 동작과 일치시키는 데 유용합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Verbatim Module Syntax
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>명시적 모듈 구문</CardTitle>
+    <CardDescription>
+      type 수정자를 사용한 임포트/익스포트의 더 명확한 처리를 제공합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 완전히 제거됨
+    import type { A } from "a";
+    
+    // 'import { b } from "bcd";'로 변환
+    import { b, type c, type d } from "bcd";
+    
+    // 'import {} from "xyz";'로 변환
+    import { type xyz } from "xyz";
+    ```
+
+    ### 장점
+    - 더 예측 가능한 모듈 변환
+    - 명확한 타입/값 구분
+    - 향상된 컴파일러 호환성
+
+    <Alert>
+      <AlertTitle>참고사항</AlertTitle>
+      <AlertDescription>
+        이 옵션은 importsNotUsedAsValues와 preserveValueImports를 대체하는
+        새로운 권장 방식입니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Isolated Modules
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 격리</CardTitle>
+    <CardDescription>
+      단일 파일 트랜스파일러(Babel 등)와의 호환성을 보장하는 설정입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 제한되는 기능들
+    ```typescript
+    // ❌ 타입만 익스포트하는 것은 불가
+    import { SomeType } from "./types";
+    export { SomeType };
+
+    // ❌ 글로벌 파일에서 네임스페이스 사용 불가
+    namespace Validation {
+      export const x = 1;
+    }
+    ```
+
+    <Alert>
+      <AlertDescription>
+        이 옵션을 활성화하면 단일 파일 컴파일에서 문제가 될 수 있는 
+        TypeScript 기능 사용 시 경고를 표시합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Force Consistent Casing In File Names
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>파일 이름 대소문자 일관성 강제</CardTitle>
+    <CardDescription>
+      파일 시스템 간 대소문자 처리 차이로 인한 문제를 방지합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 예시
+    ```typescript
+    // 파일명: userService.ts
+    // ❌ 잘못된 임포트
+    import { User } from "./UserService";
+    
+    // ✅ 올바른 임포트
+    import { User } from "./userService";
+    ```
+
+    <Alert>
+      <AlertTitle>권장사항</AlertTitle>
+      <AlertDescription>
+        서로 다른 운영체제에서 작업하는 팀의 경우 이 옵션을 반드시 활성화하는 것이 좋습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# Preserve Symlinks
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>심링크 경로 보존</CardTitle>
+    <CardDescription>
+      Node.js의 동작과 일치하도록 심볼릭 링크의 실제 경로를 해석하지 않습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 특징
+    - 심링크 파일 위치 기준으로 모듈 해석
+    - Webpack의 resolve.symlinks와 반대 동작
+    - 모노레포 프로젝트에서 유용
+
+    <Alert>
+      <AlertDescription>
+        이 설정은 특히 복잡한 프로젝트 구조나 모노레포에서 모듈 해석 방식에 
+        영향을 주므로 신중하게 선택해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 더 이상 사용되지 않는 설정들
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Deprecated 옵션들</CardTitle>
+    <CardDescription>
+      하위 호환성을 위해 유지되지만 사용이 권장되지 않는 설정들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 항목
+    - `charset`: 이제 기본적으로 UTF-8 사용
+    - `keyofStringsOnly`: TypeScript 2.9 이전 동작 유지용
+    - `noImplicitUseStrict`: strict 모드 관련 레거시 설정
+    - `suppressExcessPropertyErrors`: 객체 리터럴 검사 관련 레거시 설정
+
+    <Alert>
+      <AlertDescription>
+        이러한 옵션들은 새 프로젝트에서는 사용하지 말고, 
+        기존 프로젝트에서도 점진적으로 제거하는 것이 좋습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 실험적 데코레이터 (experimentalDecorators)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>데코레이터 지원 활성화</CardTitle>
+    <CardDescription>
+      TC39 표준화 과정 이전 버전의 데코레이터 문법을 지원합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    @logged
+    class Example {
+      @nonenumerable
+      classProp = 123;
+
+      @validate
+      method() {}
+    }
+    ```
+
+    <Alert>
+      <AlertDescription>
+        이는 실험적 기능으로, JavaScript 최종 명세와는 다를 수 있습니다.
+        프로덕션 환경에서 사용시 주의가 필요합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 데코레이터 메타데이터 (emitDecoratorMetadata)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>데코레이터 메타데이터 생성</CardTitle>
+    <CardDescription>
+      reflect-metadata 모듈과 함께 작동하는 타입 메타데이터 생성을 활성화합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    function LogMethod(target, propertyKey, descriptor) {
+      // 메타데이터 접근 가능
+      console.log(Reflect.getMetadata("design:type", target, propertyKey));
+    }
+
+    class Demo {
+      @LogMethod
+      method(param: string) {}
+    }
+    ```
+
+    ### 생성되는 메타데이터
+    - design:type: 메서드/프로퍼티의 타입
+    - design:paramtypes: 매개변수 타입들
+    - design:returntype: 반환 타입
+
+    <Alert>
+      <AlertDescription>
+        이 기능을 사용하려면 reflect-metadata 패키지를 설치하고 임포트해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# JSX 변환 모드 (jsx)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JSX 코드 변환 방식 설정</CardTitle>
+    <CardDescription>
+      .tsx 파일의 JSX 구문이 JavaScript로 변환되는 방식을 제어합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 원본 코드
+    const HelloWorld = () => <h1>Hello world</h1>;
+
+    // react-jsx 모드
+    import { jsx as _jsx } from "react/jsx-runtime";
+    export const HelloWorld = () => 
+      _jsx("h1", { children: "Hello world" });
+    ```
+
+    ### 주요 옵션
+    - `react-jsx`: 프로덕션용 최적화된 변환
+    - `react-jsxdev`: 개발용 디버깅 정보 포함
+    - `preserve`: JSX 구문 유지
+    - `react`: React.createElement 호출로 변환
+
+    <Alert>
+      <AlertDescription>
+        React 17 이상에서는 react-jsx 또는 react-jsxdev 사용을 권장합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# JSX 팩토리 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JSX 생성 함수 설정</CardTitle>
+    <CardDescription>
+      JSX 요소 생성에 사용될 함수와 프래그먼트를 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "jsxFactory": "h", // Preact 등에서 사용
+        "jsxFragmentFactory": "Fragment",
+        "jsxImportSource": "react" // jsx-runtime 소스
+      }
+    }
+    ```
+
+    ### 파일별 설정
+    ```typescript
+    /** @jsx h */
+    /** @jsxFrag Fragment */
+    /** @jsxImportSource preact */
+    import { h, Fragment } from "preact";
+    ```
+
+    <Alert>
+      <AlertDescription>
+        Preact나 다른 JSX 호환 라이브러리를 사용할 때 
+        해당 라이브러리에 맞는 팩토리 함수를 지정해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 타겟 설정 (target)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JavaScript 출력 버전 설정</CardTitle>
+    <CardDescription>
+      TypeScript가 생성할 JavaScript의 ECMAScript 버전을 지정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "target": "es2022" // 또는 "es5", "es6", "esnext" 등
+      }
+    }
+    ```
+
+    ### 주요 타겟 옵션
+    - `ES5`: 광범위한 브라우저 지원
+    - `ES6/ES2015`: 모던 브라우저 기능
+    - `ES2022`: 최신 JavaScript 기능
+    - `ESNext`: 최신 TypeScript가 지원하는 최상위 버전
+
+    <Alert>
+      <AlertDescription>
+        브라우저/환경 지원 범위와 필요한 기능을 고려하여 선택하세요.
+        높은 버전일수록 더 적은 코드가 생성되지만, 지원 범위가 줄어듭니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 라이브러리 설정 (lib)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>TypeScript 기본 타입 정의</CardTitle>
+    <CardDescription>
+      TypeScript가 기본적으로 포함할 타입 정의 라이브러리를 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 라이브러리
+    ```typescript
+    {
+      "compilerOptions": {
+        "lib": [
+          "ES2022",
+          "DOM",
+          "DOM.Iterable"
+        ]
+      }
+    }
+    ```
+
+    - `ES5~ES2023`: 각 ECMAScript 버전의 기능
+    - `DOM`: 브라우저 API
+    - `WebWorker`: 웹 워커 환경
+    - `ESNext`: 최신 JavaScript 기능
+
+    <Alert>
+      <AlertDescription>
+        target 설정에 따라 기본값이 변경됩니다.
+        브라우저 환경이 아닌 경우 DOM 관련 라이브러리는 제외할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 모듈 감지 (moduleDetection)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>파일 모듈 형식 감지</CardTitle>
+    <CardDescription>
+      TypeScript가 파일을 스크립트 또는 모듈로 처리할지 결정하는 방식을 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 감지 모드
+    - `auto`: import/export 및 package.json 타입 필드 확인
+    - `legacy`: import/export 문만 확인
+    - `force`: 모든 비선언 파일을 모듈로 처리
+
+    ```typescript
+    {
+      "compilerOptions": {
+        "moduleDetection": "auto"
+      }
+    }
+    ```
+
+    <Alert>
+      <AlertDescription>
+        Node.js 프로젝트에서는 auto 모드가 package.json의 
+        "type" 필드를 고려하므로 권장됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 진단 정보 출력
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>컴파일러 성능 진단</CardTitle>
+    <CardDescription>
+      TypeScript 컴파일 과정의 성능과 동작을 분석하기 위한 설정들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### 주요 옵션들
+    ```typescript
+    {
+      "compilerOptions": {
+        "extendedDiagnostics": true,  // 상세한 컴파일 성능 정보
+        "diagnostics": true,          // 기본적인 디버깅 정보 (deprecated)
+        "generateCpuProfile": true    // CPU 프로파일 생성
+      }
+    }
+    ```
+
+    <Alert>
+      <AlertDescription>
+        대규모 프로젝트에서 성능 문제 분석이 필요할 때 유용합니다.
+        일반적인 개발 시에는 비활성화하는 것이 좋습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 파일 목록 설명
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>컴파일 대상 파일 정보</CardTitle>
+    <CardDescription>
+      TypeScript가 처리하는 파일들과 그 이유를 확인할 수 있는 설정들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "listFiles": true,           // 컴파일된 파일 목록
+        "explainFiles": true,        // 파일이 포함된 이유 설명
+        "listEmittedFiles": true     // 생성된 파일 목록
+      }
+    }
+    ```
+
+    ### 출력 예시
+    ```plaintext
+    node_modules/typescript/lib/lib.d.ts
+      Default library for target 'es5'
+    src/index.ts
+      Matched by include pattern '**/*'
+    ```
+
+    <Alert>
+      <AlertDescription>
+        프로젝트 설정 문제를 디버깅하거나 특정 파일이 
+        컴파일에 포함/제외된 이유를 확인할 때 유용합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 모듈 해석 추적
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 경로 해석 추적</CardTitle>
+    <CardDescription>
+      TypeScript의 모듈 해석 과정을 자세히 확인할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "traceResolution": true
+      }
+    }
+    ```
+
+    ### 사용 사례
+    - 모듈 임포트가 실패하는 원인 파악
+    - 예상치 못한 모듈 해석 결과 디버깅
+    - 경로 별칭(path alias) 설정 확인
+
+    <Alert>
+      <AlertDescription>
+        모듈을 찾지 못하는 문제나 잘못된 버전의 모듈이 
+        해석되는 경우 문제 해결에 도움이 됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 복합 프로젝트 설정 (Composite)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>복합 프로젝트 활성화</CardTitle>
+    <CardDescription>
+      여러 TypeScript 프로젝트를 함께 사용할 때의 빌드 최적화 설정입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "composite": true,
+        "declaration": true,  // 자동으로 true로 설정됨
+        "rootDir": "./src"   // 명시적 설정 필요
+      }
+    }
+    ```
+
+    ### 주요 제약사항
+    - 모든 구현 파일이 `include` 패턴에 포함되어야 함
+    - `rootDir`이 명시적으로 설정되어야 함
+    - `declaration`이 자동으로 활성화됨
+
+    <Alert>
+      <AlertDescription>
+        모노레포나 대규모 프로젝트에서 빌드 성능을 최적화할 때 유용합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 증분 컴파일 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>빌드 캐시와 최적화</CardTitle>
+    <CardDescription>
+      컴파일 성능을 향상시키기 위한 증분 빌드 관련 설정입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "incremental": true,
+        "tsBuildInfoFile": "./buildcache/.tsbuildinfo"
+      }
+    }
+    ```
+
+    ### 관련 설정
+    - `incremental`: 증분 컴파일 활성화
+    - `tsBuildInfoFile`: 빌드 정보 파일 위치
+    - `composite`: true일 때 자동으로 incremental이 활성화
+
+    <Alert>
+      <AlertDescription>
+        대규모 프로젝트에서 빌드 시간을 크게 단축할 수 있지만,
+        추가 디스크 공간이 필요합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 프로젝트 참조 최적화
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>프로젝트 참조 설정</CardTitle>
+    <CardDescription>
+      여러 프로젝트 간의 참조와 로딩을 최적화하는 설정들입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "compilerOptions": {
+        "disableReferencedProjectLoad": true,
+        "disableSolutionSearching": true,
+        "disableSourceOfProjectReferenceRedirect": false
+      }
+    }
+    ```
+
+    ### 설정 효과
+    - `disableReferencedProjectLoad`: 필요할 때만 프로젝트 로드
+    - `disableSolutionSearching`: 참조 검색에서 제외
+    - `disableSourceOfProjectReferenceRedirect`: 선언 파일 사용 방식 변경
+
+    <Alert>
+      <AlertDescription>
+        대규모 모노레포에서 에디터 성능을 개선하고 메모리 사용량을 
+        줄이는 데 도움이 됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 감시 전략 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>파일 시스템 감시 방식</CardTitle>
+    <CardDescription>
+      파일과 디렉토리 변경을 감지하는 방식을 설정합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "watchOptions": {
+        "watchFile": "useFsEvents",
+        "watchDirectory": "useFsEvents",
+        "fallbackPolling": "dynamicPriority"
+      }
+    }
+    ```
+
+    ### 주요 옵션
+    - `useFsEvents`: 운영체제의 파일 시스템 이벤트 사용
+    - `dynamicPriorityPolling`: 동적 우선순위 기반 폴링
+    - `fixedPollingInterval`: 고정 간격 폴링
+
+    <Alert>
+      <AlertDescription>
+        운영체제와 프로젝트 특성에 따라 적절한 전략을 선택하세요.
+        Linux에서는 특히 감시자(watcher) 수 제한에 주의해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 감시 대상 제외 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>감시 제외 패턴</CardTitle>
+    <CardDescription>
+      특정 파일이나 디렉토리를 감시 대상에서 제외합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "watchOptions": {
+        "excludeFiles": [
+          "temp/*.ts"
+        ],
+        "excludeDirectories": [
+          "**/node_modules",
+          "dist"
+        ]
+      }
+    }
+    ```
+
+    ### 사용 사례
+    - 임시 파일 제외
+    - 빌드 출력 디렉토리 제외
+    - 대용량 의존성 디렉토리 제외
+
+    <Alert>
+      <AlertDescription>
+        불필요한 파일 감시를 제외하면 시스템 리소스 사용을 
+        줄이고 성능을 개선할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+# 성능 최적화 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>감시 모드 성능 설정</CardTitle>
+    <CardDescription>
+      파일 변경 감지와 재컴파일 동작을 최적화합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    {
+      "watchOptions": {
+        "synchronousWatchDirectory": false,
+        "assumeChangesOnlyAffectDirectDependencies": true
+      }
+    }
+    ```
+
+    ### 기능 설명
+    - `synchronousWatchDirectory`: 디렉토리 변경 즉시 반영
+    - `assumeChangesOnlyAffectDirectDependencies`: 직접 의존성만 재컴파일
+
+    <Alert>
+      <AlertDescription>
+        대규모 프로젝트에서 빠른 피드백이 필요할 때 유용하지만,
+        일부 변경사항을 놓칠 수 있으므로 주의가 필요합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>

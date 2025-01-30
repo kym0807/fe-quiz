@@ -1,0 +1,288 @@
+---
+title: "Vite 빌드 설정 옵션"
+description: "Vite의 프로덕션 빌드 관련 설정 옵션에 대한 상세 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>브라우저 호환성과 모듈 설정</CardTitle>
+    <CardDescription>
+      최종 번들의 브라우저 호환성과 모듈 프리로드 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### build.target
+    - **타입**: string | string[]
+    - **기본값**: 'modules'
+    - **설명**: 최종 번들의 브라우저 호환성 목표 설정
+    - **특별 값**:
+      - 'modules': ES 모듈, 동적 임포트, import.meta를 지원하는 브라우저 대상
+      - 'esnext': 최소한의 변환만 수행
+    - 커스텀 타겟은 ES 버전(예: 'es2015') 또는 브라우저 버전(예: 'chrome58') 지정 가능
+
+    ### build.modulePreload
+    ```js
+    export default defineConfig({
+      build: {
+        modulePreload: {
+          polyfill: true, // 폴리필 자동 주입
+          resolveDependencies: (filename, deps, context) => {
+            // 의존성 목록 커스터마이징
+            return deps.filter(dep => someCondition(dep))
+          }
+        }
+      }
+    })
+    ```
+    - **타입**: `boolean` | `{ polyfill?: boolean, resolveDependencies?: Function }`
+    - **기본값**: `{ polyfill: true }`
+    - 라이브러리 모드에서는 폴리필이 적용되지 않음
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>출력 설정</CardTitle>
+    <CardDescription>
+      빌드 결과물의 출력 경로와 에셋 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### build.outDir
+    - **타입**: string
+    - **기본값**: 'dist'
+    - 출력 디렉토리 지정 (프로젝트 루트 기준 상대 경로)
+
+    ### build.assetsDir
+    - **타입**: string
+    - **기본값**: 'assets'
+    - 생성된 에셋을 저장할 하위 디렉토리 지정
+    - 라이브러리 모드에서는 사용되지 않음
+
+    ### build.assetsInlineLimit
+    ```js
+    export default defineConfig({
+      build: {
+        // 4KB 이하의 파일은 base64 URL로 인라인 처리
+        assetsInlineLimit: 4096,
+        // 또는 함수로 커스텀 로직 적용
+        assetsInlineLimit: (filePath, content) => {
+          // 조건에 따라 true/false 반환
+          return filePath.endsWith('.svg')
+        }
+      }
+    })
+    ```
+    - **기본값**: 4096 (4KB)
+    - 이 크기보다 작은 에셋은 base64 URL로 인라인 처리
+    - Git LFS 파일은 자동으로 인라인 처리에서 제외
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>CSS 관련 빌드 설정</CardTitle>
+    <CardDescription>
+      CSS 코드 분할과 최적화 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### build.cssCodeSplit
+    - **타입**: boolean
+    - **기본값**: true (라이브러리 모드에서는 false)
+    - CSS 코드 분할 활성화/비활성화
+    - 활성화 시: 비동기 JS 청크의 CSS는 개별 청크로 보존
+    - 비활성화 시: 모든 CSS를 하나의 파일로 추출
+
+    ### build.cssTarget
+    - **타입**: string | string[]
+    - **기본값**: build.target과 동일
+    - CSS 최소화를 위한 별도의 브라우저 타겟 설정 가능
+    - 예: WeChat WebView를 위한 'chrome61' 설정
+
+    ### build.cssMinify
+    - **타입**: boolean | 'esbuild' | 'lightningcss'
+    - **기본값**: build.minify와 동일 (SSR의 경우 'esbuild')
+    - CSS 최소화를 위한 별도 설정
+    ```js
+    export default defineConfig({
+      build: {
+        cssMinify: 'lightningcss', // Lightning CSS 사용
+        // 또는
+        cssMinify: false // 최소화 비활성화
+      }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>소스맵과 번들링 옵션</CardTitle>
+    <CardDescription>
+      소스맵 생성과 Rollup 관련 고급 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### build.sourcemap
+    - **타입**: boolean | 'inline' | 'hidden'
+    - **기본값**: false
+    - **옵션**:
+      - true: 별도의 소스맵 파일 생성
+      - 'inline': 출력 파일에 데이터 URI로 포함
+      - 'hidden': 소스맵은 생성하되 번들 파일의 주석은 제거
+
+    ### build.rollupOptions
+    ```js
+    export default defineConfig({
+      build: {
+        rollupOptions: {
+          // Rollup 번들러 설정 직접 커스터마이즈
+          input: 'src/main.js',
+          output: {
+            // 출력 설정
+          },
+          plugins: [
+            // 플러그인 설정
+          ]
+        }
+      }
+    })
+    ```
+    - Rollup 번들러의 설정을 직접 커스터마이즈
+    - Vite의 내부 Rollup 설정과 병합됨
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>라이브러리 모드 설정</CardTitle>
+    <CardDescription>
+      라이브러리 빌드를 위한 특수 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### build.lib
+    ```js
+    export default defineConfig({
+      build: {
+        lib: {
+          entry: 'src/main.js',
+          name: 'MyLib',
+          formats: ['es', 'umd'],
+          fileName: (format) => `my-lib.${format}.js`,
+          cssFileName: 'my-lib-style'
+        }
+      }
+    })
+    ```
+
+    - **필수 옵션**:
+      - entry: 라이브러리 진입점
+      - name: UMD/IIFE 빌드를 위한 전역 변수명
+    - **선택 옵션**:
+      - formats: 출력 형식 ['es', 'cjs', 'umd', 'iife']
+      - fileName: 출력 파일명 패턴
+      - cssFileName: CSS 출력 파일명
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>SSR과 매니페스트 설정</CardTitle>
+    <CardDescription>
+      서버 사이드 렌더링과 에셋 매니페스트 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### build.manifest
+    - **타입**: boolean | string
+    - **기본값**: false
+    - true로 설정 시 `.vite/manifest.json` 생성
+    - 해시되지 않은 에셋 파일명과 해시된 버전 간의 매핑 정보 포함
+
+    ### build.ssr
+    ```js
+    export default defineConfig({
+      build: {
+        ssr: true, // 또는
+        ssr: 'src/entry-server.js' // SSR 진입점 직접 지정
+      }
+    })
+    ```
+    - SSR 빌드 생성
+    - string 값으로 SSR 진입점 직접 지정 가능
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>최적화와 성능 설정</CardTitle>
+    <CardDescription>
+      코드 최소화와 청크 크기 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### build.minify
+    ```js
+    export default defineConfig({
+      build: {
+        minify: 'esbuild', // 기본값
+        // 또는
+        minify: 'terser', // Terser 사용
+        // 또는
+        minify: false // 최소화 비활성화
+      }
+    })
+    ```
+    - **기본값**: 클라이언트 빌드는 'esbuild', SSR 빌드는 false
+    - esbuild는 Terser보다 20~40배 빠르고 압축률은 1~2% 차이
+
+    ### build.reportCompressedSize
+    - **타입**: boolean
+    - **기본값**: true
+    - gzip 압축 크기 보고 활성화/비활성화
+    - 큰 프로젝트에서는 비활성화하여 빌드 성능 향상 가능
+
+    ### build.chunkSizeWarningLimit
+    - **타입**: number
+    - **기본값**: 500
+    - 청크 크기 경고 제한(KB 단위)
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기타 빌드 옵션</CardTitle>
+    <CardDescription>
+      파일 쓰기와 감시 모드 관련 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ### build.write
+    - **타입**: boolean
+    - **기본값**: true
+    - false로 설정 시 디스크에 번들 쓰기 비활성화
+    - 프로그래매틱 빌드 호출에서 후처리가 필요한 경우 유용
+
+    ### build.watch
+    ```js
+    export default defineConfig({
+      build: {
+        watch: {} // Rollup 감시자 활성화
+      }
+    })
+    ```
+    - **기본값**: null
+    - 빌드 전용 플러그인이나 통합 프로세스에 유용
+    - WSL2에서 사용 시 파일 시스템 감시 관련 주의 필요
+
+    ### build.emptyOutDir
+    - **타입**: boolean
+    - **기본값**: outDir이 root 내부에 있을 때 true
+    - 빌드 전 outDir 비우기 여부
+  </CardContent>
+</Card>

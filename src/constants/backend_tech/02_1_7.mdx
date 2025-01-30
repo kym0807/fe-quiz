@@ -1,0 +1,347 @@
+---
+title: "Fastify 검증과 직렬화"
+description: "Fastify의 스키마 기반 검증 및 직렬화 시스템에 대한 상세 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>검증과 직렬화 개요</CardTitle>
+    <CardDescription>
+      Fastify의 스키마 기반 접근 방식과 JSON Schema를 활용한 유효성 검사
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Fastify는 스키마 기반 접근 방식을 사용합니다. 필수는 아니지만 라우트 검증과 출력 직렬화를 위해 JSON Schema 사용을 권장합니다.
+    Fastify는 내부적으로 스키마를 고성능 함수로 컴파일합니다.
+
+    <Alert variant="warning" className="my-4">
+      <AlertTitle>보안 주의사항</AlertTitle>
+      <AlertDescription>
+        스키마 정의는 애플리케이션 코드로 취급해야 합니다. 검증과 직렬화 기능은 new Function()을 사용하여 동적으로 코드를 평가하므로, 
+        사용자가 제공한 스키마에는 안전하지 않을 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>핵심 개념</CardTitle>
+    <CardDescription>
+      검증과 직렬화를 처리하는 두 가지 주요 컴포넌트
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Fastify의 검증과 직렬화는 다음 두 가지 별도의 컴포넌트에 의해 처리됩니다:
+
+    1. **Ajv v8**: 요청 데이터 검증
+    2. **fast-json-stringify**: 응답 본문 직렬화
+
+    이 두 컴포넌트는 `.addSchema(schema)` API를 통해 Fastify 인스턴스에 추가된 JSON 스키마만을 공유합니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>공유 스키마 사용하기</CardTitle>
+    <CardDescription>
+      애플리케이션 전반에서 재사용 가능한 스키마 정의 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    `addSchema` API를 사용하면 여러 스키마를 Fastify 인스턴스에 추가하고 애플리케이션의 여러 부분에서 재사용할 수 있습니다.
+    공유 스키마는 JSON Schema의 `$ref` 키워드를 통해 재사용됩니다.
+
+    참조 방법 예시:
+    ```ts
+    // 현재 스키마 내에서 #foo ID를 가진 필드 검색
+    myField: { $ref: '#foo' }
+
+    // 현재 스키마 내의 definitions.foo 필드 검색
+    myField: { $ref: '#/definitions/foo' }
+
+    // http://url.com/sh.json ID를 가진 공유 스키마 검색
+    myField: { $ref: 'http://url.com/sh.json#' }
+    ```
+
+    실제 사용 예시:
+    ```ts
+    fastify.addSchema({
+      $id: 'http://example.com/',
+      type: 'object',
+      properties: {
+        hello: { type: 'string' }
+      }
+    })
+
+    fastify.post('/', {
+      handler () {},
+      schema: {
+        body: {
+          type: 'array',
+          items: { $ref: 'http://example.com#/properties/hello' }
+        }
+      }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>요청 데이터 검증</CardTitle>
+    <CardDescription>
+      라우트 핸들러에서 요청 데이터의 유효성을 검사하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Fastify는 다음과 같은 요청 부분에 대한 검증을 지원합니다:
+
+    - **body**: POST, PUT, PATCH 메서드의 요청 본문 검증
+    - **querystring/query**: 쿼리 스트링 검증
+    - **params**: 라우트 매개변수 검증
+    - **headers**: 요청 헤더 검증
+
+    검증 스키마 예시:
+    ```ts
+    const schema = {
+      body: {
+        type: 'object',
+        required: ['requiredKey'],
+        properties: {
+          someKey: { type: 'string' },
+          someOtherKey: { type: 'number' },
+          requiredKey: {
+            type: 'array',
+            maxItems: 3,
+            items: { type: 'integer' }
+          },
+          nullableKey: { type: ['number', 'null'] }
+        }
+      },
+      querystring: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          excitement: { type: 'integer' }
+        }
+      }
+    }
+
+    fastify.post('/api/resource', { schema }, handler)
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>컨텐츠 타입별 검증</CardTitle>
+    <CardDescription>
+      요청의 Content-Type에 따른 다른 검증 스키마 적용 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    바디 스키마의 경우 컨텐츠 타입별로 다른 스키마를 적용할 수 있습니다:
+
+    ```ts
+    fastify.post('/api/resource', {
+      schema: {
+        body: {
+          content: {
+            'application/json': {
+              schema: { type: 'object' }
+            },
+            'text/plain': {
+              schema: { type: 'string' }
+            }
+          }
+        }
+      }
+    }, handler)
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>응답 직렬화</CardTitle>
+    <CardDescription>
+      JSON 응답 데이터의 형식과 구조를 정의하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    응답 스키마는 상태 코드별로 정의할 수 있습니다:
+
+    ```ts
+    const schema = {
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            value: { type: 'string' },
+            otherValue: { type: 'boolean' }
+          }
+        },
+        '2xx': {
+          type: 'object',
+          properties: {
+            value: { type: 'string' }
+          }
+        },
+        default: {
+          type: 'object',
+          properties: {
+            error: { type: 'boolean' }
+          }
+        }
+      }
+    }
+    ```
+
+    컨텐츠 타입별 응답 스키마도 정의할 수 있습니다:
+    ```ts
+    response: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              name: { type: 'string' },
+              image: { type: 'string' }
+            }
+          },
+          'application/vnd.v1+json': {
+            schema: {
+              type: 'array',
+              items: { $ref: 'test' }
+            }
+          }
+        }
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>오류 처리</CardTitle>
+    <CardDescription>
+      검증 오류에 대한 처리와 사용자 정의 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    기본적으로 스키마 검증 실패 시 400 상태 코드와 함께 다음과 같은 응답이 반환됩니다:
+
+    ```json
+    {
+      "statusCode": 400,
+      "error": "Bad Request",
+      "message": "body should have required property 'name'"
+    }
+    ```
+
+    라우트 내에서 검증 오류를 직접 처리하려면 `attachValidation` 옵션을 사용합니다:
+
+    ```ts
+    fastify.post('/', { 
+      schema, 
+      attachValidation: true 
+    }, function (req, reply) {
+      if (req.validationError) {
+        reply.code(400).send(req.validationError)
+      }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>오류 메시지 커스터마이징</CardTitle>
+    <CardDescription>
+      검증 오류 메시지의 형식과 내용을 사용자 정의하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    `ajv-errors`를 사용한 상세한 오류 메시지 정의:
+
+    ```ts
+    const schema = {
+      body: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            errorMessage: {
+              type: '잘못된 이름 형식입니다'
+            }
+          },
+          age: {
+            type: 'number',
+            errorMessage: {
+              type: '나이는 숫자여야 합니다',
+              min: '너무 어립니다'
+            }
+          }
+        },
+        required: ['name', 'age'],
+        errorMessage: {
+          required: {
+            name: '이름이 필요합니다',
+            age: '나이가 필요합니다'
+          }
+        }
+      }
+    }
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>다국어 지원</AlertTitle>
+      <AlertDescription>
+        `ajv-i18n`을 사용하면 다국어 오류 메시지를 지원할 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JSON Schema 지원</CardTitle>
+    <CardDescription>
+      Fastify의 JSON Schema 참조 기능 지원 범위
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    지원되는 참조 유형:
+    
+    - `$ref`에서 `$id`로의 참조
+    - `$ref`에서 `/definitions`로의 참조
+    - `$ref`에서 공유 스키마 `$id`로의 참조
+    - `$ref`에서 공유 스키마 `/definitions`로의 참조
+
+    예시:
+    ```ts
+    // 동일한 스키마 내 $id 참조
+    const schema = {
+      type: 'object',
+      definitions: {
+        address: {
+          $id: '#address',
+          type: 'object',
+          properties: {
+            city: { type: 'string' }
+          }
+        }
+      },
+      properties: {
+        home: { $ref: '#address' },
+        work: { $ref: '#address' }
+      }
+    }
+    ```
+  </CardContent>
+</Card>

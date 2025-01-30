@@ -1,0 +1,151 @@
+---
+title: "startTransition"
+description: "UI의 일부를 백그라운드에서 렌더링할 수 있게 해주는 React 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>startTransition이란?</CardTitle>
+    <CardDescription>
+      상태 업데이트를 Transition으로 표시하여 UI의 반응성을 유지하면서 백그라운드에서 렌더링할 수 있게 해주는 함수입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    startTransition(action);
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+```tsx
+import { startTransition } from 'react';
+
+function TabContainer() {
+  const [tab, setTab] = useState('about');
+
+  function selectTab(nextTab) {
+    startTransition(() => {
+      setTab(nextTab); // 이 상태 업데이트는 non-blocking
+    });
+  }
+
+  return (
+    <div>
+      <TabButton onClick={() => selectTab('about')}>소개</TabButton>
+      <TabButton onClick={() => selectTab('posts')}>게시물</TabButton>
+      <TabPanel>{/* 탭 내용 */}</TabPanel>
+    </div>
+  );
+}
+```
+
+<Alert className="my-4">
+  <AlertTitle>주요 특징</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>UI의 반응성을 유지하면서 무거운 업데이트를 처리</li>
+      <li>로딩 인디케이터 없이 자연스러운 전환 구현</li>
+      <li>중간에 다른 상태 업데이트가 발생하면 진행 중인 전환을 중단하고 새로운 업데이트 처리</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 주의사항과 제한사항
+
+<Card className="my-4 border-yellow-500">
+  <CardHeader>
+    <CardTitle>사용 시 고려사항</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h4 className="font-bold">1. 진행 상태 확인 불가</h4>
+        <p>Transition이 진행 중인지 확인하려면 대신 <code>useTransition</code>을 사용해야 합니다.</p>
+      </div>
+      <div>
+        <h4 className="font-bold">2. 상태 업데이트 함수 접근 필요</h4>
+        <p>props나 커스텀 훅의 반환값에 대한 Transition이 필요한 경우 <code>useDeferredValue</code>를 사용하세요.</p>
+      </div>
+      <div>
+        <h4 className="font-bold">3. 비동기 처리 시 주의</h4>
+        <p>async/await 이후의 상태 업데이트는 추가 startTransition으로 감싸야 합니다.</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 사용 예시
+
+### 1. 기본적인 Transition 처리
+
+```tsx
+function App() {
+  const [page, setPage] = useState('home');
+
+  function navigateTo(nextPage) {
+    startTransition(() => {
+      setPage(nextPage);
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      <nav className="space-x-2">
+        <button onClick={() => navigateTo('home')}>홈</button>
+        <button onClick={() => navigateTo('about')}>소개</button>
+        <button onClick={() => navigateTo('contact')}>연락처</button>
+      </nav>
+      <main>
+        {/* 페이지 컨텐츠 */}
+      </main>
+    </div>
+  );
+}
+```
+
+### 2. 비동기 처리와 함께 사용
+
+```tsx
+async function handleSearch(query) {
+  try {
+    const results = await searchAPI(query);
+    
+    // 비동기 요청 후의 상태 업데이트는 새로운 startTransition으로 감싸기
+    startTransition(() => {
+      setSearchResults(results);
+    });
+  } catch (error) {
+    setError(error);
+  }
+}
+```
+
+<Alert className="mt-4" variant="default">
+  <AlertTitle>Tip</AlertTitle>
+  <AlertDescription>
+    <code>startTransition</code>은 <code>useTransition</code>과 매우 유사하지만, 컴포넌트 외부에서도 사용할 수 있습니다. 
+    데이터 라이브러리나 상태 관리 라이브러리와 함께 사용할 때 유용합니다.
+  </AlertDescription>
+</Alert>
+
+## 사용이 권장되는 경우
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>startTransition 활용이 효과적인 상황</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>무거운 데이터 시각화나 차트 업데이트</li>
+      <li>탭 전환이나 페이지 네비게이션</li>
+      <li>검색 결과나 필터링된 목록 업데이트</li>
+      <li>대규모 DOM 업데이트가 필요한 상황</li>
+    </ul>
+  </CardContent>
+</Card>

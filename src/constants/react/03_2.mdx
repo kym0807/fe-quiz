@@ -1,0 +1,151 @@
+---
+title: "React의 컴포넌트와 훅 사용 규칙"
+description: "React 컴포넌트와 훅을 올바르게 사용하는 방법에 대해 알아봅니다"
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>React의 컴포넌트와 훅 호출</CardTitle>
+    <CardDescription>
+      React는 사용자 경험을 최적화하기 위해 필요할 때 컴포넌트와 훅을 렌더링합니다. 
+      선언적 방식을 사용하여 컴포넌트에서 무엇을 렌더링할지 React에게 알려주면, React가 
+      이를 가장 효과적으로 표시하는 방법을 결정합니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 컴포넌트 함수를 직접 호출하지 마세요
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```jsx
+    function BlogPost() {
+      // ✅ 좋은 예: JSX에서만 컴포넌트 사용
+      return <Layout><Article /></Layout>;
+    }
+
+    function BlogPost() {
+      // 🔴 나쁜 예: 컴포넌트를 함수처럼 직접 호출
+      return <Layout>{Article()}</Layout>;
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertDescription>
+    컴포넌트가 훅을 포함하고 있을 때, 직접 호출하면 훅 규칙을 위반할 수 있습니다.
+    특히 반복문이나 조건문 안에서 컴포넌트를 직접 호출하면 문제가 발생할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+### React가 렌더링을 제어하면 얻는 이점
+
+<Card className="mb-6">
+  <CardContent>
+    <ul className="space-y-2">
+      <li className="flex items-start">
+        <span className="font-medium mr-2">✨ 향상된 기능:</span>
+        <span>React는 훅을 통해 로컬 상태와 같은 기능을 컴포넌트에 추가할 수 있습니다.</span>
+      </li>
+      <li className="flex items-start">
+        <span className="font-medium mr-2">🔄 조정 참여:</span>
+        <span>컴포넌트 타입이 조정(reconciliation) 과정에 참여하여 트리 구조를 더 잘 이해할 수 있습니다.</span>
+      </li>
+      <li className="flex items-start">
+        <span className="font-medium mr-2">⚡ 성능 최적화:</span>
+        <span>브라우저가 컴포넌트 호출 사이에 작업을 수행할 수 있어 메인 스레드 차단을 방지합니다.</span>
+      </li>
+      <li className="flex items-start">
+        <span className="font-medium mr-2">🔍 디버깅 개선:</span>
+        <span>개발 도구를 통해 컴포넌트를 더 잘 분석할 수 있습니다.</span>
+      </li>
+      <li className="flex items-start">
+        <span className="font-medium mr-2">📈 효율적인 조정:</span>
+        <span>트리에서 어떤 컴포넌트를 다시 렌더링해야 하는지 정확히 결정할 수 있습니다.</span>
+      </li>
+    </ul>
+  </CardContent>
+</Card>
+
+## 훅 사용 규칙
+
+<Tabs defaultValue="passing" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="passing">일반 값으로 전달 금지</TabsTrigger>
+    <TabsTrigger value="mutation">동적 변경 금지</TabsTrigger>
+    <TabsTrigger value="dynamic">동적 사용 금지</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="passing">
+    <Card>
+      <CardContent>
+        <p className="mb-4">훅은 컴포넌트나 다른 훅 내부에서만 호출되어야 하며, 일반 값으로 전달하면 안됩니다. 
+        이는 지역적 추론(local reasoning)을 가능하게 하여 개발자가 컴포넌트를 독립적으로 이해할 수 있게 합니다.</p>
+        
+        <Alert>
+          <AlertDescription>
+            이 규칙을 위반하면 React가 자동으로 컴포넌트를 최적화할 수 없습니다.
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="mutation">
+    <Card>
+      <CardContent>
+        ```jsx
+        // 🔴 나쁜 예: 고차 훅 작성
+        function ChatInput() {
+          const useDataWithLogging = withLogging(useData);
+          const data = useDataWithLogging();
+        }
+
+        // ✅ 좋은 예: 새로운 훅 버전 생성
+        function ChatInput() {
+          const data = useDataWithLogging();
+        }
+
+        function useDataWithLogging() {
+          // 훅의 로직을 여기에 직접 작성
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="dynamic">
+    <Card>
+      <CardContent>
+        ```jsx
+        // 🔴 나쁜 예: props로 훅 전달
+        function ChatInput() {
+          return <Button useData={useDataWithLogging} />
+        }
+
+        // ✅ 좋은 예: 컴포넌트에서 직접 훅 사용
+        function ChatInput() {
+          return <Button />
+        }
+
+        function Button() {
+          const data = useDataWithLogging();
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Alert className="mt-6">
+  <AlertDescription>
+    훅을 동적으로 사용하면 앱의 복잡성이 크게 증가하고 지역적 추론을 방해하여 장기적으로 팀의 생산성을 저하시킬 수 있습니다.
+    테스트를 위해 컴포넌트를 모킹해야 하는 경우, 대신 서버를 모킹하여 테스트 데이터를 제공하는 것이 좋습니다.
+    가능하다면 엔드투엔드 테스트를 사용하는 것이 더 효과적입니다.
+  </AlertDescription>
+</Alert>

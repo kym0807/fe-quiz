@@ -1,0 +1,518 @@
+---
+title: "Fastify 라우팅"
+description: "Fastify의 강력한 라우팅 시스템에 대한 완벽 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>라우트 선언 방식</CardTitle>
+    <CardDescription>
+      Fastify는 두 가지 방식의 라우트 선언을 지원합니다: 전체 선언 방식과 축약 선언 방식
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 전체 선언 방식
+
+```typescript
+fastify.route({
+  method: 'GET',
+  url: '/',
+  schema: {
+    querystring: {
+      name: { type: 'string' },
+      excitement: { type: 'integer' }
+    },
+    response: {
+      200: {
+        type: 'object',
+        properties: {
+          hello: { type: 'string' }
+        }
+      }
+    }
+  },
+  handler: function (request, reply) {
+    reply.send({ hello: 'world' })
+  }
+})
+```
+
+### 주요 라우트 옵션
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 설정</TabsTrigger>
+    <TabsTrigger value="hooks">훅</TabsTrigger>
+    <TabsTrigger value="validation">유효성 검사</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="basic">
+    - **method**: HTTP 메서드 (GET, POST, PUT 등)
+    - **url**: 매칭할 URL 경로
+    - **handler**: 요청을 처리할 함수
+    - **schema**: 요청/응답 스키마 정의
+  </TabsContent>
+
+  <TabsContent value="hooks">
+    - **onRequest**: 요청 수신 직후 실행
+    - **preHandler**: 핸들러 실행 직전 실행
+    - **onResponse**: 응답 전송 후 실행
+    - **onError**: 오류 발생 시 실행
+  </TabsContent>
+
+  <TabsContent value="validation">
+    - **bodyLimit**: 요청 본문 크기 제한 (기본값: 1MiB)
+    - **validatorCompiler**: 스키마 유효성 검사 컴파일러
+    - **schemaErrorFormatter**: 스키마 오류 포맷터
+  </TabsContent>
+</Tabs>
+
+## 축약 선언 방식
+
+```typescript
+// 간단한 GET 라우트
+fastify.get('/', (request, reply) => {
+  reply.send({ hello: 'world' })
+})
+
+// 옵션을 포함한 POST 라우트
+fastify.post('/data', {
+  schema: {
+    body: {
+      type: 'object',
+      required: ['message'],
+      properties: {
+        message: { type: 'string' }
+      }
+    }
+  }
+}, async (request, reply) => {
+  return { status: 'received' }
+})
+```
+
+<Alert>
+  <AlertTitle>Handler 중복 주의</AlertTitle>
+  <AlertDescription>
+    옵션 객체와 세 번째 파라미터 모두에 핸들러를 정의하면 오류가 발생합니다.
+  </AlertDescription>
+</Alert>
+
+## URL 패턴
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동적 URL 구성</CardTitle>
+    <CardDescription>
+      Fastify는 정적 URL뿐만 아니라 매개변수와 와일드카드를 포함한 동적 URL도 지원합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 파라미터 라우트
+    fastify.get('/users/:userId', (request, reply) => {
+      const { userId } = request.params
+      // userId === '12345'
+    })
+
+    // 와일드카드 라우트
+    fastify.get('/docs/*', (request, reply) => {
+      // 모든 /docs/ 하위 경로 매칭
+    })
+    ```
+  </CardContent>
+</Card>
+
+### URL 패턴 유형
+
+#### 1. 매개변수 라우트
+```typescript
+// 단일 매개변수
+fastify.get('/users/:id', handler)
+
+// 다중 매개변수
+fastify.get('/users/:userId/posts/:postId', handler)
+
+// 선택적 매개변수
+fastify.get('/articles/:id?', handler)
+```
+
+#### 2. 정규식 패턴
+```typescript
+// 숫자만 허용하는 매개변수
+fastify.get('/images/:id(^\\d+).png', (request, reply) => {
+  // /images/12345.png는 매칭됨
+  // /images/abc.png는 매칭되지 않음
+})
+```
+
+#### 3. 복합 매개변수
+```typescript
+// 구분자로 여러 매개변수 구성
+fastify.get('/location/:lat-:lng/radius/:r', (request, reply) => {
+  const { lat, lng, r } = request.params
+  // /location/37.5-127.0/radius/10
+})
+```
+
+<Alert className="mt-4">
+  <AlertTitle>성능 고려사항</AlertTitle>
+  <AlertDescription>
+    다중 매개변수를 사용하는 라우트는 성능에 영향을 줄 수 있습니다. 
+    가능한 한 단일 매개변수 접근 방식을 선호하세요.
+  </AlertDescription>
+</Alert>
+
+## 비동기 처리
+
+<Tabs defaultValue="async" className="w-full">
+  <TabsList>
+    <TabsTrigger value="async">Async/Await</TabsTrigger>
+    <TabsTrigger value="promise">Promise</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="async">
+    ```typescript
+    fastify.get('/', async (request, reply) => {
+      const data = await getData()
+      const processed = await processData(data)
+      return processed  // 자동으로 응답으로 전송됨
+    })
+    ```
+  </TabsContent>
+
+  <TabsContent value="promise">
+    ```typescript
+    fastify.get('/', (request, reply) => {
+      return getData()
+        .then(data => processData(data))
+        .then(processed => {
+          reply.send(processed)
+        })
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+### Promise 처리 규칙
+
+1. **값 반환 시**:
+   - 직접 값을 반환하면 자동으로 응답으로 전송됩니다.
+   - `undefined`는 반환할 수 없습니다.
+
+2. **reply.send() 사용 시**:
+   - `return reply` 또는 `await reply`를 해야 합니다.
+   - 값 반환과 `reply.send()`를 동시에 사용하면 먼저 실행된 것이 우선합니다.
+
+<Alert>
+  <AlertTitle>중요</AlertTitle>
+  <AlertDescription>
+    애플리케이션 전체에서 일관된 방식을 사용하세요. 
+    콜백 스타일과 async/await를 혼용하면 에러 처리가 복잡해질 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 라우트 프리픽스
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>라우트 프리픽스 사용하기</CardTitle>
+    <CardDescription>
+      API 버전 관리나 라우트 그룹화를 위해 경로에 프리픽스를 추가할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // server.js
+    fastify.register(require('./routes/v1/users'), { prefix: '/v1' })
+    fastify.register(require('./routes/v2/users'), { prefix: '/v2' })
+    
+    // routes/v1/users.js
+    module.exports = function (fastify, opts, done) {
+      fastify.get('/users', handlerV1)
+      done()
+    }
+    ```
+  </CardContent>
+</Card>
+
+### 프리픽스 활용 예시
+
+<Tabs defaultValue="version" className="w-full">
+  <TabsList>
+    <TabsTrigger value="version">API 버전 관리</TabsTrigger>
+    <TabsTrigger value="group">라우트 그룹화</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="version">
+    ```typescript
+    // 버전별 API 라우트 관리
+    fastify.register(async function(app) {
+      app.get('/users', getUsersV1)
+      app.get('/products', getProductsV1)
+    }, { prefix: '/v1' })
+
+    fastify.register(async function(app) {
+      app.get('/users', getUsersV2)
+      app.get('/products', getProductsV2)
+    }, { prefix: '/v2' })
+    ```
+  </TabsContent>
+
+  <TabsContent value="group">
+    ```typescript
+    // 기능별 라우트 그룹화
+    fastify.register(async function(app) {
+      app.get('/list', listAuth)
+      app.post('/login', loginHandler)
+      app.post('/signup', signupHandler)
+    }, { prefix: '/auth' })
+    ```
+  </TabsContent>
+</Tabs>
+
+### 루트 경로(/) 처리
+
+프리픽스가 `/`로 끝나는지 여부에 따라 동작이 달라집니다:
+
+- `/something/`: 루트 경로는 `/something/`에만 매칭
+- `/something`: 루트 경로는 `/something`과 `/something/` 모두 매칭
+
+## 제약 조건
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>라우트 제약 조건</CardTitle>
+    <CardDescription>
+      특정 요청 속성이나 헤더에 따라 라우트 매칭을 제어할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+### 버전 제약 조건
+
+```typescript
+fastify.route({
+  method: 'GET',
+  url: '/api',
+  constraints: { version: '1.2.0' },
+  handler: function (request, reply) {
+    reply.send({ version: 'v1.2.0' })
+  }
+})
+```
+
+<Alert>
+  <AlertTitle>보안 주의사항</AlertTitle>
+  <AlertDescription>
+    캐시 중독 공격을 방지하기 위해 버전 관리에 사용하는 헤더를 Vary 헤더에 포함시키세요.
+  </AlertDescription>
+</Alert>
+
+### 호스트 제약 조건
+
+```typescript
+// 정확한 호스트 매칭
+fastify.route({
+  method: 'GET',
+  url: '/',
+  constraints: { host: 'api.example.com' },
+  handler: apiHandler
+})
+
+// 정규식 패턴 매칭
+fastify.route({
+  method: 'GET',
+  url: '/',
+  constraints: { host: /.*\.example\.com/ },
+  handler: subdomainHandler
+})
+```
+
+### 커스텀 제약 조건
+
+```typescript
+const customConstraint = {
+  name: 'auth',
+  storage: function () {
+    let handlers = {}
+    return {
+      get: (type) => handlers[type] || null,
+      set: (type, store) => { handlers[type] = store }
+    }
+  },
+  deriveConstraint: (req, ctx) => {
+    return req.headers['authorization']
+  }
+}
+```
+
+## 커스텀 로그 레벨
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>라우트별 로그 레벨</CardTitle>
+    <CardDescription>
+      각 라우트나 플러그인에 대해 서로 다른 로그 레벨을 설정할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 플러그인 레벨 설정
+    fastify.register(require('./routes/user'), { 
+      logLevel: 'warn' 
+    })
+
+    // 라우트 레벨 설정
+    fastify.get('/', { 
+      logLevel: 'debug' 
+    }, handler)
+    ```
+  </CardContent>
+</Card>
+
+## 로그 직렬화
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 직렬화</TabsTrigger>
+    <TabsTrigger value="custom">커스텀 직렬화</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="basic">
+    ```typescript
+    const fastify = require('fastify')({
+      logger: {
+        serializers: {
+          req: (req) => ({
+            method: req.method,
+            url: req.url,
+            headers: req.headers
+          })
+        }
+      }
+    })
+    ```
+  </TabsContent>
+
+  <TabsContent value="custom">
+    ```typescript
+    fastify.register(require('./routes/user'), {
+      logSerializers: {
+        user: (value) => ({
+          id: value.id,
+          username: value.username
+          // 민감한 정보 제외
+        })
+      }
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+## 구성 관리
+
+### 라우트 구성 옵션
+
+```typescript
+// 다국어 지원 예시
+fastify.get('/greeting', {
+  config: {
+    locale: 'ko',
+    messages: {
+      hello: '안녕하세요!'
+    }
+  }
+}, (request, reply) => {
+  const { locale, messages } = reply.routeOptions.config
+  reply.send({ message: messages.hello })
+})
+```
+
+### 구성 상속
+
+```typescript
+const fastify = require('fastify')()
+
+// 공통 구성
+const commonConfig = {
+  rateLimit: {
+    max: 100,
+    timeWindow: '1 minute'
+  }
+}
+
+// 구성을 적용한 라우트 그룹
+fastify.register(async (instance) => {
+  instance.get('/users', {
+    config: {
+      ...commonConfig,
+      auth: true
+    }
+  }, handler)
+})
+```
+
+<Alert>
+  <AlertTitle>구성 모범 사례</AlertTitle>
+  <AlertDescription>
+    - 환경별 구성을 분리하세요
+    - 민감한 정보는 환경 변수로 관리하세요
+    - 구성 객체는 불변성을 유지하세요
+  </AlertDescription>
+</Alert>
+
+## 비동기 제약 조건 처리
+
+<Card className="mb-6">
+  <CardContent>
+    ```typescript
+    const asyncConstraint = {
+      name: 'database',
+      storage: () => {
+        const store = new Map()
+        return {
+          get: key => store.get(key),
+          set: (key, value) => store.set(key, value)
+        }
+      },
+      deriveConstraint: async (req, ctx) => {
+        const result = await db.query('SELECT access FROM users WHERE id = ?', [
+          req.headers['user-id']
+        ])
+        return result.access
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mt-4">
+  <AlertTitle>성능 고려사항</AlertTitle>
+  <AlertDescription>
+    비동기 제약 조건은 라우터 성능에 영향을 줄 수 있습니다. 
+    꼭 필요한 경우에만 사용하고, 가능한 캐싱을 활용하세요.
+  </AlertDescription>
+</Alert>
+
+### 오류 처리
+
+```typescript
+const fastify = require('fastify')({
+  frameworkErrors: function (error, request, reply) {
+    if (error instanceof fastify.errorCodes.FST_ERR_ASYNC_CONSTRAINT) {
+      reply.code(400).send({
+        error: 'Invalid request',
+        message: '요청을 처리할 수 없습니다.'
+      })
+    } else {
+      reply.send(error)
+    }
+  }
+})
+```

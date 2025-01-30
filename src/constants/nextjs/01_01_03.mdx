@@ -1,0 +1,211 @@
+---
+title: "Next.js 에러 핸들링"
+description: "Next.js에서 예상 가능한 에러와 예상치 못한 예외를 처리하는 방법에 대해 알아봅니다"
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>에러의 종류</CardTitle>
+    <CardDescription>
+      Next.js의 에러는 크게 두 가지 카테고리로 나눌 수 있습니다:
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-2 gap-4">
+      <div className="p-4 bg-blue-50 rounded-lg">
+        <h3 className="font-medium mb-2">예상 가능한 에러</h3>
+        <p>폼 검증이나 요청 실패 등 정상적인 작동 중에 발생할 수 있는 에러</p>
+      </div>
+      <div className="p-4 bg-red-50 rounded-lg">
+        <h3 className="font-medium mb-2">예상치 못한 예외</h3>
+        <p>버그나 비정상적인 상황에서 발생하는 예기치 않은 에러</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 예상 가능한 에러 처리하기
+
+<Tabs defaultValue="server-actions" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="server-actions">서버 액션</TabsTrigger>
+    <TabsTrigger value="server-components">서버 컴포넌트</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="server-actions">
+    <Card>
+      <CardHeader>
+        <CardTitle>useActionState로 에러 관리하기</CardTitle>
+        <CardDescription>
+          서버 액션의 상태와 에러를 관리하기 위해 useActionState 훅을 사용합니다.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        ```tsx
+        // app/actions.ts
+        'use server'
+        
+        export async function createUser(prevState: any, formData: FormData) {
+          const res = await fetch('https://...')
+          const json = await res.json()
+          
+          if (!res.ok) {
+            return { message: '유효한 이메일을 입력해주세요' }
+          }
+          
+          redirect('/dashboard')
+        }
+
+        // app/ui/signup.tsx
+        'use client'
+        
+        export function Signup() {
+          const [state, formAction, pending] = useActionState(
+            createUser, 
+            { message: '' }
+          )
+          
+          return (
+            <form action={formAction}>
+              <input type="email" name="email" required />
+              <p aria-live="polite">{state?.message}</p>
+              <button disabled={pending}>가입하기</button>
+            </form>
+          )
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="server-components">
+    <Card>
+      <CardContent>
+        ```tsx
+        export default async function Page() {
+          const res = await fetch('https://...')
+          const data = await res.json()
+          
+          if (!res.ok) {
+            return <div>에러가 발생했습니다.</div>
+          }
+          
+          return <div>{/* 정상적인 UI */}</div>
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 에러 바운더리로 예외 처리하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>error.tsx 파일 사용하기</CardTitle>
+    <CardDescription>
+      예상치 못한 에러를 처리하기 위해 error.tsx 파일을 사용하여 에러 바운더리를 구현합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    'use client'
+    
+    export default function Error({
+      error,
+      reset,
+    }: {
+      error: Error & { digest?: string }
+      reset: () => void
+    }) {
+      useEffect(() => {
+        // 에러 로깅 서비스에 에러 기록
+        console.error(error)
+      }, [error])
+    
+      return (
+        <div className="p-4">
+          <h2 className="text-red-600 mb-4">
+            문제가 발생했습니다!
+          </h2>
+          <button
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+            onClick={() => reset()}
+          >
+            다시 시도
+          </button>
+        </div>
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 에러 바운더리 계층
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    <div className="space-y-4">
+      <div className="flex items-start space-x-2">
+        <span className="text-blue-500 font-medium">일반적인 에러:</span>
+        <span>error.js로 루트 레이아웃 아래의 에러 처리</span>
+      </div>
+      <div className="flex items-start space-x-2">
+        <span className="text-blue-500 font-medium">세분화된 에러:</span>
+        <span>중첩된 error.js 파일로 특정 영역의 에러 처리 (예: app/dashboard/error.js)</span>
+      </div>
+      <div className="flex items-start space-x-2">
+        <span className="text-blue-500 font-medium">전역 에러:</span>
+        <span>global-error.js로 루트 레이아웃의 에러 처리</span>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertDescription>
+    전역 에러 UI를 사용할 때는 반드시 자체적인 html과 body 태그를 정의해야 합니다. 
+    에러가 발생하면 루트 레이아웃이나 템플릿을 대체하기 때문입니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mt-6">
+  <CardContent>
+    ```tsx
+    // app/global-error.tsx
+    'use client'
+    
+    export default function GlobalError({
+      error,
+      reset,
+    }: {
+      error: Error & { digest?: string }
+      reset: () => void
+    }) {
+      return (
+        <html>
+          <body>
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-2xl mb-4">
+                  치명적인 오류가 발생했습니다!
+                </h2>
+                <button
+                  className="px-4 py-2 bg-red-500 text-white rounded"
+                  onClick={() => reset()}
+                >
+                  앱 다시 시작
+                </button>
+              </div>
+            </div>
+          </body>
+        </html>
+      )
+    }
+    ```
+  </CardContent>
+</Card>

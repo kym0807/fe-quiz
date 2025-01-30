@@ -1,0 +1,167 @@
+---
+title: "renderToStaticMarkup"
+description: "React 트리를 정적 HTML 문자열로 렌더링하는 서버 사이드 API"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# renderToStaticMarkup
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>renderToStaticMarkup이란?</CardTitle>
+    <CardDescription>
+      React 컴포넌트 트리를 상호작용이 불가능한 순수 HTML 문자열로 변환하는 API입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const html = renderToStaticMarkup(reactNode, options?)
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    import { renderToStaticMarkup } from 'react-dom/server';
+
+    app.use('/', (request, response) => {
+      const html = renderToStaticMarkup(<Page />);
+      response.send(html);
+    });
+
+    // 예시 컴포넌트
+    function Page() {
+      return (
+        <article>
+          <h1>블로그 포스트</h1>
+          <p>이 페이지는 정적으로 생성됩니다.</p>
+        </article>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 주요 특징
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>API 특징과 제한사항</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div>
+      <h3 className="font-bold">매개변수</h3>
+      <div className="pl-4 space-y-2 mt-2">
+        <p>• <code>reactNode</code>: HTML로 렌더링할 React 노드 (예: JSX)</p>
+        <p>• <code>options.identifierPrefix</code>: useId로 생성되는 ID의 접두사</p>
+      </div>
+    </div>
+
+    <div>
+      <h3 className="font-bold">반환값</h3>
+      <p className="pl-4">HTML 문자열을 반환합니다.</p>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert variant="destructive" className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription className="space-y-2">
+    <p>• 생성된 HTML은 하이드레이션이 불가능합니다.</p>
+    <p>• Suspense 지원이 제한적이며, 컴포넌트가 중단되면 즉시 fallback을 HTML로 전송합니다.</p>
+    <p>• 브라우저에서도 작동하지만, 클라이언트 코드에서의 사용은 권장되지 않습니다.</p>
+  </AlertDescription>
+</Alert>
+
+## 사용 사례
+
+<Tabs defaultValue="static" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="static">정적 페이지</TabsTrigger>
+    <TabsTrigger value="email">이메일 템플릿</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="static">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        function BlogPost() {
+          return (
+            <html>
+              <head>
+                <title>정적 블로그</title>
+                <link rel="stylesheet" href="/styles.css" />
+              </head>
+              <body>
+                <article>
+                  <h1>제목</h1>
+                  <div className="content">
+                    <p>내용...</p>
+                  </div>
+                </article>
+              </body>
+            </html>
+          );
+        }
+
+        // 정적 페이지 생성
+        const html = renderToStaticMarkup(<BlogPost />);
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="email">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        function EmailTemplate({ username }) {
+          return (
+            <div style={{ fontFamily: 'Arial, sans-serif' }}>
+              <h2>환영합니다, {username}님!</h2>
+              <p>이메일 인증을 완료해주세요.</p>
+              <hr />
+              <footer>
+                <small>© 2024 My Company</small>
+              </footer>
+            </div>
+          );
+        }
+
+        // 이메일 HTML 생성
+        const emailHtml = renderToStaticMarkup(
+          <EmailTemplate username="홍길동" />
+        );
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 대안적 방법
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>대화형 앱을 위한 대안</CardTitle>
+    <CardDescription>
+      사용자 상호작용이 필요한 앱의 경우 다음 방법을 사용하세요:
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // 서버 측
+    import { renderToString } from 'react-dom/server';
+    const html = renderToString(<App />);
+
+    // 클라이언트 측
+    import { hydrateRoot } from 'react-dom/client';
+    hydrateRoot(document, <App />);
+    ```
+  </CardContent>
+</Card>

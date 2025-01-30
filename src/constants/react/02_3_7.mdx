@@ -1,0 +1,187 @@
+---
+title: "prerenderToNodeStream"
+description: "Node.js 스트림을 사용하여 React 트리를 정적 HTML로 생성하는 API"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# prerenderToNodeStream
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>prerenderToNodeStream이란?</CardTitle>
+    <CardDescription>
+      Node.js 환경에서 React 애플리케이션을 정적 HTML로 생성하는 API입니다. 모든 데이터 로딩이 완료될 때까지 기다린 후 결과를 생성합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const { prelude } = await prerenderToNodeStream(reactNode, options?)
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    import { prerenderToNodeStream } from 'react-dom/static';
+
+    app.use('/', async (request, response) => {
+      const { prelude } = await prerenderToNodeStream(<App />, {
+        bootstrapScripts: ['/main.js'],
+      });
+
+      response.setHeader('Content-Type', 'text/html');
+      prelude.pipe(response);
+    });
+    ```
+  </CardContent>
+</Card>
+
+## 구현 방식
+
+<Tabs defaultValue="stream" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="stream">스트림 응답</TabsTrigger>
+    <TabsTrigger value="string">문자열 변환</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="stream">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        app.use('/', async (request, response) => {
+          const { prelude } = await prerenderToNodeStream(
+            <App />, 
+            {
+              bootstrapScripts: ['/main.js']
+            }
+          );
+          
+          response.setHeader('Content-Type', 'text/html');
+          prelude.pipe(response);
+        });
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="string">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        async function renderToString() {
+          const { prelude } = await prerenderToNodeStream(
+            <App />, 
+            {
+              bootstrapScripts: ['/main.js']
+            }
+          );
+          
+          return new Promise((resolve, reject) => {
+            let data = '';
+            prelude.on('data', chunk => {
+              data += chunk;
+            });
+            prelude.on('end', () => resolve(data));
+            prelude.on('error', reject);
+          });
+        }
+        ```
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 에셋 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>빌드 에셋 처리</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // 에셋 맵 정의
+    const assetMap = {
+      'styles.css': '/styles.123456.css',
+      'main.js': '/main.123456.js'
+    };
+
+    // 서버 사이드 렌더링
+    app.use('/', async (request, response) => {
+      const { prelude } = await prerenderToNodeStream(
+        <App assetMap={assetMap} />,
+        {
+          bootstrapScriptContent: 
+            `window.assetMap = ${JSON.stringify(assetMap)};`,
+          bootstrapScripts: [assetMap['main.js']]
+        }
+      );
+
+      response.setHeader('Content-Type', 'text/html');
+      prelude.pipe(response);
+    });
+
+    // 클라이언트 하이드레이션
+    hydrateRoot(document, <App assetMap={window.assetMap} />);
+    ```
+  </CardContent>
+</Card>
+
+## Suspense와 데이터 로딩
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>데이터 로딩 처리</CardTitle>
+    <CardDescription>
+      prerenderToNodeStream은 모든 Suspense 경계의 데이터 로딩이 완료될 때까지 기다립니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    function ProfilePage() {
+      return (
+        <ProfileLayout>
+          <ProfileCover />
+          <Sidebar>
+            <Friends />
+            <Photos />
+          </Sidebar>
+          <Suspense fallback={<PostsGlimmer />}>
+            <Posts />
+          </Suspense>
+        </ProfileLayout>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 주의사항
+
+<Alert variant="destructive" className="mb-6">
+  <AlertTitle>중요 고려사항</AlertTitle>
+  <AlertDescription className="space-y-2">
+    <p>• Node.js 전용 API입니다. Web Streams 환경에서는 prerender를 사용하세요.</p>
+    <p>• 전체 앱 렌더링이 완료될 때까지 스트리밍이 시작되지 않습니다.</p>
+    <p>• 점진적 로딩이 필요하면 renderToPipeableStream을 사용하세요.</p>
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Suspense 지원</CardTitle>
+  </CardHeader>
+  <CardContent>
+    지원되는 데이터 소스:
+    - Suspense 지원 프레임워크(Relay, Next.js 등)의 데이터 페칭
+    - lazy를 사용한 코드 분할
+    - use 훅으로 Promise 값 읽기
+    
+    *Effect나 이벤트 핸들러의 데이터 페칭은 감지되지 않습니다.
+  </CardContent>
+</Card>

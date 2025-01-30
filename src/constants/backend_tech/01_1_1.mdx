@@ -1,0 +1,155 @@
+---
+title: "WebSocket 기본"
+description: "서버와의 양방향 통신을 위한 WebSocket API 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# WebSocket
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>WebSocket 소개</CardTitle>
+    <CardDescription>
+      서버와의 실시간 양방향 통신을 구현하기 위한 WebSocket API에 대해 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    WebSocket 객체는 서버와의 WebSocket 연결을 생성하고 관리하며, 데이터를 주고받을 수 있는 API를 제공합니다.
+    이 기능은 Web Workers에서도 사용 가능합니다.
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    WebSocket API는 자체적인 백프레셔(backpressure) 메커니즘이 없습니다. 메시지가 처리 속도보다 빠르게 도착하면 
+    메모리 부족이나 CPU 과부하가 발생할 수 있습니다. 백프레셔가 필요한 경우 WebSocketStream을 대신 사용하세요.
+  </AlertDescription>
+</Alert>
+
+## 생성자
+
+```javascript
+const socket = new WebSocket(url);
+const socket = new WebSocket(url, protocols);
+```
+
+### 매개변수
+
+- `url`: 연결할 WebSocket 서버의 URL (ws://, wss://, http://, https:// 스키마 사용)
+- `protocols` (선택): 사용할 하위 프로토콜을 지정하는 문자열 또는 문자열 배열
+
+## 주요 속성
+
+<Card className="mb-4">
+  <CardContent className="pt-6">
+    <div className="grid gap-4">
+      <div>
+        <h3 className="font-medium">binaryType</h3>
+        <p className="text-sm text-gray-500">수신되는 바이너리 데이터의 타입 ("blob" 또는 "arraybuffer")</p>
+      </div>
+      <div>
+        <h3 className="font-medium">bufferedAmount</h3>
+        <p className="text-sm text-gray-500">아직 전송되지 않고 대기 중인 데이터의 바이트 수</p>
+      </div>
+      <div>
+        <h3 className="font-medium">readyState</h3>
+        <p className="text-sm text-gray-500">현재 연결 상태 (CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3)</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 주요 메서드
+
+<Tabs defaultValue="send" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="send">send()</TabsTrigger>
+    <TabsTrigger value="close">close()</TabsTrigger>
+  </TabsList>
+  <TabsContent value="send">
+    ```javascript
+    // 텍스트 전송
+    socket.send("Hello Server!");
+    
+    // 바이너리 데이터 전송
+    socket.send(new Uint8Array([1, 2, 3]));
+    ```
+  </TabsContent>
+  <TabsContent value="close">
+    ```javascript
+    // 기본 종료
+    socket.close();
+    
+    // 커스텀 코드와 이유를 지정하여 종료
+    socket.close(3000, "사용자가 연결을 종료했습니다");
+    ```
+  </TabsContent>
+</Tabs>
+
+## 이벤트 처리
+
+```javascript
+// 연결 성공 시
+socket.addEventListener("open", (event) => {
+  console.log("서버와 연결되었습니다!");
+});
+
+// 메시지 수신 시
+socket.addEventListener("message", (event) => {
+  console.log("서버로부터 메시지 수신:", event.data);
+});
+
+// 에러 발생 시
+socket.addEventListener("error", (event) => {
+  console.error("WebSocket 에러 발생:", event);
+});
+
+// 연결 종료 시
+socket.addEventListener("close", (event) => {
+  console.log("연결이 종료되었습니다.");
+  console.log("종료 코드:", event.code);
+  console.log("종료 이유:", event.reason);
+});
+```
+
+## 사용 예제
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```javascript
+    // WebSocket 연결 생성
+    const socket = new WebSocket("ws://localhost:8080");
+    
+    // 연결 성공 시 서버에 메시지 전송
+    socket.addEventListener("open", () => {
+      socket.send("안녕하세요, 서버!");
+    });
+    
+    // 바이너리 데이터 처리 설정
+    socket.binaryType = "arraybuffer";
+    
+    // 메시지 수신 처리
+    socket.addEventListener("message", (event) => {
+      if (event.data instanceof ArrayBuffer) {
+        // 바이너리 프레임 처리
+        const view = new DataView(event.data);
+        console.log("수신된 정수값:", view.getInt32(0));
+      } else {
+        // 텍스트 프레임 처리
+        console.log("수신된 텍스트:", event.data);
+      }
+    });
+    ```
+  </CardContent>
+</Card>
+
+<Alert variant="default" className="mt-6">
+  <AlertTitle>보안 참고사항</AlertTitle>
+  <AlertDescription>
+    프로덕션 환경에서는 암호화된 연결을 위해 'wss://' (WebSocket Secure) 프로토콜을 사용하는 것을 권장합니다.
+  </AlertDescription>
+</Alert>

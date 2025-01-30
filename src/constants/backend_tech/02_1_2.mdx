@@ -1,0 +1,503 @@
+---
+title: "Fastify 서버"
+description: "Fastify 인스턴스 생성과 옵션 설정에 대한 완벽 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Fastify 서버란?</CardTitle>
+    <CardDescription>
+      Fastify 모듈은 새로운 Fastify 서버 인스턴스를 생성하는 팩토리 함수를 제공합니다. 이 문서에서는 서버 인스턴스 생성 시 사용할 수 있는 옵션들을 자세히 다룹니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 기본 설정 옵션
+
+<Tabs defaultValue="http" className="w-full">
+  <TabsList>
+    <TabsTrigger value="http">HTTP 설정</TabsTrigger>
+    <TabsTrigger value="security">보안 설정</TabsTrigger>
+    <TabsTrigger value="performance">성능 설정</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="http">
+    ### HTTP 관련 설정
+    
+    - **http**: 서버의 리스닝 소켓을 설정하는 객체입니다. Node.js의 createServer 메서드와 동일한 옵션을 사용합니다.
+    
+    - **http2**: HTTP/2를 사용할지 여부를 설정합니다. 기본값은 `false`입니다.
+    
+    - **https**: TLS를 위한 서버 소켓 설정 객체입니다. Node.js의 createServer 메서드와 동일한 옵션을 사용하며, `null`일 경우 TLS가 비활성화됩니다.
+
+    ```typescript
+    const fastify = require('fastify')({
+      http2: true,
+      https: {
+        key: fs.readFileSync('key.pem'),
+        cert: fs.readFileSync('cert.pem')
+      }
+    })
+    ```
+  </TabsContent>
+
+  <TabsContent value="security">
+    ### 보안 관련 설정
+    
+    - **onProtoPoisoning**: JSON 객체의 `__proto__` 처리 방식을 설정합니다.
+      - `'error'` (기본값): 에러 발생
+      - `'remove'`: 제거
+      - `'ignore'`: 무시
+    
+    - **onConstructorPoisoning**: JSON 객체의 `constructor` 처리 방식을 설정합니다.
+      - `'error'` (기본값): 에러 발생
+      - `'remove'`: 제거
+      - `'ignore'`: 무시
+
+    <Alert>
+      <AlertTitle>보안 주의사항</AlertTitle>
+      <AlertDescription>
+        프로토타입 오염 공격을 방지하기 위해 기본값인 'error'를 사용하는 것을 권장합니다.
+      </AlertDescription>
+    </Alert>
+  </TabsContent>
+
+  <TabsContent value="performance">
+    ### 성능 관련 설정
+    
+    - **connectionTimeout**: 서버 타임아웃을 밀리초 단위로 설정합니다. 기본값은 0(타임아웃 없음)입니다.
+    
+    - **keepAliveTimeout**: HTTP/1 연결의 keep-alive 타임아웃을 밀리초 단위로 설정합니다. 기본값은 72초입니다.
+    
+    - **maxRequestsPerSocket**: HTTP/1.1 사용 시 소켓당 최대 요청 수를 설정합니다. 기본값은 0(제한 없음)입니다.
+    
+    - **bodyLimit**: 서버가 허용하는 최대 페이로드 크기를 바이트 단위로 설정합니다. 기본값은 1MiB입니다.
+  </TabsContent>
+</Tabs>
+
+## 라우팅 설정
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>라우팅 관련 설정</CardTitle>
+    <CardDescription>
+      URL 경로 처리와 관련된 다양한 설정 옵션을 제공합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    const fastify = require('fastify')({
+      ignoreTrailingSlash: true,
+      caseSensitive: false
+    })
+    
+    // '/foo/'와 '/foo' 모두 동일한 라우트로 처리됩니다
+    fastify.get('/foo', function (req, reply) {
+      reply.send('동일한 엔드포인트')
+    })
+    ```
+  </CardContent>
+</Card>
+
+### 주요 라우팅 옵션
+
+- **ignoreTrailingSlash** 
+  - 기본값: `false`
+  - URL 끝의 슬래시(/)를 무시할지 여부를 설정합니다.
+  - `true`로 설정하면 `/foo`와 `/foo/`가 동일한 라우트로 처리됩니다.
+
+- **ignoreDuplicateSlashes**
+  - 기본값: `false`
+  - URL의 중복된 슬래시를 제거할지 여부를 설정합니다.
+  - `true`로 설정하면 `///foo//bar//`가 `/foo/bar/`로 처리됩니다.
+
+- **caseSensitive**
+  - 기본값: `true`
+  - 라우트의 대소문자 구분 여부를 설정합니다.
+  - `false`로 설정하면 `/foo`와 `/FOO`가 동일한 라우트로 처리됩니다.
+
+<Alert>
+  <AlertTitle>RFC3986 호환성</AlertTitle>
+  <AlertDescription>
+    caseSensitive를 false로 설정하는 것은 RFC3986 표준과 맞지 않습니다. 특별한 이유가 없다면 기본값을 유지하는 것을 권장합니다.
+  </AlertDescription>
+</Alert>
+
+## 로깅 설정
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 설정</TabsTrigger>
+    <TabsTrigger value="custom">커스텀 로거</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="basic">
+    ### 기본 로거 설정
+    
+    Fastify는 Pino 로거를 내장하고 있으며, 다음과 같이 설정할 수 있습니다:
+
+    ```typescript
+    const fastify = require('fastify')({
+      logger: {
+        level: 'info',
+        serializers: {
+          req: function (req) {
+            return { url: req.url }
+          }
+        }
+      }
+    })
+    ```
+
+    - **level**: 최소 로깅 레벨 ('info', 'error', 'debug' 등)
+    - **serializers**: 로그 객체 직렬화 설정
+  </TabsContent>
+
+  <TabsContent value="custom">
+    ### 커스텀 로거 설정
+    
+    Pino 인터페이스를 준수하는 커스텀 로거를 사용할 수 있습니다:
+
+    ```typescript
+    const customLogger = {
+      info: function (o, ...n) {},
+      warn: function (o, ...n) {},
+      error: function (o, ...n) {},
+      fatal: function (o, ...n) {},
+      trace: function (o, ...n) {},
+      debug: function (o, ...n) {},
+      child: function() {
+        return Object.create(this);
+      }
+    }
+
+    const fastify = require('fastify')({
+      logger: customLogger
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+### 로깅 비활성화 옵션
+
+```typescript
+const fastify = require('fastify')({
+  disableRequestLogging: true  // 요청 로깅 비활성화
+})
+```
+
+<Alert className="mt-4">
+  <AlertTitle>로깅 비활성화 시 주의사항</AlertTitle>
+  <AlertDescription>
+    요청 로깅을 비활성화하면 다음 로그들이 출력되지 않습니다:
+    - 요청 수신 및 응답 완료 로그
+    - 오류 응답 로그
+    - 404 에러 로그
+  </AlertDescription>
+</Alert>
+
+## 서버 메서드
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>주요 서버 메서드</CardTitle>
+    <CardDescription>
+      Fastify 인스턴스에서 사용할 수 있는 핵심 메서드들을 소개합니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+### 서버 시작과 종료
+
+```typescript
+// 서버 시작
+fastify.listen({ port: 3000 }, (err) => {
+  if (err) {
+    fastify.log.error(err)
+    process.exit(1)
+  }
+})
+
+// Promise 방식
+await fastify.listen({ port: 3000 })
+
+// 서버 종료
+await fastify.close()
+```
+
+### 라우트 관리
+
+```typescript
+// 라우트 등록
+fastify.route({
+  method: 'GET',
+  url: '/api/items',
+  handler: async (request, reply) => {
+    return { items: [] }
+  }
+})
+
+// 라우트 존재 여부 확인
+const exists = fastify.hasRoute({
+  method: 'GET',
+  url: '/api/items'
+})
+
+// 등록된 라우트 찾기
+const route = fastify.findRoute({
+  method: 'GET',
+  url: '/api/items'
+})
+```
+
+### 라우트 트리 출력
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 출력</TabsTrigger>
+    <TabsTrigger value="method">메서드별 출력</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="basic">
+    ```typescript
+    fastify.get('/test', () => {})
+    fastify.get('/test/hello', () => {})
+    fastify.put('/update', () => {})
+
+    console.log(fastify.printRoutes())
+    // └── /
+    //     ├── test (GET)
+    //     │   └── /hello (GET)
+    //     └── update (PUT)
+    ```
+  </TabsContent>
+
+  <TabsContent value="method">
+    ```typescript
+    console.log(fastify.printRoutes({ method: 'GET' }))
+    // GET 메서드 라우트만 출력
+    // └── /
+    //     └── test
+    //         └── /hello
+    ```
+  </TabsContent>
+</Tabs>
+
+## 플러그인 시스템
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>플러그인 관리</CardTitle>
+    <CardDescription>
+      Fastify의 강력한 플러그인 시스템을 활용하여 기능을 확장할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 플러그인 등록
+    fastify.register(async function plugin (instance, opts) {
+      instance.get('/plugin-route', () => {
+        return { hello: 'from plugin' }
+      })
+    })
+
+    // 플러그인 트리 출력
+    console.log(fastify.printPlugins())
+    // └── root
+    //     └── plugin
+    ```
+  </CardContent>
+</Card>
+
+### 플러그인 타임아웃
+
+```typescript
+const fastify = require('fastify')({
+  pluginTimeout: 20000  // 20초
+})
+```
+
+<Alert>
+  <AlertTitle>타임아웃 설정</AlertTitle>
+  <AlertDescription>
+    pluginTimeout은 플러그인 로딩 시간을 제한합니다. 설정된 시간을 초과하면 'ERR_AVVIO_PLUGIN_TIMEOUT' 에러가 발생합니다. 0으로 설정하면 타임아웃이 비활성화됩니다.
+  </AlertDescription>
+</Alert>
+
+## 콘텐츠 타입 파서
+
+### 커스텀 파서 추가
+
+```typescript
+// JSON 파서 추가
+fastify.addContentTypeParser('text/json', { asString: true }, 
+  fastify.getDefaultJsonParser('ignore', 'ignore'))
+
+// 텍스트 파서 추가
+fastify.addContentTypeParser('text/plain', { asString: true }, 
+  fastify.defaultTextParser)
+```
+
+### 파서 관리
+
+```typescript
+// 파서 존재 여부 확인
+const hasParser = fastify.hasContentTypeParser('text/json')
+
+// 특정 파서 제거
+fastify.removeContentTypeParser('application/json')
+
+// 모든 파서 제거
+fastify.removeAllContentTypeParsers()
+```
+
+## 에러 처리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>에러 핸들러 설정</CardTitle>
+    <CardDescription>
+      Fastify는 유연한 에러 처리 시스템을 제공하며, 기본 에러 핸들러를 커스터마이징할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    // 전역 에러 핸들러 설정
+    fastify.setErrorHandler(function (error, request, reply) {
+      // 에러 로깅
+      this.log.error(error)
+      
+      // 에러 응답
+      reply.status(500).send({ 
+        error: true, 
+        message: error.message 
+      })
+    })
+    ```
+  </CardContent>
+</Card>
+
+### 특정 라우트의 에러 처리
+
+```typescript
+fastify.get('/', {
+  errorHandler: (error, request, reply) => {
+    if (error.code === 'CUSTOM_ERROR') {
+      reply.send({ custom: 'error response' })
+      return
+    }
+    // 기본 에러 핸들러 사용
+    fastify.errorHandler(error, request, reply)
+  }
+}, handler)
+```
+
+## 고급 로깅 기능
+
+### 자식 로거 설정
+
+```typescript
+const fastify = require('fastify')({
+  childLoggerFactory: function (logger, bindings, opts, rawReq) {
+    // 추가 바인딩 계산
+    bindings.traceId = rawReq.headers['x-trace-id']
+    return logger.child(bindings, opts)
+  }
+})
+```
+
+### 요청 ID 생성 설정
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 설정</TabsTrigger>
+    <TabsTrigger value="custom">커스텀 설정</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="basic">
+    ```typescript
+    const fastify = require('fastify')({
+      requestIdHeader: 'x-request-id',
+      requestIdLogLabel: 'reqId'
+    })
+    ```
+  </TabsContent>
+
+  <TabsContent value="custom">
+    ```typescript
+    let requestCounter = 0
+    const fastify = require('fastify')({
+      genReqId: function (req) {
+        return `req-${requestCounter++}`
+      }
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+## 초기 설정 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>초기 설정 접근</CardTitle>
+    <CardDescription>
+      fastify.initialConfig를 통해 서버 초기 설정값에 접근할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```typescript
+    const fastify = require('fastify')({
+      https: {
+        allowHTTP1: true,
+        key: readFileSync('./key.pem'),
+        cert: readFileSync('./cert.pem')
+      },
+      logger: { level: 'trace' },
+      ignoreTrailingSlash: true
+    })
+
+    console.log(fastify.initialConfig)
+    /*
+    {
+      https: { allowHTTP1: true },
+      ignoreTrailingSlash: true
+    }
+    */
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>읽기 전용 설정</AlertTitle>
+  <AlertDescription>
+    initialConfig 객체는 읽기 전용이며 수정할 수 없습니다. 서버 실행 중에 설정을 변경하려면 적절한 API를 사용해야 합니다.
+  </AlertDescription>
+</Alert>
+
+## 프록시 설정
+
+```typescript
+const fastify = require('fastify')({
+  trustProxy: true  // 모든 프록시 신뢰
+  // 또는
+  trustProxy: '127.0.0.1,192.168.1.1/24'  // 특정 IP/CIDR만 신뢰
+})
+
+fastify.get('/', (request, reply) => {
+  console.log(request.ip)        // 클라이언트 IP
+  console.log(request.ips)       // 프록시 체인의 모든 IP
+  console.log(request.hostname)  // 요청의 hostname
+  console.log(request.protocol)  // 요청 프로토콜
+})
+```
+
+<Alert className="mt-4">
+  <AlertTitle>보안 주의사항</AlertTitle>
+  <AlertDescription>
+    trustProxy 설정은 X-Forwarded-* 헤더를 신뢰하게 만듭니다. 프로덕션 환경에서는 신뢰할 수 있는 프록시 서버의 IP만 명시적으로 설정하는 것을 권장합니다.
+  </AlertDescription>
+</Alert>

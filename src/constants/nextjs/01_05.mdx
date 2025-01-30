@@ -1,0 +1,218 @@
+---
+title: "Next.js의 CSS-in-JS"
+description: "Next.js 앱에서 CSS-in-JS 라이브러리 사용하기"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# CSS-in-JS in Next.js
+
+<Alert variant="warning" className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    런타임 JavaScript가 필요한 CSS-in-JS 라이브러리들은 현재 서버 컴포넌트에서 지원되지 않습니다. 
+    서버 컴포넌트나 스트리밍과 같은 최신 React 기능과 함께 사용하려면 라이브러리가 동시성 렌더링을 포함한 최신 React를 지원해야 합니다.
+  </AlertDescription>
+</Alert>
+
+## 지원 현황
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>지원되는 라이브러리</CardTitle>
+    <CardDescription>app 디렉토리의 클라이언트 컴포넌트에서 사용 가능한 라이브러리들입니다.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="p-2 bg-gray-50 rounded">ant-design</div>
+      <div className="p-2 bg-gray-50 rounded">chakra-ui</div>
+      <div className="p-2 bg-gray-50 rounded">@fluentui/react</div>
+      <div className="p-2 bg-gray-50 rounded">kuma-ui</div>
+      <div className="p-2 bg-gray-50 rounded">@mui/material</div>
+      <div className="p-2 bg-gray-50 rounded">@mui/joy</div>
+      <div className="p-2 bg-gray-50 rounded">pandacss</div>
+      <div className="p-2 bg-gray-50 rounded">styled-jsx</div>
+      <div className="p-2 bg-gray-50 rounded">styled-components</div>
+      <div className="p-2 bg-gray-50 rounded">stylex</div>
+      <div className="p-2 bg-gray-50 rounded">tamagui</div>
+      <div className="p-2 bg-gray-50 rounded">tss-react</div>
+      <div className="p-2 bg-gray-50 rounded">vanilla-extract</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertTitle>💡 알아두면 좋은 점</AlertTitle>
+  <AlertDescription>
+    서버 컴포넌트 스타일링에는 CSS Modules이나 Tailwind CSS와 같은 CSS 파일 기반 솔루션을 권장합니다.
+  </AlertDescription>
+</Alert>
+
+## CSS-in-JS 설정하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 설정 단계</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ol className="list-decimal list-inside space-y-2">
+      <li>스타일 레지스트리 생성 (렌더링 중 CSS 규칙 수집)</li>
+      <li>useServerInsertedHTML 훅 사용 (규칙을 컨텐츠 전에 주입)</li>
+      <li>스타일 레지스트리로 앱을 감싸는 클라이언트 컴포넌트 생성</li>
+    </ol>
+  </CardContent>
+</Card>
+
+## styled-jsx 설정 예시
+
+<Tabs defaultValue="registry" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="registry">레지스트리 설정</TabsTrigger>
+    <TabsTrigger value="layout">레이아웃 설정</TabsTrigger>
+  </TabsList>
+  <TabsContent value="registry">
+    ```tsx
+    'use client'
+    
+    import React, { useState } from 'react'
+    import { useServerInsertedHTML } from 'next/navigation'
+    import { StyleRegistry, createStyleRegistry } from 'styled-jsx'
+    
+    export default function StyledJsxRegistry({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      const [jsxStyleRegistry] = useState(() => createStyleRegistry())
+    
+      useServerInsertedHTML(() => {
+        const styles = jsxStyleRegistry.styles()
+        jsxStyleRegistry.flush()
+        return <>{styles}</>
+      })
+    
+      return <StyleRegistry registry={jsxStyleRegistry}>{children}</StyleRegistry>
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="layout">
+    ```tsx
+    import StyledJsxRegistry from './registry'
+    
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html>
+          <body>
+            <StyledJsxRegistry>{children}</StyledJsxRegistry>
+          </body>
+        </html>
+      )
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## styled-components 설정하기
+
+<Tabs defaultValue="config" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="config">설정</TabsTrigger>
+    <TabsTrigger value="registry">레지스트리</TabsTrigger>
+    <TabsTrigger value="layout">레이아웃</TabsTrigger>
+  </TabsList>
+  <TabsContent value="config">
+    ```js
+    // next.config.js
+    module.exports = {
+      compiler: {
+        styledComponents: true,
+      },
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="registry">
+    ```tsx
+    'use client'
+    
+    import React, { useState } from 'react'
+    import { useServerInsertedHTML } from 'next/navigation'
+    import { ServerStyleSheet, StyleSheetManager } from 'styled-components'
+    
+    export default function StyledComponentsRegistry({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      const [styledComponentsStyleSheet] = useState(() => new ServerStyleSheet())
+    
+      useServerInsertedHTML(() => {
+        const styles = styledComponentsStyleSheet.getStyleElement()
+        styledComponentsStyleSheet.instance.clearTag()
+        return <>{styles}</>
+      })
+    
+      if (typeof window !== 'undefined') return <>{children}</>
+    
+      return (
+        <StyleSheetManager sheet={styledComponentsStyleSheet.instance}>
+          {children}
+        </StyleSheetManager>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="layout">
+    ```tsx
+    import StyledComponentsRegistry from './lib/registry'
+    
+    export default function RootLayout({
+      children,
+    }: {
+      children: React.ReactNode
+    }) {
+      return (
+        <html>
+          <body>
+            <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
+          </body>
+        </html>
+      )
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>작동 방식 이해하기</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">서버 렌더링</h4>
+        <p>스타일이 전역 레지스트리로 추출되어 HTML의 {'<head>'}에 주입됩니다.</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">스트리밍</h4>
+        <p>각 청크의 스타일이 수집되어 기존 스타일에 추가됩니다. 클라이언트 측 하이드레이션이 완료되면 styled-components가 동적 스타일 주입을 담당합니다.</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">최적화</h4>
+        <p>스타일 레지스트리를 최상위 클라이언트 컴포넌트로 사용하여 후속 서버 렌더링에서 스타일 재생성을 방지하고 서버 컴포넌트 페이로드에 포함되지 않도록 합니다.</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>고급 설정</AlertTitle>
+  <AlertDescription>
+    styled-components 컴파일의 개별 속성을 설정해야 하는 고급 사용 사례의 경우, Next.js styled-components API 문서를 참조하시기 바랍니다.
+  </AlertDescription>
+</Alert>

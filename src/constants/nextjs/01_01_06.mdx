@@ -1,0 +1,154 @@
+---
+title: "Next.js 라우트 그룹"
+description: "app 디렉토리에서 라우트 그룹을 사용하여 URL 구조에 영향을 주지 않고 라우트를 구성하는 방법을 알아봅니다"
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>라우트 그룹이란?</CardTitle>
+    <CardDescription>
+      app 디렉토리에서 폴더를 라우트 그룹으로 표시하면 해당 폴더가 URL 경로에 포함되지 않습니다.
+      이를 통해 URL 구조에 영향을 주지 않으면서 라우트 세그먼트와 프로젝트 파일을 논리적 그룹으로
+      구성할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+## 라우트 그룹 생성
+
+<Card className="mb-6">
+  <CardContent>
+    ```text
+    // 라우트 그룹은 폴더 이름을 괄호로 감싸서 생성합니다
+    app/
+    ├── (marketing)
+    │   ├── blog
+    │   └── about
+    └── (shop)
+        ├── cart
+        └── products
+    ```
+    폴더 이름을 괄호로 감싸면 (`(folderName)`), 해당 폴더는 URL에 포함되지 않습니다.
+    예를 들어, `(marketing)/blog`의 URL은 그냥 `/blog`가 됩니다.
+  </CardContent>
+</Card>
+
+## 활용 사례
+
+<Tabs defaultValue="organize" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="organize">라우트 구성</TabsTrigger>
+    <TabsTrigger value="layouts">레이아웃 적용</TabsTrigger>
+    <TabsTrigger value="loading">로딩 스켈레톤</TabsTrigger>
+    <TabsTrigger value="root">다중 루트 레이아웃</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="organize">
+    <Card>
+      <CardHeader>
+        <CardTitle>URL에 영향 없이 라우트 구성하기</CardTitle>
+      </CardHeader>
+      <CardContent>
+        ```text
+        app/
+        ├── (marketing)
+        │   ├── layout.tsx   # 마케팅 섹션용 레이아웃
+        │   ├── blog
+        │   └── about
+        └── (shop)
+            ├── layout.tsx   # 쇼핑 섹션용 레이아웃
+            ├── cart
+            └── products
+        ```
+        관련된 라우트들을 그룹화하면서도 URL 구조는 단순하게 유지할 수 있습니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="layouts">
+    <Card>
+      <CardContent>
+        ```text
+        app/
+        ├── (shop)
+        │   ├── layout.tsx     # 쇼핑 관련 페이지들의 공통 레이아웃
+        │   ├── account
+        │   └── cart
+        └── checkout           # 별도의 레이아웃 사용
+        ```
+        특정 라우트들에만 공통 레이아웃을 적용하고 싶을 때 사용할 수 있습니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="loading">
+    <Card>
+      <CardContent>
+        ```text
+        app/
+        └── dashboard
+            ├── (overview)
+            │   ├── loading.tsx  # overview 페이지만을 위한 로딩 UI
+            │   └── page.tsx
+            └── settings
+        ```
+        특정 라우트에만 로딩 스켈레톤을 적용할 수 있습니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="root">
+    <Card>
+      <CardContent>
+        ```text
+        app/
+        ├── (marketing)
+        │   ├── layout.tsx    # 마케팅 섹션의 루트 레이아웃
+        │   └── page.tsx      # 홈페이지
+        └── (shop)
+            ├── layout.tsx    # 쇼핑 섹션의 루트 레이아웃
+            └── [...routes]
+        ```
+        각 섹션별로 완전히 다른 UI나 경험을 제공하고 싶을 때 유용합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertDescription>
+    라우트 그룹을 사용할 때 같은 URL 경로로 해석되는 라우트를 만들면 안 됩니다.
+    예를 들어, `(marketing)/about/page.js`와 `(shop)/about/page.js`는 모두 `/about`으로
+    해석되어 오류가 발생합니다.
+  </AlertDescription>
+</Alert>
+
+## 주의사항
+
+<Card className="mt-6">
+  <CardContent className="pt-6">
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-medium mb-2">라우트 그룹 이름</h3>
+        <p>괄호 안의 이름은 조직화를 위한 것일 뿐 특별한 의미는 없으며 URL에 영향을 주지 않습니다.</p>
+      </div>
+      
+      <div>
+        <h3 className="font-medium mb-2">다중 루트 레이아웃</h3>
+        <ul className="list-disc pl-6 space-y-2">
+          <li>최상위 layout.js 파일이 없는 경우, 홈 page.js는 라우트 그룹 중 하나에 정의되어야 합니다.</li>
+          <li>다중 루트 레이아웃 간의 네비게이션은 전체 페이지 로드를 발생시킵니다.</li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3 className="font-medium mb-2">HTML 태그</h3>
+        <p>각 루트 레이아웃에는 html과 body 태그가 포함되어야 합니다.</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>

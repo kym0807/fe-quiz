@@ -1,0 +1,401 @@
+---
+title: "Fastify 타입스크립트 가이드"
+description: "Fastify에서 타입스크립트를 활용하는 방법에 대한 종합 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>시작하기</CardTitle>
+    <CardDescription>
+      Fastify와 타입스크립트 설정하기
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    1. 새 프로젝트 초기화 및 의존성 설치:
+    ```bash
+    npm init -y
+    npm i fastify
+    npm i -D typescript @types/node
+    ```
+
+    2. package.json에 스크립트 추가:
+    ```json
+    {
+      "scripts": {
+        "build": "tsc -p tsconfig.json",
+        "start": "node index.js"
+      }
+    }
+    ```
+
+    3. 타입스크립트 설정 파일 생성:
+    ```bash
+    npx tsc --init
+    ```
+
+    4. 기본 서버 코드 작성 (index.ts):
+    ```ts
+    import fastify from 'fastify'
+
+    const server = fastify()
+
+    server.get('/ping', async (request, reply) => {
+      return 'pong\n'
+    })
+
+    server.listen({ port: 8080 }, (err, address) => {
+      if (err) {
+        console.error(err)
+        process.exit(1)
+      }
+      console.log(`Server listening at ${address}`)
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>제네릭 활용하기</CardTitle>
+    <CardDescription>
+      타입 안정성을 높이기 위한 Fastify의 제네릭 시스템 활용법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    인터페이스 정의:
+    ```ts
+    // 쿼리스트링 타입 정의
+    interface IQuerystring {
+      username: string;
+      password: string;
+    }
+
+    // 헤더 타입 정의
+    interface IHeaders {
+      'h-Custom': string;
+    }
+
+    // 응답 타입 정의
+    interface IReply {
+      200: { success: boolean };
+      302: { url: string };
+      '4xx': { error: string };
+    }
+    ```
+
+    라우트에 제네릭 적용:
+    ```ts
+    server.get<{
+      Querystring: IQuerystring,
+      Headers: IHeaders,
+      Reply: IReply
+    }>('/auth', async (request, reply) => {
+      const { username, password } = request.query
+      const customerHeader = request.headers['h-Custom']
+
+      // 타입 검사가 적용된 응답
+      reply.code(200).send({ success: true });
+      // 타입 에러 발생: reply.code(200).send('wrong-type');
+      
+      return `로그인 성공!`
+    })
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>제네릭의 장점</AlertTitle>
+      <AlertDescription>
+        제네릭을 사용하면 런타임 이전에 타입 에러를 잡을 수 있어 더 안정적인 API 개발이 가능합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JSON Schema 검증</CardTitle>
+    <CardDescription>
+      TypeBox를 활용한 런타임 검증과 타입 추론
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    TypeBox를 사용한 스키마 정의:
+    ```ts
+    import { Type, Static } from '@sinclair/typebox'
+
+    const User = Type.Object({
+      name: Type.String(),
+      mail: Type.Optional(Type.String({ format: 'email' })),
+    })
+
+    // 타입 추출
+    type UserType = Static<typeof User>
+
+    // 라우트에서 활용
+    fastify.post<{ Body: UserType, Reply: UserType }>(
+      '/',
+      {
+        schema: {
+          body: User,
+          response: {
+            200: User
+          },
+        },
+      },
+      (request, reply) => {
+        const { name, mail } = request.body // 자동 타입 추론
+        reply.status(200).send({ name, mail })
+      }
+    )
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>플러그인 개발</CardTitle>
+    <CardDescription>
+      타입스크립트로 Fastify 플러그인 만들기
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    플러그인 타입 정의:
+    ```ts
+    import { FastifyPluginCallback } from 'fastify'
+    import fp from 'fastify-plugin'
+
+    // 타입 확장을 위한 선언 병합
+    declare module 'fastify' {
+      interface FastifyRequest {
+        myPluginProp: string
+      }
+      interface FastifyReply {
+        myPluginProp: number
+      }
+    }
+
+    // 플러그인 옵션 인터페이스
+    interface MyPluginOptions {
+      myPluginOption: string
+    }
+
+    // 콜백 스타일 플러그인
+    const myPluginCallback: FastifyPluginCallback<MyPluginOptions> = (
+      fastify, 
+      options, 
+      done
+    ) => {
+      fastify.decorateRequest('myPluginProp', 'secret_value')
+      fastify.decorateReply('myPluginProp', 42)
+      done()
+    }
+
+    // async/await 스타일 플러그인
+    const myPluginAsync: FastifyPluginAsync<MyPluginOptions> = async (
+      fastify, 
+      options
+    ) => {
+      fastify.decorateRequest('myPluginProp', 'secret_value')
+      fastify.decorateReply('myPluginProp', 42)
+    }
+
+    export default fp(myPluginCallback, '3.x')
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>플러그인 배포 시 주의사항</AlertTitle>
+      <AlertDescription>
+        플러그인을 npm에 배포할 때는 JavaScript 소스와 타입 정의 파일(.d.ts)을 모두 포함해야 합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>에러 처리</CardTitle>
+    <CardDescription>
+      타입 시스템을 활용한 안전한 에러 처리
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```ts
+    interface ValidationError extends Error {
+      validation: any[];
+      statusCode: number;
+    }
+
+    // 커스텀 에러 핸들러
+    server.setErrorHandler((error: ValidationError, request, reply) => {
+      if (error.validation) {
+        reply.status(422).send({
+          error: '유효성 검사 실패',
+          details: error.validation
+        })
+        return
+      }
+      
+      reply.status(error.statusCode || 500).send({
+        error: error.message
+      })
+    })
+    ```
+
+    에러 응답 예시:
+    ```json
+    {
+      "statusCode": 422,
+      "error": "유효성 검사 실패",
+      "details": [
+        {
+          "field": "email",
+          "message": "유효한 이메일 주소를 입력하세요"
+        }
+      ]
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>서버 타입 설정</CardTitle>
+    <CardDescription>
+      다양한 프로토콜(HTTP, HTTPS, HTTP2)을 위한 타입 설정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    HTTP 서버:
+    ```ts
+    import fastify from 'fastify'
+    
+    // 기본값이 HTTP이므로 별도 설정 불필요
+    const server = fastify()
+    ```
+
+    HTTPS 서버:
+    ```ts
+    import fs from 'node:fs'
+    import path from 'node:path'
+
+    const server = fastify({
+      https: {
+        key: fs.readFileSync('key.pem'),
+        cert: fs.readFileSync('cert.pem')
+      }
+    })
+    ```
+
+    HTTP2 서버:
+    ```ts
+    // 비보안 HTTP2
+    const server = fastify({ http2: true })
+
+    // 보안 HTTP2
+    const secureServer = fastify({
+      http2: true,
+      https: {
+        key: fs.readFileSync('key.pem'),
+        cert: fs.readFileSync('cert.pem')
+      }
+    })
+    ```
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>고급 타입 기능</CardTitle>
+    <CardDescription>
+      타입 시스템의 고급 기능 활용
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    요청/응답 커스텀 타입:
+    ```ts
+    import { FastifyRequest, FastifyReply } from 'fastify'
+
+    interface CustomRequest extends FastifyRequest {
+      user?: {
+        id: number;
+        role: string;
+      }
+    }
+
+    interface CustomResponse extends FastifyReply {
+      success: (data: any) => FastifyReply;
+      error: (message: string) => FastifyReply;
+    }
+    ```
+
+    헤더 및 쿼리 파라미터 타입:
+    ```ts
+    interface RouteGeneric {
+      Headers: {
+        'api-key': string;
+      };
+      Querystring: {
+        limit?: number;
+        offset?: number;
+      };
+    }
+
+    server.get<RouteGeneric>('/items', async (req) => {
+      const apiKey = req.headers['api-key']
+      const { limit = 10, offset = 0 } = req.query
+      // ...
+    })
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>타입 안정성 향상</AlertTitle>
+      <AlertDescription>
+        인터페이스 확장과 제네릭을 적절히 활용하면 런타임 오류를 크게 줄일 수 있습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>타입 모듈 관리</CardTitle>
+    <CardDescription>
+      타입 정의 파일의 구조화 및 관리
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```ts
+    // types/index.ts
+    export * from './request'
+    export * from './response'
+    export * from './schema'
+    export * from './config'
+
+    // types/request.ts
+    export interface RequestGeneric {
+      Body?: unknown;
+      Querystring?: unknown;
+      Params?: unknown;
+      Headers?: unknown;
+    }
+
+    // 사용 예시
+    import { RequestGeneric } from './types'
+
+    interface UserRequest extends RequestGeneric {
+      Body: { name: string };
+      Headers: { authorization: string };
+    }
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>모범 사례</AlertTitle>
+      <AlertDescription>
+        관련된 타입들을 모듈로 그룹화하고 index.ts를 통해 export하면 코드 관리가 용이해집니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>

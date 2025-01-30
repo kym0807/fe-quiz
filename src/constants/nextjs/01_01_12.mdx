@@ -1,0 +1,180 @@
+---
+title: "Next.js 국제화(Internationalization)"
+description: "다국어 지원과 국제화된 라우팅을 구현하는 방법"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Next.js의 국제화란?</CardTitle>
+    <CardDescription>
+      여러 언어와 지역에 맞는 콘텐츠를 제공하기 위한 라우팅 및 렌더링 설정 방법입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-muted rounded-lg">
+        <h3 className="font-semibold mb-2">주요 용어</h3>
+        <ul className="space-y-2">
+          <li><span className="font-medium">로케일(Locale):</span> 언어와 형식 설정을 식별하는 코드</li>
+          <li>
+            <span className="font-mono text-sm">
+              en-US: 미국 영어
+              nl-NL: 네덜란드어(네덜란드)
+              nl: 네덜란드어(지역 무관)
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 라우팅 구현하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>국제화 라우팅 설정</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// middleware.js
+import { NextResponse } from "next/server";
+import { match } from '@formatjs/intl-localematcher'
+import Negotiator from 'negotiator'
+
+const locales = ['en-US', 'nl-NL', 'nl']
+const defaultLocale = 'en-US'
+
+// 브라우저 선호 언어 감지
+function getLocale(request) {
+  const headers = { 'accept-language': request.headers.get('accept-language') ?? 'en-US' }
+  const languages = new Negotiator({ headers }).languages()
+  return match(languages, locales, defaultLocale)
+}
+
+export function middleware(request) {
+  const { pathname } = request.nextUrl
+  
+  // URL에 이미 로케일이 있는지 확인
+  const pathnameHasLocale = locales.some(
+    (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
+  )
+  
+  if (pathnameHasLocale) return
+  
+  // 로케일이 없으면 리다이렉트
+  const locale = getLocale(request)
+  request.nextUrl.pathname = `/${locale}${pathname}`
+  return NextResponse.redirect(request.nextUrl)
+}
+
+export const config = {
+  matcher: ['/((?!_next|api|.*\\..*).*)']
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>구현 방식</AlertTitle>
+  <AlertDescription>
+    국제화된 라우팅은 두 가지 방식으로 구현할 수 있습니다:
+    - 서브패스 방식: `/fr/products`
+    - 도메인 방식: `my-site.fr/products`
+  </AlertDescription>
+</Alert>
+  </CardContent>
+</Card>
+
+## 다국어 콘텐츠 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>번역 사전 구현</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// dictionaries/en.json
+{
+  "products": {
+    "cart": "Add to Cart"
+  }
+}
+
+// dictionaries/nl.json
+{
+  "products": {
+    "cart": "Toevoegen aan Winkelwagen"
+  }
+}
+
+// app/[lang]/dictionaries.ts
+import 'server-only'
+
+const dictionaries = {
+  en: () => import('./dictionaries/en.json').then((module) => module.default),
+  nl: () => import('./dictionaries/nl.json').then((module) => module.default),
+}
+
+export const getDictionary = async (locale: 'en' | 'nl') => dictionaries[locale]()
+```
+
+```typescript
+// app/[lang]/page.tsx
+import { getDictionary } from './dictionaries'
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ lang: 'en' | 'nl' }>
+}) {
+  const lang = (await params).lang
+  const dict = await getDictionary(lang)
+  return <button>{dict.products.cart}</button>
+}
+```
+  </CardContent>
+</Card>
+
+## 정적 생성
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>로케일별 정적 라우트 생성</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// app/[lang]/layout.tsx
+export async function generateStaticParams() {
+  return [
+    { lang: 'en-US' },
+    { lang: 'nl-NL' }
+  ]
+}
+
+export default function RootLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: { lang: string }
+}) {
+  return (
+    <html lang={params.lang}>
+      <body>{children}</body>
+    </html>
+  )
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>성능 최적화</AlertTitle>
+  <AlertDescription>
+    - Server Components를 사용하므로 번역 파일이 클라이언트 번들에 포함되지 않습니다
+    - 정적 생성을 통해 빌드 시점에 각 로케일별 페이지를 미리 생성할 수 있습니다
+  </AlertDescription>
+</Alert>
+  </CardContent>
+</Card>

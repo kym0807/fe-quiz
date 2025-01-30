@@ -1,0 +1,135 @@
+---
+title: "useDebugValue"
+description: "React DevTools에서 커스텀 Hook에 라벨을 추가할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useDebugValue란?</CardTitle>
+    <CardDescription>
+      React DevTools에서 커스텀 Hook의 디버그 정보를 더 읽기 쉽게 표시할 수 있게 해주는 Hook입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    useDebugValue(value, format?)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="pt-6 space-y-4">
+    - **value**: React DevTools에 표시하고자 하는 값. 어떤 타입이든 가능합니다.
+    - **format?**: (선택적) 포맷팅 함수. DevTools에서 컴포넌트를 검사할 때 이 함수가 호출되어 반환된 값이 표시됩니다.
+  </CardContent>
+</Card>
+
+## 사용 예시
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 사용법</TabsTrigger>
+    <TabsTrigger value="format">포맷팅 함수 사용</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="basic">
+    ```tsx
+    import { useDebugValue } from 'react';
+
+    function useOnlineStatus() {
+      const isOnline = useSyncExternalStore(
+        subscribe,
+        () => navigator.onLine,
+        () => true
+      );
+      
+      useDebugValue(isOnline ? 'Online' : 'Offline');
+      
+      return isOnline;
+    }
+    ```
+    
+    이렇게 하면 DevTools에서 `useOnlineStatus`를 사용하는 컴포넌트를 검사할 때
+    "OnlineStatus: Online" 같은 형태로 표시됩니다.
+  </TabsContent>
+  
+  <TabsContent value="format">
+    ```tsx
+    function useDate() {
+      const date = useOtherHook();
+      useDebugValue(date, date => date.toDateString());
+      return date;
+    }
+    ```
+    
+    포맷팅 함수는 컴포넌트가 실제로 검사될 때만 호출되므로, 
+    무거운 포맷팅 작업을 지연시킬 수 있습니다.
+  </TabsContent>
+</Tabs>
+
+<Alert className="my-6">
+  <AlertTitle>사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    모든 커스텀 Hook에 디버그 값을 추가할 필요는 없습니다. 주로 다음과 같은 경우에 유용합니다:
+    - 공유 라이브러리의 일부인 커스텀 Hook
+    - 복잡한 내부 데이터 구조를 가진 Hook
+  </AlertDescription>
+</Alert>
+
+## 실제 구현 예시
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>온라인 상태 체크 Hook</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // useOnlineStatus.js
+    import { useSyncExternalStore, useDebugValue } from 'react';
+
+    export function useOnlineStatus() {
+      const isOnline = useSyncExternalStore(
+        subscribe,
+        () => navigator.onLine,
+        () => true
+      );
+      
+      useDebugValue(isOnline ? 'Online' : 'Offline');
+      
+      return isOnline;
+    }
+
+    // 이벤트 구독 함수
+    function subscribe(callback) {
+      window.addEventListener('online', callback);
+      window.addEventListener('offline', callback);
+      return () => {
+        window.removeEventListener('online', callback);
+        window.removeEventListener('offline', callback);
+      };
+    }
+
+    // 사용 예시
+    function StatusBar() {
+      const isOnline = useOnlineStatus();
+      return <h1>{isOnline ? '✅ Online' : '❌ Disconnected'}</h1>;
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert variant="info" className="mt-6">
+  <AlertTitle>개발 팁</AlertTitle>
+  <AlertDescription>
+    useDebugValue는 개발 모드에서만 영향을 미치며, 프로덕션 빌드에는 영향을 주지 않습니다.
+    따라서 디버깅에 도움이 된다고 생각되는 경우 자유롭게 사용할 수 있습니다.
+  </AlertDescription>
+</Alert>

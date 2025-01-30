@@ -1,0 +1,190 @@
+---
+title: "createPortal"
+description: "React 컴포넌트를 DOM 트리의 다른 위치에 렌더링할 수 있게 해주는 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>createPortal이란?</CardTitle>
+    <CardDescription>
+      자식 엘리먼트를 DOM 계층 구조상 다른 위치에 렌더링할 수 있게 해주는 함수입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    createPortal(children, domNode, key?)
+    ```
+  </CardContent>
+</Card>
+
+## 기본 개념
+
+```tsx
+import { createPortal } from 'react-dom';
+
+function MyComponent() {
+  return (
+    <div className="border-2 border-black">
+      <p>이 자식은 부모 div 안에 위치합니다.</p>
+      {createPortal(
+        <p>이 자식은 document.body에 위치합니다.</p>,
+        document.body
+      )}
+    </div>
+  );
+}
+```
+
+<Alert className="my-4">
+  <AlertTitle>중요한 특징</AlertTitle>
+  <AlertDescription>
+    Portal은 DOM 노드의 물리적 위치만 변경합니다. React 트리에서의 동작(이벤트 버블링, Context 등)은 
+    그대로 유지됩니다.
+  </AlertDescription>
+</Alert>
+
+## 주요 사용 사례
+
+### 1. 모달 다이얼로그 구현
+
+```tsx
+function Modal({ isOpen, onClose, children }) {
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+      <div className="bg-white p-6 rounded-lg">
+        {children}
+        <button 
+          onClick={onClose}
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+        >
+          닫기
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function App() {
+  const [showModal, setShowModal] = useState(false);
+
+  return (
+    <div className="overflow-hidden">
+      <button onClick={() => setShowModal(true)}>
+        모달 열기
+      </button>
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
+        <h2>모달 내용</h2>
+        <p>이 모달은 overflow: hidden의 영향을 받지 않습니다.</p>
+      </Modal>
+    </div>
+  );
+}
+```
+
+### 2. 비React 서버 마크업에 React 컴포넌트 통합
+
+```tsx
+// 서버에서 생성된 HTML
+// <div id="sidebar">
+//   <div id="sidebar-content"></div>
+// </div>
+
+function App() {
+  return (
+    <>
+      <MainContent />
+      {createPortal(
+        <SidebarContent />,
+        document.getElementById('sidebar-content')
+      )}
+    </>
+  );
+}
+```
+
+## 고급 사용 예제
+
+### 외부 위젯과 통합
+
+```tsx
+function MapWithPopup() {
+  const [popupContainer, setPopupContainer] = useState(null);
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    if (!mapRef.current) {
+      const map = initializeMap();
+      mapRef.current = map;
+      const popup = createPopupContainer(map);
+      setPopupContainer(popup);
+    }
+  }, []);
+
+  return (
+    <div className="w-full h-[400px]">
+      {popupContainer && createPortal(
+        <div className="bg-white p-2 rounded shadow">
+          <h3>React로 만든 팝업</h3>
+          <p>외부 맵 라이브러리와 통합됨</p>
+        </div>,
+        popupContainer
+      )}
+    </div>
+  );
+}
+```
+
+<Card className="my-4 border-yellow-500">
+  <CardHeader>
+    <CardTitle>주의사항</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h4 className="font-bold">1. 접근성(A11y)</h4>
+        <ul className="list-disc pl-6">
+          <li>모달 사용 시 WAI-ARIA 가이드라인 준수</li>
+          <li>키보드 포커스 관리 필요</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">2. 이벤트 처리</h4>
+        <ul className="list-disc pl-6">
+          <li>이벤트는 React 트리를 따라 전파됨</li>
+          <li>필요한 경우 이벤트 전파 중단 필요</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 사용이 권장되는 경우
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>Portal 활용이 효과적한 상황</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>모달, 다이얼로그, 툴팁 구현</li>
+      <li>부모 컴포넌트의 CSS 제약에서 벗어나야 할 때</li>
+      <li>비React 코드와의 통합이 필요할 때</li>
+      <li>레거시 시스템 점진적 마이그레이션</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Alert className="mt-4">
+  <AlertTitle>성능 고려사항</AlertTitle>
+  <AlertDescription>
+    Portal을 사용하더라도 React의 가상 DOM 조정 과정은 그대로 발생합니다.
+    불필요한 Portal 사용은 피하고, 실제로 필요한 경우에만 사용하세요.
+  </AlertDescription>
+</Alert>

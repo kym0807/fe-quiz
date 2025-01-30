@@ -1,0 +1,337 @@
+---
+title: "JavaScript 클래스(Classes)"
+description: "자바스크립트에서 객체 지향 프로그래밍을 위한 클래스 문법 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>자바스크립트 클래스의 이해</CardTitle>
+    <CardDescription>
+      자바스크립트는 프로토타입 기반 언어지만, 클래스를 통해 더 직관적인 객체 지향 프로그래밍이 가능해졌습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    자바스크립트의 클래스는 프로토타입 상속을 더 쉽게 사용할 수 있도록 해주는 문법적 설탕(Syntactic Sugar)입니다. 
+    다른 언어의 클래스와 비슷하게 동작하면서도, 자바스크립트만의 특징을 유지합니다.
+  </CardContent>
+</Card>
+
+## 클래스의 기본 구조
+
+<Card>
+  <CardContent className="pt-6">
+    ```javascript
+    class MyClass {
+      // 생성자
+      constructor() {
+        // 생성자 내용
+      }
+
+      // 인스턴스 필드
+      myField = "foo";
+
+      // 인스턴스 메서드
+      myMethod() {
+        // 메서드 내용
+      }
+
+      // 정적 필드
+      static myStaticField = "bar";
+
+      // 정적 메서드
+      static myStaticMethod() {
+        // 정적 메서드 내용
+      }
+
+      // private 필드
+      #myPrivateField = "bar";
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 클래스 선언과 사용
+
+<Tabs defaultValue="declaration" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="declaration">클래스 선언</TabsTrigger>
+    <TabsTrigger value="instance">인스턴스 생성</TabsTrigger>
+  </TabsList>
+  <TabsContent value="declaration">
+    ```javascript
+    class MyClass {
+      constructor() {
+        // 생성자 내용
+      }
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="instance">
+    ```javascript
+    const myInstance = new MyClass();
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert>
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    클래스 선언은 함수 선언과 달리 호이스팅되지 않습니다. 
+    클래스를 사용하기 전에 반드시 선언해야 합니다.
+  </AlertDescription>
+</Alert>
+
+## 생성자와 인스턴스 메서드
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>실용적인 예제: Color 클래스</CardTitle>
+    <CardDescription>
+      RGB 색상값을 다루는 클래스를 통해 생성자와 메서드의 활용을 알아보겠습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    class Color {
+      constructor(r, g, b) {
+        // RGB 값을 배열로 저장
+        this.values = [r, g, b];
+      }
+      
+      getRed() {
+        return this.values[0];
+      }
+      
+      setRed(value) {
+        this.values[0] = value;
+      }
+    }
+
+    const red = new Color(255, 0, 0);
+    console.log(red.getRed()); // 255
+    ```
+  </CardContent>
+</Card>
+
+## Private 필드의 활용
+
+<Alert variant="default" className="mb-6">
+  <AlertTitle>Private 필드의 특징</AlertTitle>
+  <AlertDescription>
+    Private 필드를 사용하면 클래스 내부 구현을 외부로부터 숨길 수 있어 더 안전한 코드를 작성할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+```javascript
+class Color {
+  #values; // private 필드 선언
+
+  constructor(r, g, b) {
+    this.#values = [r, g, b];
+  }
+
+  getRed() {
+    return this.#values[0];
+  }
+
+  setRed(value) {
+    if (value < 0 || value > 255) {
+      throw new RangeError("유효하지 않은 RGB 값입니다");
+    }
+    this.#values[0] = value;
+  }
+}
+```
+
+## 접근자 프로퍼티 (Getter/Setter)
+
+<Card className="mb-6">
+  <CardContent>
+    ```javascript
+    class Color {
+      #values;
+      
+      constructor(r, g, b) {
+        this.#values = [r, g, b];
+      }
+      
+      get red() {
+        return this.#values[0];
+      }
+      
+      set red(value) {
+        if (value < 0 || value > 255) {
+          throw new RangeError("유효하지 않은 RGB 값입니다");
+        }
+        this.#values[0] = value;
+      }
+    }
+
+    const color = new Color(255, 0, 0);
+    console.log(color.red); // 255
+    color.red = 128; // setter 호출
+    ```
+  </CardContent>
+</Card>
+
+## 상속과 확장
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>extends를 활용한 클래스 상속</CardTitle>
+    <CardDescription>
+      기존 클래스의 기능을 확장하여 새로운 클래스를 만드는 방법을 알아보겠습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    class ColorWithAlpha extends Color {
+      #alpha;
+
+      constructor(r, g, b, a) {
+        super(r, g, b);  // 부모 클래스의 생성자 호출
+        this.#alpha = a;
+      }
+
+      get alpha() {
+        return this.#alpha;
+      }
+
+      set alpha(value) {
+        if (value < 0 || value > 1) {
+          throw new RangeError("투명도는 0과 1 사이여야 합니다");
+        }
+        this.#alpha = value;
+      }
+
+      toString() {
+        return `${super.toString()}, ${this.#alpha}`;
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 정적(Static) 멤버
+
+<Tabs defaultValue="methods" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="methods">정적 메서드</TabsTrigger>
+    <TabsTrigger value="fields">정적 필드</TabsTrigger>
+  </TabsList>
+  <TabsContent value="methods">
+    ```javascript
+    class Color {
+      static isValid(r, g, b) {
+        return r >= 0 && r <= 255 && 
+               g >= 0 && g <= 255 && 
+               b >= 0 && b <= 255;
+      }
+    }
+
+    console.log(Color.isValid(255, 0, 0)); // true
+    ```
+  </TabsContent>
+  <TabsContent value="fields">
+    ```javascript
+    class Color {
+      static WHITE = new Color(255, 255, 255);
+      static BLACK = new Color(0, 0, 0);
+      
+      static {
+        // 정적 초기화 블록
+        this.GRAY = new Color(128, 128, 128);
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>정적 멤버의 특징</AlertTitle>
+  <AlertDescription>
+    정적 멤버는 클래스의 인스턴스가 아닌 클래스 자체에 속합니다.
+    인스턴스를 생성하지 않고도 접근할 수 있으며, 모든 인스턴스가 공유하는 기능을 구현할 때 유용합니다.
+  </AlertDescription>
+</Alert>
+
+## 클래스 사용의 장단점
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>클래스를 사용해야 하는 경우</CardTitle>
+    <CardDescription>
+      클래스가 특히 유용한 상황들을 살펴보겠습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    - 내부 상태를 가지며 다양한 동작을 노출해야 하는 객체를 만들 때
+    - 관련된 데이터와 동작을 하나의 단위로 캡슐화하고 싶을 때
+    - 코드를 체계적으로 구조화하고 싶을 때
+  </CardContent>
+</Card>
+
+## 실제 사용 예시
+
+<Tabs defaultValue="map" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="map">Map</TabsTrigger>
+    <TabsTrigger value="date">Date</TabsTrigger>
+    <TabsTrigger value="error">Error</TabsTrigger>
+  </TabsList>
+  <TabsContent value="map">
+    ```javascript
+    const userMap = new Map();
+    userMap.set('id', 1);
+    userMap.set('name', 'John');
+    console.log(userMap.get('name')); // 'John'
+    ```
+  </TabsContent>
+  <TabsContent value="date">
+    ```javascript
+    const today = new Date();
+    console.log(today.getFullYear());
+    console.log(today.getMonth() + 1);
+    ```
+  </TabsContent>
+  <TabsContent value="error">
+    ```javascript
+    try {
+      throw new TypeError('타입이 잘못되었습니다');
+    } catch (error) {
+      console.log(error instanceof Error); // true
+      console.log(error.message);
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    클래스를 사용할 때는 가변성(mutability)과 상태 관리에 주의해야 합니다.
+    특히 Date 객체처럼 가변 객체를 다룰 때는 예기치 않은 부작용이 발생할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 마무리
+
+<Card>
+  <CardContent className="pt-6">
+    클래스는 객체 지향 프로그래밍을 위한 강력한 도구이지만, 상황에 따라 적절히 사용해야 합니다.
+    내부 데이터를 저장하고 많은 동작을 노출해야 하는 객체를 만들 때 클래스 사용을 고려해보세요.
+    특히 private 필드를 활용하면 깔끔한 API를 설계할 수 있습니다.
+  </CardContent>
+</Card>
+
+<Alert variant="default" className="mt-6">
+  <AlertTitle>추가 팁</AlertTitle>
+  <AlertDescription>
+    클래스를 사용할 때는 단일 책임 원칙을 고려하고, 상속 계층을 너무 깊게 만들지 않도록 주의하세요.
+    때로는 클래스 대신 순수 함수나 더 단순한 객체를 사용하는 것이 더 나은 선택일 수 있습니다.
+  </AlertDescription>
+</Alert>

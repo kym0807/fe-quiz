@@ -1,0 +1,340 @@
+---
+title: "Node.js 이벤트 루프 완벽 가이드"
+description: "Node.js의 이벤트 루프 동작 방식과 비동기 처리 메커니즘 이해하기"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>이벤트 루프란?</CardTitle>
+    <CardDescription>
+      단일 JavaScript 스레드로 논블로킹 I/O 작업을 수행하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Node.js는 기본적으로 단일 JavaScript 스레드를 사용하지만, 가능한 경우 시스템 
+    커널에 작업을 위임함으로써 논블로킹 I/O 작업을 수행할 수 있습니다.
+
+    <Alert className="mt-4">
+      <AlertTitle>커널의 역할</AlertTitle>
+      <AlertDescription>
+        대부분의 현대 커널은 멀티스레드이므로 백그라운드에서 여러 작업을 동시에 
+        처리할 수 있습니다. 작업이 완료되면 커널이 Node.js에 알려주어 적절한 
+        콜백이 poll 큐에 추가되고 실행됩니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>이벤트 루프의 단계</CardTitle>
+    <CardDescription>
+      Node.js 이벤트 루프의 실행 순서와 각 단계별 특징
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```text
+       ┌───────────────────────────┐
+    ┌─>│           timers          │
+    │  └─────────────┬─────────────┘
+    │  ┌─────────────┴─────────────┐
+    │  │     pending callbacks     │
+    │  └─────────────┬─────────────┘
+    │  ┌─────────────┴─────────────┐
+    │  │       idle, prepare       │
+    │  └─────────────┬─────────────┘      ┌───────────────┐
+    │  ┌─────────────┴─────────────┐      │   incoming:   │
+    │  │           poll            │<─────┤  connections, │
+    │  └─────────────┬─────────────┘      │   data, etc.  │
+    │  ┌─────────────┴─────────────┐      └───────────────┘
+    │  │           check           │
+    │  └─────────────┬─────────────┘
+    │  ┌─────────────┴─────────────┐
+    └──┤      close callbacks      │
+       └───────────────────────────┘
+    ```
+
+    각 단계는 이벤트 루프의 "phase"라고 불리며, 각각 FIFO(First In First Out) 
+    방식의 콜백 큐를 가지고 있습니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>이벤트 루프 단계별 상세 설명</CardTitle>
+    <CardDescription>
+      각 단계(Phase)의 역할과 실행 과정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="timers" className="w-full">
+      <TabsList>
+        <TabsTrigger value="timers">타이머</TabsTrigger>
+        <TabsTrigger value="pending">Pending</TabsTrigger>
+        <TabsTrigger value="poll">Poll</TabsTrigger>
+        <TabsTrigger value="check">Check</TabsTrigger>
+        <TabsTrigger value="close">Close</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="timers">
+        <Card>
+          <CardContent>
+            <h4 className="text-lg font-semibold mb-2">타이머 단계</h4>
+            - setTimeout()과 setInterval()로 예약된 콜백들이 실행됨
+            - 타이머는 정확한 실행 시간이 아닌 최소 실행 시간을 보장
+            - 운영체제 스케줄링이나 다른 콜백 실행으로 인해 지연될 수 있음
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="pending">
+        <Card>
+          <CardContent>
+            <h4 className="text-lg font-semibold mb-2">Pending 콜백 단계</h4>
+            - 다음 루프 반복으로 연기된 I/O 콜백들을 실행
+            - 주로 시스템 작업 관련 콜백 처리 (예: TCP 에러 처리)
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="poll">
+        <Card>
+          <CardContent>
+            <h4 className="text-lg font-semibold mb-2">Poll 단계</h4>
+            **주요 기능:**
+            1. I/O를 위해 블로킹해야 하는 시간 계산
+            2. poll 큐의 이벤트 처리
+
+            **동작 방식:**
+            - 큐가 비어있지 않은 경우: 동기적으로 콜백 실행
+            - 큐가 비어있는 경우:
+              - setImmediate() 콜백이 있으면 check 단계로 이동
+              - 없으면 새로운 콜백이 추가될 때까지 대기
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="check">
+        <Card>
+          <CardContent>
+            <h4 className="text-lg font-semibold mb-2">Check 단계</h4>
+            - setImmediate() 콜백이 실행되는 단계
+            - poll 단계가 유휴 상태가 되면 바로 실행됨
+            - libuv API를 사용하여 poll 단계 완료 후 실행되도록 스케줄링
+          </CardContent>
+        </Card>
+      </TabsContent>
+      
+      <TabsContent value="close">
+        <Card>
+          <CardContent>
+            <h4 className="text-lg font-semibold mb-2">Close 콜백 단계</h4>
+            - 소켓이나 핸들이 갑자기 닫힐 때의 'close' 이벤트 처리
+            - process.nextTick()을 통해 발생하는 close 이벤트도 처리
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>setImmediate() vs setTimeout()</CardTitle>
+    <CardDescription>
+      두 타이밍 함수의 차이점과 실행 컨텍스트에 따른 동작 방식
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="grid gap-4">
+        <Card>
+          <CardContent>
+            <h4 className="font-semibold mb-2">주요 차이점</h4>
+            - setImmediate(): 현재 poll 단계가 완료된 직후 실행
+            - setTimeout(): 지정된 시간(ms) 이후 실행
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="main" className="w-full">
+          <TabsList>
+            <TabsTrigger value="main">메인 모듈</TabsTrigger>
+            <TabsTrigger value="io">I/O 사이클</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="main">
+            ```javascript
+            // 실행 순서가 비결정적
+            setTimeout(() => {
+              console.log('timeout');
+            }, 0);
+            
+            setImmediate(() => {
+              console.log('immediate');
+            });
+            ```
+          </TabsContent>
+          
+          <TabsContent value="io">
+            ```javascript
+            // immediate가 항상 먼저 실행됨
+            const fs = require('node:fs');
+            fs.readFile(__filename, () => {
+              setTimeout(() => {
+                console.log('timeout');
+              }, 0);
+              setImmediate(() => {
+                console.log('immediate');
+              });
+            });
+            ```
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      <Alert>
+        <AlertTitle>setImmediate()의 장점</AlertTitle>
+        <AlertDescription>
+          I/O 사이클 내에서 스케줄링될 때, setImmediate()는 타이머의 수에 관계없이 
+          항상 setTimeout() 보다 먼저 실행됩니다.
+        </AlertDescription>
+      </Alert>
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>process.nextTick()</CardTitle>
+    <CardDescription>
+      이벤트 루프의 특별한 부분
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Alert className="mb-4">
+      <AlertTitle>중요한 특징</AlertTitle>
+      <AlertDescription>
+        process.nextTick()은 이벤트 루프의 일부가 아닙니다. 대신 현재 작업이 
+        완료된 직후, 이벤트 루프의 다음 단계로 진행하기 전에 실행됩니다.
+      </AlertDescription>
+    </Alert>
+
+    ```javascript
+    let bar;
+    function someAsyncApiCall(callback) {
+      process.nextTick(callback);
+    }
+    
+    someAsyncApiCall(() => {
+      console.log('bar', bar); // 1
+    });
+    
+    bar = 1;
+    ```
+
+    <Card className="mt-4">
+      <CardContent>
+        **사용 이유:**
+        1. 에러 처리, 리소스 정리, 재시도 등을 이벤트 루프 진행 전에 수행
+        2. 콜 스택이 풀린 후, 이벤트 루프 진행 전에 콜백 실행이 필요한 경우
+      </CardContent>
+    </Card>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>process.nextTick() vs setImmediate()</CardTitle>
+    <CardDescription>
+      비슷해 보이지만 다른 두 메서드의 차이점 이해하기
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid gap-4">
+      <Card>
+        <CardContent>
+          - process.nextTick(): 현재 단계에서 즉시 실행
+          - setImmediate(): 이벤트 루프의 다음 반복('tick')에서 실행
+        </CardContent>
+      </Card>
+
+      <Alert>
+        <AlertTitle>이름에 대한 참고사항</AlertTitle>
+        <AlertDescription>
+          실제로는 이름이 서로 바뀌는 것이 더 적절했을 수 있으나, npm의 많은 
+          패키지들이 현재 방식에 의존하고 있어 변경이 어려운 상황입니다. 
+          개발자들에게는 이해하기 쉬운 setImmediate() 사용을 권장합니다.
+        </AlertDescription>
+      </Alert>
+    </div>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>실제 사용 예제</CardTitle>
+    <CardDescription>
+      process.nextTick()의 실제 활용 사례
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="server" className="w-full">
+      <TabsList>
+        <TabsTrigger value="server">서버 리스닝</TabsTrigger>
+        <TabsTrigger value="emitter">이벤트 이미터</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="server">
+        ```javascript
+        const server = net.createServer();
+        server.on('connection', conn => {});
+        
+        server.listen(8080);
+        server.on('listening', () => {});
+        ```
+        <Alert className="mt-2">
+          <AlertDescription>
+            listen() 호출 시 포트 바인딩이 즉시 발생하므로, listening 이벤트 전에 
+            connection 이벤트가 발생할 수 있습니다.
+          </AlertDescription>
+        </Alert>
+      </TabsContent>
+      
+      <TabsContent value="emitter">
+        ```javascript
+        const EventEmitter = require('node:events');
+        
+        class MyEmitter extends EventEmitter {
+          constructor() {
+            super();
+            // 핸들러가 할당된 후에 이벤트 발생
+            process.nextTick(() => {
+              this.emit('event');
+            });
+          }
+        }
+        
+        const myEmitter = new MyEmitter();
+        myEmitter.on('event', () => {
+          console.log('이벤트 발생!');
+        });
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>핵심 정리</AlertTitle>
+  <AlertDescription>
+    - 이벤트 루프는 Node.js의 비동기 처리의 핵심 메커니즘입니다
+    - 각 단계는 고유한 역할과 실행 순서를 가집니다
+    - process.nextTick()은 각 단계 사이에서 특별한 우선순위로 실행됩니다
+    - setImmediate()와 setTimeout()은 실행 컨텍스트에 따라 다른 동작을 보입니다
+    - 적절한 타이밍 메서드 선택은 애플리케이션의 성능과 안정성에 중요한 영향을 미칩니다
+  </AlertDescription>
+</Alert>

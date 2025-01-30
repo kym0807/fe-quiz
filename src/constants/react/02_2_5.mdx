@@ -1,0 +1,174 @@
+---
+title: "preinit"
+description: "스타일시트나 외부 스크립트를 미리 가져오고 실행할 수 있게 해주는 React 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Alert className="mb-6" variant="info">
+  <AlertTitle>프레임워크 사용 시 참고사항</AlertTitle>
+  <AlertDescription>
+    React 기반 프레임워크들은 대부분 리소스 로딩을 자동으로 처리합니다.
+    이 API를 직접 사용하기 전에 사용 중인 프레임워크의 문서를 확인하세요.
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>preinit란?</CardTitle>
+    <CardDescription>
+      스타일시트나 외부 스크립트를 미리 가져오고 즉시 실행할 수 있게 해주는 함수입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import { preinit } from 'react-dom';
+
+    preinit("https://example.com/script.js", { as: "script" });
+    preinit("https://example.com/style.css", { as: "style", precedence: "medium" });
+    ```
+  </CardContent>
+</Card>
+
+## 옵션 설정
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>preinit 옵션</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h4 className="font-bold">필수 옵션</h4>
+        <ul className="list-disc pl-6">
+          <li><code>as</code>: 리소스 타입 ("script" 또는 "style")</li>
+          <li><code>precedence</code>: 스타일시트 사용 시 필수 ("reset", "low", "medium", "high")</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">선택 옵션</h4>
+        <ul className="list-disc pl-6">
+          <li><code>crossOrigin</code>: CORS 정책 ("anonymous" 또는 "use-credentials")</li>
+          <li><code>integrity</code>: 리소스 무결성 검증을 위한 해시</li>
+          <li><code>nonce</code>: CSP 적용 시 사용되는 암호화 논스</li>
+          <li><code>fetchPriority</code>: 가져오기 우선순위 ("auto", "high", "low")</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 사용 예제
+
+### 1. 스크립트 미리 초기화
+
+```tsx
+function App() {
+  // 외부 스크립트 미리 초기화
+  preinit("https://analytics.example.com/script.js", {
+    as: "script",
+    fetchPriority: "low"
+  });
+
+  return (
+    <div className="app">
+      {/* 앱 컨텐츠 */}
+    </div>
+  );
+}
+```
+
+### 2. 스타일시트 미리 초기화
+
+```tsx
+function ThemeProvider({ children }) {
+  // 테마 스타일 미리 초기화
+  preinit("https://themes.example.com/dark.css", {
+    as: "style",
+    precedence: "high"  // 높은 우선순위로 설정
+  });
+
+  return (
+    <div className="theme-container">
+      {children}
+    </div>
+  );
+}
+```
+
+### 3. 이벤트 핸들러에서 사용
+
+```tsx
+function WizardButton() {
+  const handleWizardStart = () => {
+    // 마법사 UI를 위한 스타일 미리 초기화
+    preinit("https://example.com/wizard.css", {
+      as: "style",
+      precedence: "medium"
+    });
+    
+    // 마법사 관련 스크립트 미리 초기화
+    preinit("https://example.com/wizard.js", {
+      as: "script"
+    });
+    
+    startWizard();
+  };
+
+  return (
+    <button 
+      onClick={handleWizardStart}
+      className="px-4 py-2 bg-blue-500 text-white rounded"
+    >
+      마법사 시작
+    </button>
+  );
+}
+```
+
+<Alert className="my-4" variant="warning">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>동일한 URL에 대한 중복 호출은 한 번만 적용됩니다</li>
+      <li>서버 사이드 렌더링에서는 컴포넌트 렌더링 중이나 관련 비동기 컨텍스트에서만 작동합니다</li>
+      <li>스크립트는 다운로드 완료 즉시 실행됩니다</li>
+      <li>스타일시트는 삽입 즉시 적용됩니다</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## preload vs preinit vs preinitModule
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>리소스 로딩 API 비교</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-3 gap-4">
+      <div>
+        <h4 className="font-bold">preload</h4>
+        <ul className="list-disc pl-6">
+          <li>리소스만 다운로드</li>
+          <li>즉시 실행하지 않음</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">preinit</h4>
+        <ul className="list-disc pl-6">
+          <li>다운로드 및 즉시 실행</li>
+          <li>일반 스크립트/스타일용</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">preinitModule</h4>
+        <ul className="list-disc pl-6">
+          <li>ESM 모듈 전용</li>
+          <li>모듈 시스템 지원</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>

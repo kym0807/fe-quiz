@@ -1,0 +1,211 @@
+---
+title: "Route Handlers"
+description: "Next.js의 Web Request와 Response API를 활용한 커스텀 요청 처리기 만들기"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Route Handlers란?</CardTitle>
+    <CardDescription>
+      app 디렉토리 내에서 Web Request와 Response API를 사용하여 
+      커스텀 요청 처리기를 만들 수 있게 해주는 기능입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Alert>
+      <AlertTitle>알아두세요</AlertTitle>
+      <AlertDescription>
+        Route Handlers는 app 디렉토리에서만 사용할 수 있으며, pages 디렉토리의 API Routes와 동일한 역할을 합니다.
+        따라서 API Routes와 Route Handlers를 함께 사용할 필요가 없습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>route.js|ts 파일 작성하기</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// app/api/route.ts
+export async function GET(request: Request) {
+  // 요청 처리 로직
+}
+```
+
+주요 특징:
+app 디렉토리 내 어디서나 사용 가능
+page.js와 layout.js처럼 중첩 가능
+단, 동일한 route 세그먼트에 page.js와 route.js를 동시에 둘 수 없음
+  </CardContent>
+</Card>
+
+## 지원하는 HTTP 메서드
+
+<Card className="mb-6">
+  <CardContent>
+    <div className="grid grid-cols-4 gap-2">
+      {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map((method) => (
+        <div key={method} className="bg-secondary p-2 rounded text-center">
+          {method}
+        </div>
+      ))}
+    </div>
+    <p className="mt-4 text-sm text-muted-foreground">
+      지원하지 않는 메서드 호출 시 405 Method Not Allowed 응답이 반환됩니다.
+    </p>
+  </CardContent>
+</Card>
+
+## 캐싱 동작
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>캐싱 설정</CardTitle>
+    <CardDescription>
+      기본적으로 캐시되지 않으며, GET 메서드에 한해 선택적으로 캐싱을 활성화할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+```typescript
+export const dynamic = 'force-static'
+
+export async function GET() {
+  const res = await fetch('https://api.example.com/data', {
+    headers: {
+      'Content-Type': 'application/json',
+      'API-Key': process.env.API_KEY,
+    },
+  })
+  const data = await res.json()
+
+  return Response.json({ data })
+}
+```
+  </CardContent>
+</Card>
+
+## 쿠키 다루기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>쿠키 읽기와 설정</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+import { cookies } from 'next/headers'
+
+export async function GET(request: Request) {
+  const cookieStore = await cookies()
+  const token = cookieStore.get('token')
+
+  return new Response('Hello!', {
+    status: 200,
+    headers: { 'Set-Cookie': `token=${token.value}` },
+  })
+}
+```
+  </CardContent>
+</Card>
+
+## 헤더 관리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>헤더 읽기와 설정</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+import { headers } from 'next/headers'
+
+export async function GET(request: Request) {
+  const headersList = await headers()
+  const referer = headersList.get('referer')
+
+  return new Response('Hello!', {
+    status: 200,
+    headers: { referer: referer },
+  })
+}
+```
+  </CardContent>
+</Card>
+
+## 동적 라우트 세그먼트
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동적 데이터 기반 핸들러</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// app/items/[slug]/route.ts
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const slug = (await params).slug
+  // slug는 'a', 'b', 'c' 등이 될 수 있습니다
+}
+```
+
+<table className="w-full mt-4">
+  <thead>
+    <tr className="border-b">
+      <th className="text-left p-2">URL 예시</th>
+      <th className="text-left p-2">params 값</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr className="border-b">
+      <td className="p-2">/items/a</td>
+      <td className="p-2">Promise&#123; slug: 'a' &#125;</td>
+    </tr>
+    <tr className="border-b">
+      <td className="p-2">/items/b</td>
+      <td className="p-2">Promise&#123; slug: 'b' &#125;</td>
+    </tr>
+  </tbody>
+</table>
+  </CardContent>
+</Card>
+
+## 요청 본문 처리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>다양한 요청 본문 처리 방법</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+// JSON 데이터 처리
+export async function POST(request: Request) {
+  const res = await request.json()
+  return Response.json({ res })
+}
+
+// FormData 처리
+export async function POST(request: Request) {
+  const formData = await request.formData()
+  const name = formData.get('name')
+  const email = formData.get('email')
+  return Response.json({ name, email })
+}
+```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>보안 팁</AlertTitle>
+  <AlertDescription>
+    FormData의 경우 모든 데이터가 문자열로 전달됩니다.
+    데이터 유효성 검사와 타입 변환을 위해 zod-form-data 같은 라이브러리 사용을 고려해보세요.
+  </AlertDescription>
+</Alert>

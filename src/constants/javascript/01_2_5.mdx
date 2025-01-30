@@ -1,0 +1,218 @@
+---
+title: "Challenge: 튀는 공 데모 확장하기"  
+description: "JavaScript 객체 지향 기술을 활용해 튀는 공 데모에 새로운 기능 추가"  
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>목표</CardTitle>  
+    <CardDescription>  
+      사용자 제어가 가능한 악의 원을 추가하고, 점수 카운터와 공 소멸 기능을 구현합니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    이 챌린지에서는 다음 기능을 구현합니다:  
+    - 공과 악의 원을 상속 구조로 설계.  
+    - 악의 원이 공을 잡아먹도록 구현.  
+    - 점수 카운터를 추가해 남은 공의 수를 표시.  
+  </CardContent>  
+</Card>  
+
+## Shape 클래스 생성  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>Shape 클래스</CardTitle>  
+    <CardDescription>  
+      공과 악의 원의 기본 속성을 정의하는 클래스입니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    class Shape {  
+      constructor(x, y, velX, velY) {  
+        this.x = x;  
+        this.y = y;  
+        this.velX = velX;  
+        this.velY = velY;  
+      }  
+    }  
+    ```  
+    `Shape` 클래스는 위치와 속도를 정의하며, 공과 악의 원 클래스가 이를 상속받습니다.  
+  </CardContent>  
+</Card>  
+
+## 공 클래스 수정  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>Ball 클래스</CardTitle>  
+    <CardDescription>  
+      공 클래스는 Shape를 상속받아 구현합니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    class Ball extends Shape {  
+      constructor(x, y, velX, velY, size, color) {  
+        super(x, y, velX, velY);  
+        this.size = size;  
+        this.color = color;  
+        this.exists = true;  
+      }  
+
+      collisionDetect() {  
+        for (const ball of balls) {  
+          if (this !== ball && ball.exists) {  
+            const dx = this.x - ball.x;  
+            const dy = this.y - ball.y;  
+            const distance = Math.sqrt(dx * dx + dy * dy);  
+
+            if (distance < this.size + ball.size) {  
+              this.color = ball.color = randomRGB();  
+            }  
+          }  
+        }  
+      }  
+    }  
+    ```  
+    - `exists`: 공의 존재 여부를 추적하는 속성입니다.  
+    - `collisionDetect`: 존재하는 공만 충돌 감지에 포함합니다.  
+  </CardContent>  
+</Card>  
+
+## 악의 원 클래스  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>EvilCircle 클래스</CardTitle>  
+    <CardDescription>  
+      사용자 제어가 가능한 악의 원을 구현합니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    class EvilCircle extends Shape {  
+      constructor(x, y) {  
+        super(x, y, 20, 20);  
+        this.size = 10;  
+        this.color = "white";  
+
+        window.addEventListener("keydown", (e) => {  
+          switch (e.key) {  
+            case "a": this.x -= this.velX; break;  
+            case "d": this.x += this.velX; break;  
+            case "w": this.y -= this.velY; break;  
+            case "s": this.y += this.velY; break;  
+          }  
+        });  
+      }  
+
+      draw() {  
+        ctx.beginPath();  
+        ctx.strokeStyle = this.color;  
+        ctx.lineWidth = 3;  
+        ctx.arc(this.x, this.y, this.size, 0, 2 * Math.PI);  
+        ctx.stroke();  
+      }  
+
+      checkBounds() {  
+        if ((this.x + this.size) >= width) this.x = width - this.size;  
+        if ((this.x - this.size) <= 0) this.x = this.size;  
+        if ((this.y + this.size) >= height) this.y = height - this.size;  
+        if ((this.y - this.size) <= 0) this.y = this.size;  
+      }  
+
+      collisionDetect() {  
+        for (const ball of balls) {  
+          if (ball.exists) {  
+            const dx = this.x - ball.x;  
+            const dy = this.y - ball.y;  
+            const distance = Math.sqrt(dx * dx + dy * dy);  
+
+            if (distance < this.size + ball.size) {  
+              ball.exists = false;  
+              ballCount--;  
+              para.textContent = `Ball count: ${ballCount}`;  
+            }  
+          }  
+        }  
+      }  
+    }  
+    ```  
+    - 사용자 입력으로 악의 원을 이동합니다.  
+    - 공과 충돌 시 `exists`를 `false`로 설정하고 점수를 업데이트합니다.  
+  </CardContent>  
+</Card>  
+
+## 애니메이션과 점수 카운터  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>루프와 점수 업데이트</CardTitle>  
+    <CardDescription>  
+      공의 상태와 점수를 관리하는 애니메이션 루프입니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    ```javascript  
+    const para = document.querySelector("p");  
+    let ballCount = 0;  
+
+    const balls = [];  
+    while (balls.length < 25) {  
+      const size = random(10, 20);  
+      const ball = new Ball(  
+        random(size, width - size),  
+        random(size, height - size),  
+        random(-7, 7),  
+        random(-7, 7),  
+        size,  
+        randomRGB()  
+      );  
+      balls.push(ball);  
+      ballCount++;  
+    }  
+
+    para.textContent = `Ball count: ${ballCount}`;  
+
+    const evilCircle = new EvilCircle(random(0, width), random(0, height));  
+
+    function loop() {  
+      ctx.fillStyle = "rgb(0 0 0 / 25%)";  
+      ctx.fillRect(0, 0, width, height);  
+
+      for (const ball of balls) {  
+        if (ball.exists) {  
+          ball.draw();  
+          ball.update();  
+          ball.collisionDetect();  
+        }  
+      }  
+
+      evilCircle.draw();  
+      evilCircle.checkBounds();  
+      evilCircle.collisionDetect();  
+
+      requestAnimationFrame(loop);  
+    }  
+
+    loop();  
+    ```  
+    - `ballCount`: 남은 공의 수를 추적합니다.  
+    - 악의 원과 공의 상태를 루프에서 처리합니다.  
+  </CardContent>  
+</Card>  
+
+## 요약  
+<Card className="mb-6">  
+  <CardHeader>  
+    <CardTitle>챌린지 요약</CardTitle>  
+    <CardDescription>  
+      튀는 공 데모를 확장하며 JavaScript 객체 지향 기법을 활용했습니다.  
+    </CardDescription>  
+  </CardHeader>  
+  <CardContent>  
+    - `Shape` 클래스를 통해 공통 속성을 관리했습니다.  
+    - 사용자 제어 악의 원과 점수 카운터를 추가했습니다.  
+    - 충돌 감지와 삭제 기능을 통해 상호작용을 강화했습니다.  
+  </CardContent>  
+</Card>  

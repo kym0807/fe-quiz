@@ -1,0 +1,202 @@
+---
+title: "JavaScript 타이머 완벽 가이드"
+description: "setTimeout과 setInterval을 통한 JavaScript의 타이밍 제어"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>setTimeout 기본</CardTitle>
+    <CardDescription>
+      함수 실행을 지연시키는 기본적인 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="basic" className="w-full">
+      <TabsList>
+        <TabsTrigger value="basic">기본 사용법</TabsTrigger>
+        <TabsTrigger value="params">매개변수 전달</TabsTrigger>
+        <TabsTrigger value="clear">타이머 취소</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="basic">
+        ```javascript
+        setTimeout(() => {
+          // 2초 후 실행
+        }, 2000);
+
+        setTimeout(() => {
+          // 50밀리초 후 실행
+        }, 50);
+        ```
+      </TabsContent>
+      
+      <TabsContent value="params">
+        ```javascript
+        const myFunction = (firstParam, secondParam) => {
+          // 작업 수행
+        };
+
+        // 2초 후 myFunction 실행, 매개변수와 함께
+        setTimeout(myFunction, 2000, firstParam, secondParam);
+        ```
+      </TabsContent>
+      
+      <TabsContent value="clear">
+        ```javascript
+        const id = setTimeout(() => {
+          // 2초 후 실행되어야 하는 코드
+        }, 2000);
+
+        // 실행 취소
+        clearTimeout(id);
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>제로 딜레이 타이머</CardTitle>
+    <CardDescription>
+      setTimeout을 0ms 딜레이로 사용하기
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    setTimeout(() => {
+      console.log('after');
+    }, 0);
+    console.log('before');
+
+    // 출력:
+    // before
+    // after
+    ```
+
+    <Alert className="mt-4">
+      <AlertTitle>활용 팁</AlertTitle>
+      <AlertDescription>
+        CPU 집약적인 작업에서 다른 함수들이 실행될 수 있도록 
+        스케줄러에 함수를 대기시킬 때 특히 유용합니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>setInterval 이해하기</CardTitle>
+    <CardDescription>
+      주기적으로 반복되는 작업을 처리하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="basic" className="w-full">
+      <TabsList>
+        <TabsTrigger value="basic">기본 사용법</TabsTrigger>
+        <TabsTrigger value="clear">인터벌 중단</TabsTrigger>
+        <TabsTrigger value="conditional">조건부 중단</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="basic">
+        ```javascript
+        setInterval(() => {
+          // 2초마다 실행
+        }, 2000);
+        ```
+      </TabsContent>
+      
+      <TabsContent value="clear">
+        ```javascript
+        const id = setInterval(() => {
+          // 2초마다 실행
+        }, 2000);
+
+        clearInterval(id); // 반복 중단
+        ```
+      </TabsContent>
+      
+      <TabsContent value="conditional">
+        ```javascript
+        const interval = setInterval(() => {
+          if (App.somethingIWait === 'arrived') {
+            clearInterval(interval);
+            return;
+          }
+          // 그 외의 경우 작업 수행
+        }, 100);
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>재귀적 setTimeout</CardTitle>
+    <CardDescription>
+      setInterval의 한계를 극복하는 대안적 접근 방식
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <Alert>
+        <AlertTitle>setInterval의 한계</AlertTitle>
+        <AlertDescription>
+          setInterval은 함수의 실행 시간과 관계없이 일정 간격으로 함수를 시작합니다.
+          이는 실행 시간이 간격보다 길어질 경우 문제가 될 수 있습니다.
+        </AlertDescription>
+      </Alert>
+
+      ```javascript
+      const myFunction = () => {
+        // 작업 수행
+        setTimeout(myFunction, 1000);
+      };
+
+      setTimeout(myFunction, 1000);
+      ```
+
+      <Card className="mt-4">
+        <CardContent>
+          재귀적 setTimeout을 사용하면:
+          - 이전 실행이 완료된 후에만 다음 실행이 예약됨
+          - 실행 간격이 일정하지 않더라도 안전하게 처리 가능
+          - 작업 시간이 동적으로 변하는 경우에 더 적합
+        </CardContent>
+      </Card>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>Node.js에서의 타이머</AlertTitle>
+  <AlertDescription>
+    - setTimeout과 setInterval은 Node.js의 Timers 모듈을 통해 사용 가능
+    - Node.js는 setImmediate() 함수도 제공 (setTimeout(fn, 0)과 유사)
+    - setImmediate는 Node.js 이벤트 루프와 함께 작동하도록 최적화되어 있음
+  </AlertDescription>
+</Alert>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>브라우저 호환성 참고사항</CardTitle>
+    <CardDescription>
+      브라우저별 구현의 차이점 이해하기
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Alert className="mb-4">
+      <AlertTitle>setImmediate 지원</AlertTitle>
+      <AlertDescription>
+        IE와 Edge는 setImmediate() 메서드를 구현하고 있지만, 
+        이는 표준이 아니며 다른 브라우저에서는 사용할 수 없습니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>

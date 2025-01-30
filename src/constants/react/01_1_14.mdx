@@ -1,0 +1,444 @@
+---
+title: "useRef"
+description: "렌더링에 필요하지 않은 값을 참조할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useRef란?</CardTitle>
+    <CardDescription>
+      렌더링에 사용되지 않는 값을 참조할 수 있게 해주는 React Hook입니다.
+      변경 시 리렌더링을 트리거하지 않는 값을 저장하는 데 유용합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const ref = useRef(initialValue)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **initialValue**: ref 객체의 current 속성의 초기값. 어떤 타입의 값이든 가능합니다.
+  </CardContent>
+</Card>
+
+### 반환값
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - 단일 속성 **current**를 가진 객체를 반환
+    - 초기값은 전달한 initialValue로 설정됨
+    - 이후 렌더링에서도 동일한 객체를 반환
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+### 값 참조하기
+
+<Tabs defaultValue="counter" className="w-full">
+  <TabsList>
+    <TabsTrigger value="counter">클릭 카운터</TabsTrigger>
+    <TabsTrigger value="timer">타이머</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="counter">
+    ```tsx
+    function Counter() {
+      const countRef = useRef(0);
+
+      function handleClick() {
+        countRef.current = countRef.current + 1;
+        alert(`${countRef.current}번 클릭했습니다!`);
+      }
+
+      return (
+        <button onClick={handleClick}>
+          클릭하세요!
+        </button>
+      );
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="timer">
+    ```tsx
+    function Stopwatch() {
+      const [startTime, setStartTime] = useState(null);
+      const [now, setNow] = useState(null);
+      const intervalRef = useRef(null);
+
+      function handleStart() {
+        setStartTime(Date.now());
+        setNow(Date.now());
+
+        clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(() => {
+          setNow(Date.now());
+        }, 10);
+      }
+
+      function handleStop() {
+        clearInterval(intervalRef.current);
+      }
+
+      return (
+        <>
+          <button onClick={handleStart}>시작</button>
+          <button onClick={handleStop}>정지</button>
+        </>
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## useRef vs useState
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>언제 useRef를 사용해야 하나요?</CardTitle>
+  </CardHeader>
+  <CardContent>
+    useRef는 다음과 같은 경우에 적합합니다:
+    
+    1. 렌더링 사이에 정보를 유지해야 할 때
+    2. 값 변경 시 리렌더링이 필요하지 않을 때
+    3. 각 컴포넌트 인스턴스에 로컬 값이 필요할 때
+
+    ```tsx
+    // ✅ ref 사용이 적절한 경우
+    const intervalRef = useRef(null);
+    
+    // ✅ state 사용이 적절한 경우
+    const [count, setCount] = useState(0);
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    1. ref.current는 변경 가능하지만, 렌더링에 사용되는 객체는 변경하지 마세요.
+    2. ref.current를 변경해도 리렌더링이 발생하지 않습니다.
+    3. 렌더링 중에는 ref.current를 읽거나 쓰지 마세요.
+  </AlertDescription>
+</Alert>
+
+## DOM 요소 접근하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 사용법</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    function TextInput() {
+      // 1. ref 객체 생성
+      const inputRef = useRef(null);
+      
+      // 2. DOM 요소에 ref 속성으로 연결
+      return (
+        <>
+          <input ref={inputRef} />
+          <button onClick={() => {
+            // 3. DOM 노드 접근
+            inputRef.current.focus();
+          }}>
+            입력란 포커스
+          </button>
+        </>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 일반적인 사용 사례
+
+<Tabs defaultValue="focus" className="w-full">
+  <TabsList>
+    <TabsTrigger value="focus">포커스 관리</TabsTrigger>
+    <TabsTrigger value="scroll">스크롤 제어</TabsTrigger>
+    <TabsTrigger value="media">미디어 제어</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="focus">
+    ```tsx
+    function Form() {
+      const inputRef = useRef(null);
+
+      function handleClick() {
+        inputRef.current.focus();
+      }
+
+      return (
+        <>
+          <input ref={inputRef} />
+          <button onClick={handleClick}>
+            입력란 포커스
+          </button>
+        </>
+      );
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="scroll">
+    ```tsx
+    function ScrollableList() {
+      const listRef = useRef(null);
+
+      function scrollToItem(index) {
+        const items = listRef.current.querySelectorAll('li');
+        items[index].scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest'
+        });
+      }
+
+      return (
+        <ul ref={listRef}>
+          {/* 리스트 아이템들 */}
+        </ul>
+      );
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="media">
+    ```tsx
+    function VideoPlayer() {
+      const [isPlaying, setIsPlaying] = useState(false);
+      const videoRef = useRef(null);
+
+      function handlePlayPause() {
+        if (isPlaying) {
+          videoRef.current.pause();
+        } else {
+          videoRef.current.play();
+        }
+        setIsPlaying(!isPlaying);
+      }
+
+      return (
+        <video ref={videoRef} src="/video.mp4" />
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 컴포넌트에 ref 전달하기
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    // 커스텀 입력 컴포넌트
+    const MyInput = forwardRef((props, ref) => {
+      return <input {...props} ref={ref} />;
+    });
+
+    // 부모 컴포넌트
+    function Form() {
+      const inputRef = useRef(null);
+
+      function handleClick() {
+        inputRef.current.focus();
+      }
+
+      return (
+        <>
+          <MyInput ref={inputRef} />
+          <button onClick={handleClick}>
+            포커스
+          </button>
+        </>
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>forwardRef 사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    1. 커스텀 컴포넌트에 ref를 전달하려면 반드시 forwardRef로 감싸야 합니다.
+    2. ref는 모든 종류의 값을 전달할 수 있지만, DOM 요소를 전달하는 것이 가장 일반적입니다.
+    3. 불필요하게 많은 DOM 요소를 노출하지 마세요.
+  </AlertDescription>
+</Alert>
+
+## ref 콘텐츠 생성 최적화
+
+### 초기화 지연하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>비용이 큰 객체의 생성 최적화</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // 🔴 피해야 할 방법: 매 렌더링마다 새 객체 생성
+    function Video() {
+      const playerRef = useRef(new VideoPlayer());
+      // ...
+    }
+
+    // ✅ 권장하는 방법: 필요할 때만 생성
+    function Video() {
+      const playerRef = useRef(null);
+      
+      if (playerRef.current === null) {
+        playerRef.current = new VideoPlayer();
+      }
+      // ...
+    }
+    ```
+  </CardContent>
+</Card>
+
+### null 체크 피하기
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 패턴</TabsTrigger>
+    <TabsTrigger value="getter">게터 패턴</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="basic">
+    ```tsx
+    function VideoPlayer() {
+      const playerRef = useRef<VideoPlayer | null>(null);
+      
+      // 매번 null 체크 필요
+      function handlePlay() {
+        if (playerRef.current !== null) {
+          playerRef.current.play();
+        }
+      }
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="getter">
+    ```tsx
+    function VideoPlayer() {
+      const playerRef = useRef<VideoPlayer | null>(null);
+      
+      // 게터 함수를 통해 null 체크 캡슐화
+      function getPlayer() {
+        if (playerRef.current !== null) {
+          return playerRef.current;
+        }
+        const player = new VideoPlayer();
+        playerRef.current = player;
+        return player;
+      }
+
+      function handlePlay() {
+        getPlayer().play(); // null 체크 불필요
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 일반적인 문제 해결
+
+### 커스텀 컴포넌트에 ref 전달 실패
+
+```tsx
+// 🔴 작동하지 않음
+function MyInput(props) {
+  return <input {...props} />;
+}
+
+// ✅ forwardRef로 해결
+const MyInput = forwardRef((props, ref) => {
+  return <input {...props} ref={ref} />;
+});
+```
+
+### 렌더링 중 ref 사용
+
+<Alert className="mb-6" variant="destructive">
+  <AlertTitle>렌더링 중 ref 사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    렌더링 중에는 ref.current를 읽거나 쓰지 마세요.
+    ```tsx
+    // 🔴 잘못된 사용
+    function MyComponent() {
+      const myRef = useRef(0);
+      // 렌더링 중 ref 수정
+      myRef.current = 123;
+      // 렌더링 중 ref 읽기
+      return <div>{myRef.current}</div>;
+    }
+
+    // ✅ 올바른 사용
+    function MyComponent() {
+      const myRef = useRef(0);
+      useEffect(() => {
+        myRef.current = 123;
+      });
+      function handleClick() {
+        console.log(myRef.current);
+      }
+    }
+    ```
+  </AlertDescription>
+</Alert>
+
+## 모범 사례
+
+<Card className="mb-6">
+  <CardContent className="space-y-4">
+    1. **ref 사용 목적 명확히 하기**:
+       ```tsx
+       // 의도를 명확히 하는 이름 사용
+       const inputRef = useRef(null);
+       const timeoutRef = useRef(null);
+       const prevValueRef = useRef(null);
+       ```
+
+    2. **클린업 처리 잊지 않기**:
+       ```tsx
+       useEffect(() => {
+         const timerId = setInterval(() => {}, 1000);
+         timeoutRef.current = timerId;
+         return () => clearInterval(timerId);
+       }, []);
+       ```
+
+    3. **적절한 초기화 시점 선택**:
+       ```tsx
+       const valueRef = useRef(null);
+       
+       // 필요한 시점에 초기화
+       useEffect(() => {
+         valueRef.current = expensiveOperation();
+       }, []);
+       ```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>성능 최적화 팁</AlertTitle>
+  <AlertDescription>
+    1. 불필요한 ref 생성을 피하세요.
+    2. 큰 객체는 지연 초기화를 사용하세요.
+    3. 렌더링에 사용되는 값은 state를 사용하세요.
+    4. ref 콜백 대신 useRef + useEffect 조합을 고려하세요.
+  </AlertDescription>
+</Alert>

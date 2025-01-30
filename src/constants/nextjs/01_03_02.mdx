@@ -1,0 +1,155 @@
+---
+title: "Client Components"
+description: "브라우저에서 실행되는 인터랙티브한 UI 구현하기"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Client Components란?</CardTitle>
+    <CardDescription>
+      서버에서 미리 렌더링된 후, 브라우저에서 JavaScript를 통해 동작하는 인터랙티브한 UI를 구현할 수 있게 해주는 컴포넌트입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-muted rounded-lg">
+        <h3 className="font-semibold mb-2">주요 이점</h3>
+        <ul className="space-y-2 list-disc pl-4">
+          <li>상태 관리, 이벤트 처리 가능</li>
+          <li>즉각적인 사용자 피드백</li>
+          <li>브라우저 API 사용 가능</li>
+          <li>동적 UI 업데이트</li>
+        </ul>
+      </div>
+      <div className="p-4 bg-muted rounded-lg">
+        <h3 className="font-semibold mb-2">사용 가능한 기능</h3>
+        <ul className="space-y-2 list-disc pl-4">
+          <li>useState, useEffect</li>
+          <li>이벤트 리스너</li>
+          <li>geolocation</li>
+          <li>localStorage</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Client Component 선언</CardTitle>
+  </CardHeader>
+  <CardContent>
+```typescript
+'use client'
+
+import { useState } from 'react'
+
+export default function Counter() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <div>
+      <p>클릭 횟수: {count}</p>
+      <button onClick={() => setCount(count + 1)}>
+        클릭하세요
+      </button>
+    </div>
+  )
+}
+```
+
+<Alert className="mt-4">
+  <AlertTitle>중요</AlertTitle>
+  <AlertDescription>
+    'use client' 지시어는 파일 최상단, import문 위에 선언해야 하며
+    이 지시어가 선언된 파일의 모든 하위 컴포넌트는 클라이언트 번들의 일부가 됩니다.
+  </AlertDescription>
+</Alert>
+  </CardContent>
+</Card>
+
+## 렌더링 프로세스
+
+<Tabs defaultValue="initial" className="w-full">
+  <TabsList>
+    <TabsTrigger value="initial">초기 페이지 로드</TabsTrigger>
+    <TabsTrigger value="navigation">페이지 네비게이션</TabsTrigger>
+  </TabsList>
+
+  <TabsContent value="initial">
+    <Card>
+      <CardHeader>
+        <CardTitle>초기 페이지 로드 시 렌더링</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="border p-4 rounded-lg">
+            <h3 className="font-semibold mb-2">서버 측</h3>
+            <ol className="list-decimal pl-6 space-y-2">
+              <li>React가 Server Components를 RSC Payload로 변환</li>
+              <li>Next.js가 HTML 생성</li>
+            </ol>
+          </div>
+          
+          <div className="border p-4 rounded-lg">
+            <h3 className="font-semibold mb-2">클라이언트 측</h3>
+            <ol className="list-decimal pl-6 space-y-2">
+              <li>HTML을 사용하여 초기 미리보기 표시</li>
+              <li>RSC Payload로 컴포넌트 트리 조정</li>
+              <li>하이드레이션을 통한 인터랙티브 기능 활성화</li>
+            </ol>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  </TabsContent>
+
+  <TabsContent value="navigation">
+    <Card>
+      <CardHeader>
+        <CardTitle>페이지 네비게이션 시 렌더링</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <p>후속 네비게이션에서는 전체 과정이 클라이언트에서 실행됩니다:</p>
+          <ol className="list-decimal pl-6 space-y-2">
+            <li>Client Component JavaScript 번들 다운로드</li>
+            <li>RSC Payload를 사용하여 컴포넌트 트리 조정</li>
+            <li>DOM 업데이트</li>
+          </ol>
+        </div>
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>서버 환경으로 돌아가기</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <p>
+        Client Component 내에서도 다음과 같은 경우 서버 기능을 활용할 수 있습니다:
+      </p>
+      <ul className="list-disc pl-6 space-y-2">
+        <li>클라이언트 번들 사이즈 축소</li>
+        <li>서버에서 데이터 페칭</li>
+        <li>서버 전용 API 사용</li>
+      </ul>
+      <Alert>
+        <AlertTitle>권장 사항</AlertTitle>
+        <AlertDescription>
+          Client Components와 Server Components를 적절히 조합하여 최적의 성능을 달성하세요.
+          자세한 내용은 Composition Patterns 문서를 참조하세요.
+        </AlertDescription>
+      </Alert>
+    </div>
+  </CardContent>
+</Card>

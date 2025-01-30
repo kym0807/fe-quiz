@@ -1,0 +1,163 @@
+---
+title: "lazy"
+description: "컴포넌트의 코드 로딩을 첫 렌더링 시점까지 지연시키는 React 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>lazy란?</CardTitle>
+    <CardDescription>
+      컴포넌트가 처음 렌더링될 때까지 해당 컴포넌트의 코드 로딩을 지연시킬 수 있게 해주는 함수입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const SomeComponent = lazy(load);
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+### 일반적인 컴포넌트 import vs lazy loading
+
+```tsx
+// 일반적인 import 방식
+import MarkdownPreview from './MarkdownPreview';
+
+// lazy를 사용한 동적 import 방식
+import { lazy } from 'react';
+const MarkdownPreview = lazy(() => import('./MarkdownPreview'));
+```
+
+### Suspense와 함께 사용하기
+
+```tsx
+import { Suspense, lazy } from 'react';
+import Loading from './Loading';
+
+const MarkdownPreview = lazy(() => import('./MarkdownPreview'));
+
+function Editor() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <h2>미리보기</h2>
+      <MarkdownPreview />
+    </Suspense>
+  );
+}
+```
+
+## 실제 사용 예제
+
+```tsx
+function MarkdownEditor() {
+  const [showPreview, setShowPreview] = useState(false);
+  const [markdown, setMarkdown] = useState('안녕하세요, **세계**!');
+
+  return (
+    <>
+      <textarea 
+        value={markdown} 
+        onChange={e => setMarkdown(e.target.value)} 
+        className="w-full p-2 border rounded"
+      />
+      
+      <label className="flex items-center gap-2 my-4">
+        <input 
+          type="checkbox" 
+          checked={showPreview} 
+          onChange={e => setShowPreview(e.target.checked)}
+        />
+        미리보기 표시
+      </label>
+
+      <hr />
+      
+      {showPreview && (
+        <Suspense fallback={<Loading />}>
+          <h2>미리보기</h2>
+          <MarkdownPreview markdown={markdown} />
+        </Suspense>
+      )}
+    </>
+  );
+}
+```
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>lazy 함수의 동작 방식</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2">
+      <p>1. 컴포넌트가 처음 렌더링될 때까지 <code>load</code> 함수를 호출하지 않습니다.</p>
+      <p>2. <code>load</code> 함수가 호출되면 Promise가 해결될 때까지 대기합니다.</p>
+      <p>3. Promise가 해결되면 해당 모듈의 <code>default</code> export를 React 컴포넌트로 사용합니다.</p>
+      <p>4. Promise와 그 결과는 캐시되어 <code>load</code> 함수는 한 번만 호출됩니다.</p>
+    </div>
+  </CardContent>
+</Card>
+
+## 주의사항과 베스트 프랙티스
+
+### 1. 컴포넌트 선언 위치
+
+<Tabs defaultValue="bad" className="w-full">
+  <TabsList>
+    <TabsTrigger value="bad">잘못된 방법</TabsTrigger>
+    <TabsTrigger value="good">올바른 방법</TabsTrigger>
+  </TabsList>
+  <TabsContent value="bad">
+    ```tsx
+    function Editor() {
+      // ❌ 컴포넌트 내부에서 lazy 선언
+      // 리렌더링할 때마다 상태가 초기화됩니다
+      const MarkdownPreview = lazy(() => import('./MarkdownPreview'));
+      return <MarkdownPreview />;
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="good">
+    ```tsx
+    // ✅ 모듈의 최상위 레벨에서 lazy 선언
+    const MarkdownPreview = lazy(() => import('./MarkdownPreview'));
+    
+    function Editor() {
+      return <MarkdownPreview />;
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="my-4" variant="warning">
+  <AlertTitle>lazy 사용 시 고려사항</AlertTitle>
+  <AlertDescription>
+    <div className="space-y-2">
+      <p>• 반드시 default export를 사용하는 컴포넌트에만 사용 가능</p>
+      <p>• 번들러나 프레임워크의 dynamic import 지원 필요</p>
+      <p>• Suspense와 함께 사용하여 로딩 상태 처리 필요</p>
+      <p>• 항상 모듈의 최상위 레벨에서 선언</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+## 사용이 권장되는 경우
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>lazy 활용이 효과적인 상황</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>큰 사이즈의 에디터나 복잡한 시각화 컴포넌트</li>
+      <li>조건부로 렌더링되는 모달이나 대화상자</li>
+      <li>라우트별 페이지 컴포넌트</li>
+      <li>사용자 인터랙션 후에 표시되는 컴포넌트</li>
+    </ul>
+  </CardContent>
+</Card>

@@ -1,0 +1,307 @@
+---
+title: "useDeferredValue"
+description: "UI의 특정 부분의 업데이트를 지연시킬 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useDeferredValue란?</CardTitle>
+    <CardDescription>
+      UI의 특정 부분의 업데이트를 지연시켜 전반적인 성능을 개선할 수 있게 해주는 React Hook입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const deferredValue = useDeferredValue(value, initialValue?)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="pt-6 space-y-4">
+    - **value**: 지연시키고자 하는 값. 어떤 타입이든 가능합니다.
+    - **initialValue?**: (선택적) 컴포넌트의 초기 렌더링 동안 사용할 값.
+  </CardContent>
+</Card>
+
+### 반환값
+
+<Card className="mb-4">
+  <CardContent className="pt-6">
+    - **currentValue**: 지연된 값을 반환합니다.
+    - 초기 렌더링: initialValue 또는 제공된 value와 동일
+    - 업데이트 시: 
+      1. 먼저 이전 값으로 리렌더링
+      2. 백그라운드에서 새로운 값으로 리렌더링
+  </CardContent>
+</Card>
+
+## 주요 사용 사례
+
+<Tabs defaultValue="loading" className="w-full">
+  <TabsList>
+    <TabsTrigger value="loading">로딩 중 오래된 콘텐츠 표시</TabsTrigger>
+    <TabsTrigger value="stale">오래된 콘텐츠 표시</TabsTrigger>
+    <TabsTrigger value="performance">성능 최적화</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="loading">
+    ```tsx
+    function SearchPage() {
+      const [query, setQuery] = useState('');
+      const deferredQuery = useDeferredValue(query);
+      
+      return (
+        <>
+          <input 
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          <Suspense fallback={<h2>로딩 중...</h2>}>
+            <SearchResults query={deferredQuery} />
+          </Suspense>
+        </>
+      );
+    }
+    ```
+    새로운 결과가 로드되는 동안 이전 검색 결과를 계속 표시합니다.
+  </TabsContent>
+  
+  <TabsContent value="stale">
+    ```tsx
+    function SearchPage() {
+      const [query, setQuery] = useState('');
+      const deferredQuery = useDeferredValue(query);
+      const isStale = query !== deferredQuery;
+      
+      return (
+        <div style={{
+          opacity: isStale ? 0.5 : 1,
+          transition: 'opacity 0.2s'
+        }}>
+          <SearchResults query={deferredQuery} />
+        </div>
+      );
+    }
+    ```
+    오래된 콘텐츠임을 시각적으로 표시합니다.
+  </TabsContent>
+
+  <TabsContent value="performance">
+    ```tsx
+    function App() {
+      const [text, setText] = useState('');
+      const deferredText = useDeferredValue(text);
+      
+      return (
+        <>
+          <input 
+            value={text}
+            onChange={e => setText(e.target.value)} 
+          />
+          <SlowList text={deferredText} />
+        </>
+      );
+    }
+    ```
+    무거운 UI 업데이트를 지연시켜 입력의 반응성을 유지합니다.
+  </TabsContent>
+</Tabs>
+
+## 주의사항
+
+<Alert variant="warning" className="my-4">
+  <AlertTitle>값 생성 시점</AlertTitle>
+  <AlertDescription>
+    useDeferredValue에 전달하는 값은 렌더링 외부에서 생성된 값이거나 원시 값(문자열, 숫자 등)이어야 합니다.
+    렌더링 중에 새 객체를 생성하여 전달하면 불필요한 백그라운드 리렌더링이 발생할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 동작 원리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>내부 작동 방식</CardTitle>
+  </CardHeader>
+  <CardContent>
+    지연된 값의 업데이트는 두 단계로 진행됩니다:
+
+    1. **즉시 렌더링**: 새로운 값으로 UI를 업데이트하지만, 지연된 값은 이전 값을 유지
+    2. **백그라운드 렌더링**: 새로운 지연 값으로 백그라운드에서 리렌더링
+
+    ```tsx
+    function SearchPage() {
+      const [query, setQuery] = useState('');
+      const deferredQuery = useDeferredValue(query);
+      
+      // query가 "ab"로 변경되면:
+      // 1. 첫 렌더링: query = "ab", deferredQuery = "a"
+      // 2. 백그라운드 렌더링: query = "ab", deferredQuery = "ab"
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 성능 최적화 테크닉
+
+### memo와 함께 사용하기
+
+<Alert className="mb-4" variant="info">
+  <AlertTitle>최적화를 위한 필수 조건</AlertTitle>
+  <AlertDescription>
+    성능 최적화를 위해서는 지연된 값을 사용하는 컴포넌트를 반드시 memo로 감싸야 합니다.
+  </AlertDescription>
+</Alert>
+
+```tsx
+import { memo } from 'react';
+
+// ✅ memo로 감싸서 최적화
+const SlowList = memo(function SlowList({ text }) {
+  return (
+    <ul>
+      {items.map(item => (
+        <SlowItem key={item.id} text={text} />
+      ))}
+    </ul>
+  );
+});
+
+function App() {
+  const [text, setText] = useState('');
+  const deferredText = useDeferredValue(text);
+  
+  return (
+    <>
+      <input value={text} onChange={e => setText(e.target.value)} />
+      <SlowList text={deferredText} />
+    </>
+  );
+}
+```
+
+### 지연 상태 표시하기
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    function SearchResults({ query }) {
+      const deferredQuery = useDeferredValue(query);
+      const isStale = query !== deferredQuery;
+      
+      return (
+        <div style={{
+          opacity: isStale ? 0.8 : 1,
+          transition: 'opacity 0.2s ease',
+        }}>
+          <ResultsList query={deferredQuery} />
+        </div>
+      );
+    }
+    ```
+
+    사용자에게 현재 표시된 내용이 최신이 아님을 시각적으로 알려줄 수 있습니다.
+  </CardContent>
+</Card>
+
+## 다른 최적화 기법과의 비교
+
+<Tabs defaultValue="defer" className="w-full">
+  <TabsList>
+    <TabsTrigger value="defer">useDeferredValue</TabsTrigger>
+    <TabsTrigger value="debounce">Debounce</TabsTrigger>
+    <TabsTrigger value="throttle">Throttle</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="defer">
+    - React와 통합된 네이티브 솔루션
+    - 디바이스 성능에 따라 자동으로 조절
+    - 백그라운드 렌더링이 중단 가능
+    ```tsx
+    const deferredValue = useDeferredValue(value);
+    ```
+  </TabsContent>
+  
+  <TabsContent value="debounce">
+    - 사용자 입력이 멈출 때까지 대기
+    - 고정된 지연 시간 사용
+    ```tsx
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedValue(value);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }, [value]);
+    ```
+  </TabsContent>
+  
+  <TabsContent value="throttle">
+    - 일정 시간 간격으로 업데이트 제한
+    - 고정된 간격 사용
+    ```tsx
+    useEffect(() => {
+      if (canUpdate) {
+        setThrottledValue(value);
+        setCanUpdate(false);
+        setTimeout(() => setCanUpdate(true), 1000);
+      }
+    }, [value, canUpdate]);
+    ```
+  </TabsContent>
+</Tabs>
+
+## 실제 예제: 검색 기능 구현
+
+```tsx
+function SearchInterface() {
+  const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
+  const isStale = query !== deferredQuery;
+
+  return (
+    <div className="p-4">
+      <div className="mb-4">
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          className="w-full p-2 border rounded"
+          placeholder="검색어를 입력하세요..."
+        />
+      </div>
+
+      <div style={{
+        opacity: isStale ? 0.8 : 1,
+        transition: 'opacity 0.2s ease'
+      }}>
+        <Suspense fallback={<LoadingSpinner />}>
+          <SearchResults query={deferredQuery} />
+        </Suspense>
+      </div>
+
+      {isStale && (
+        <div className="text-sm text-gray-500 mt-2">
+          최신 결과를 불러오는 중...
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+<Alert className="mt-6" variant="info">
+  <AlertTitle>성능 팁</AlertTitle>
+  <AlertDescription>
+    useDeferredValue는 네트워크 요청 자체를 최적화하지 않습니다. 
+    필요한 경우 debounce나 throttle과 함께 사용하여 네트워크 요청을 최적화할 수 있습니다.
+  </AlertDescription>
+</Alert>

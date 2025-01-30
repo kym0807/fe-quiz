@@ -1,0 +1,194 @@
+---
+title: "Next.js의 지연 로딩"
+description: "성능 최적화를 위한 지연 로딩 구현 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+# 지연 로딩 (Lazy Loading)
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>지연 로딩이란?</CardTitle>
+    <CardDescription>
+      초기 로딩 성능을 향상시키기 위해 JavaScript 코드를 필요한 시점에 로드하는 기술입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">next/dynamic</h3>
+        <p>React.lazy()와 Suspense의 조합</p>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="font-bold mb-2">React.lazy()</h3>
+        <p>Suspense와 함께 사용하는 React의 내장 기능</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 클라이언트 컴포넌트 지연 로딩
+
+<Tabs defaultValue="basic" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="basic">기본 사용</TabsTrigger>
+    <TabsTrigger value="ssr">SSR 스킵</TabsTrigger>
+  </TabsList>
+  <TabsContent value="basic">
+    ```tsx
+    'use client'
+    
+    import { useState } from 'react'
+    import dynamic from 'next/dynamic'
+    
+    const ComponentA = dynamic(() => import('../components/A'))
+    const ComponentB = dynamic(() => import('../components/B'))
+    
+    export default function ClientComponentExample() {
+      const [showMore, setShowMore] = useState(false)
+    
+      return (
+        <div>
+          {/* 별도의 클라이언트 번들로 즉시 로드 */}
+          <ComponentA />
+    
+          {/* 조건이 충족될 때만 로드 */}
+          {showMore && <ComponentB />}
+          <button onClick={() => setShowMore(!showMore)}>
+            더 보기
+          </button>
+        </div>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="ssr">
+    ```tsx
+    // SSR을 건너뛰고 클라이언트에서만 로드
+    const ComponentC = dynamic(() => import('../components/C'), { 
+      ssr: false 
+    })
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="mb-6">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    ssr: false 옵션은 클라이언트 컴포넌트에서만 사용할 수 있습니다. 서버 컴포넌트에서 사용하면 에러가 발생합니다.
+  </AlertDescription>
+</Alert>
+
+## 외부 라이브러리 지연 로딩
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동적 import를 사용한 외부 라이브러리 로딩</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    'use client'
+    
+    import { useState } from 'react'
+    
+    const names = ['김철수', '이영희', '박지민', '최수진']
+    
+    export default function Page() {
+      const [results, setResults] = useState()
+    
+      return (
+        <div>
+          <input
+            type="text"
+            placeholder="검색"
+            onChange={async (e) => {
+              const { value } = e.currentTarget
+              // fuse.js를 동적으로 로드
+              const Fuse = (await import('fuse.js')).default
+              const fuse = new Fuse(names)
+    
+              setResults(fuse.search(value))
+            }}
+          />
+          <pre>결과: {JSON.stringify(results, null, 2)}</pre>
+        </div>
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 커스텀 로딩 컴포넌트
+
+<Tabs defaultValue="loading" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="loading">로딩 컴포넌트</TabsTrigger>
+    <TabsTrigger value="named">Named Exports</TabsTrigger>
+  </TabsList>
+  <TabsContent value="loading">
+    ```tsx
+    import dynamic from 'next/dynamic'
+    
+    const WithCustomLoading = dynamic(
+      () => import('../components/WithCustomLoading'),
+      {
+        loading: () => <p>로딩 중...</p>,
+      }
+    )
+    
+    export default function Page() {
+      return (
+        <div>
+          <WithCustomLoading />
+        </div>
+      )
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="named">
+    ```tsx
+    // components/hello.js
+    'use client'
+    
+    export function Hello() {
+      return <p>안녕하세요!</p>
+    }
+    
+    // app/page.js
+    import dynamic from 'next/dynamic'
+    
+    const ClientComponent = dynamic(() =>
+      import('../components/hello').then((mod) => mod.Hello)
+    )
+    ```
+  </TabsContent>
+</Tabs>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>지연 로딩 모범 사례</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">적절한 사용 시점</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>모달이나 복잡한 위젯처럼 즉시 필요하지 않은 컴포넌트</li>
+          <li>조건부로 렌더링되는 대형 컴포넌트</li>
+          <li>자주 사용되지 않는 외부 라이브러리</li>
+        </ul>
+      </div>
+      <div className="p-4 bg-gray-50 rounded-lg">
+        <h4 className="font-bold">성능 고려사항</h4>
+        <ul className="list-disc list-inside mt-2">
+          <li>작은 컴포넌트는 지연 로딩이 오히려 성능을 저하시킬 수 있음</li>
+          <li>서버 컴포넌트는 자동으로 코드 분할됨</li>
+          <li>사용자 경험을 위해 적절한 로딩 상태 제공 필요</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>

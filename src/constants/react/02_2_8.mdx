@@ -1,0 +1,166 @@
+---
+title: "preloadModule"
+description: "ES 모듈을 미리 다운로드할 수 있게 해주는 React 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Alert className="mb-6" variant="info">
+  <AlertTitle>프레임워크 사용 시 참고사항</AlertTitle>
+  <AlertDescription>
+    React 기반 프레임워크들은 대부분 리소스 로딩을 자동으로 처리합니다.
+    이 API를 직접 사용하기 전에 사용 중인 프레임워크의 문서를 확인하세요.
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>preloadModule이란?</CardTitle>
+    <CardDescription>
+      사용할 예정인 ES 모듈(ECMAScript Module)을 미리 다운로드할 수 있게 해주는 함수입니다.
+      실제 사용 전에 모듈을 준비하여 성능을 최적화합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import { preloadModule } from 'react-dom';
+
+    preloadModule("https://example.com/module.js", { as: "script" });
+    ```
+  </CardContent>
+</Card>
+
+## 옵션 설정
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>preloadModule 옵션</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <h4 className="font-bold">필수 옵션</h4>
+        <ul className="list-disc pl-6">
+          <li><code>as</code>: 반드시 "script"로 설정해야 함</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">선택 옵션</h4>
+        <ul className="list-disc pl-6">
+          <li><code>crossOrigin</code>: CORS 정책 ("anonymous" 또는 "use-credentials")</li>
+          <li><code>integrity</code>: 모듈 무결성 검증을 위한 해시</li>
+          <li><code>nonce</code>: CSP 적용 시 사용되는 암호화 논스</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 사용 예제
+
+### 1. 컴포넌트 렌더링 시 모듈 프리로드
+
+```tsx
+function FeatureComponent() {
+  // 필요한 모듈을 미리 다운로드
+  preloadModule("https://example.com/feature-module.js", {
+    as: "script",
+    crossOrigin: "anonymous"
+  });
+
+  return (
+    <div className="feature">
+      {/* 컴포넌트 내용 */}
+    </div>
+  );
+}
+```
+
+### 2. 사용자 인터랙션 기반 프리로드
+
+```tsx
+function AdvancedEditor() {
+  const handleEditorHover = () => {
+    // 사용자가 호버했을 때 에디터 모듈 프리로드
+    preloadModule("https://example.com/editor-module.js", {
+      as: "script",
+      integrity: "sha384-..."
+    });
+  };
+
+  return (
+    <div 
+      onMouseEnter={handleEditorHover}
+      className="p-4 hover:bg-gray-100 rounded"
+    >
+      <h3>고급 에디터</h3>
+      <p>호버 시 모듈 프리로드 시작</p>
+    </div>
+  );
+}
+```
+
+## preloadModule vs preinitModule
+
+<Tabs defaultValue="preload" className="w-full">
+  <TabsList>
+    <TabsTrigger value="preload">preloadModule</TabsTrigger>
+    <TabsTrigger value="preinit">preinitModule</TabsTrigger>
+  </TabsList>
+  <TabsContent value="preload">
+    ```tsx
+    // 다운로드만 수행, 실행은 나중에
+    preloadModule("https://example.com/module.js", {
+      as: "script"
+    });
+    ```
+  </TabsContent>
+  <TabsContent value="preinit">
+    ```tsx
+    // 다운로드 후 즉시 실행
+    preinitModule("https://example.com/module.js", {
+      as: "script"
+    });
+    ```
+  </TabsContent>
+</Tabs>
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>선택 가이드</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <h4 className="font-bold">preloadModule 사용</h4>
+        <ul className="list-disc pl-6">
+          <li>모듈이 곧 필요할 예정</li>
+          <li>즉시 실행은 필요없음</li>
+          <li>사용자 인터랙션 예측</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">preinitModule 사용</h4>
+        <ul className="list-disc pl-6">
+          <li>모듈을 즉시 사용할 예정</li>
+          <li>다운로드 즉시 실행 필요</li>
+          <li>지연 없는 실행 중요</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Alert className="mt-4">
+  <AlertTitle>최적화 팁</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>사용자 행동을 예측하여 적절한 시점에 프리로드 수행</li>
+      <li>불필요한 모듈 프리로드는 대역폭 낭비가 될 수 있음</li>
+      <li>중요도에 따라 모듈 프리로드 우선순위 설정</li>
+      <li>서버 사이드 렌더링 시 컴포넌트 렌더링 단계에서만 호출</li>
+    </ul>
+  </AlertDescription>
+</Alert>

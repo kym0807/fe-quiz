@@ -1,0 +1,279 @@
+---
+title: "useLayoutEffect"
+description: "브라우저가 화면을 다시 그리기 전에 실행되는 useEffect의 동기 버전"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Alert variant="destructive" className="mb-6">
+  <AlertTitle>성능 주의</AlertTitle>
+  <AlertDescription>
+    useLayoutEffect는 성능에 영향을 줄 수 있습니다. 가능한 경우 useEffect를 사용하세요.
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useLayoutEffect란?</CardTitle>
+    <CardDescription>
+      브라우저가 화면을 다시 그리기 전에 동기적으로 실행되는 Effect Hook입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    useLayoutEffect(setup, dependencies?)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **setup**: Effect의 로직이 포함된 함수. 정리(cleanup) 함수를 반환할 수 있습니다.
+    - **dependencies?**: (선택적) setup 코드 내에서 참조하는 모든 반응형 값들의 배열
+  </CardContent>
+</Card>
+
+### 제약사항
+
+<Alert className="mb-6">
+  <AlertDescription className="space-y-2">
+    - 컴포넌트의 최상위 레벨에서만 호출 가능
+    - 서버 사이드 렌더링에서는 실행되지 않음
+    - 브라우저의 화면 갱신을 차단함
+    - 내부의 상태 업데이트는 모든 Effect를 즉시 실행시킴
+  </AlertDescription>
+</Alert>
+
+## 주요 사용 사례
+
+### 레이아웃 측정이 필요한 경우
+
+```tsx
+function Tooltip() {
+  const ref = useRef(null);
+  const [tooltipHeight, setTooltipHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const { height } = ref.current.getBoundingClientRect();
+    setTooltipHeight(height);
+  }, []);
+
+  // tooltipHeight를 사용하여 렌더링...
+}
+```
+
+### 실행 단계
+
+<Card className="mb-6">
+  <CardContent>
+    1. 초기 콘텐츠 렌더링
+    2. 브라우저가 화면을 다시 그리기 전에 레이아웃 측정
+    3. 측정된 레이아웃 정보를 사용하여 최종 콘텐츠 렌더링
+  </CardContent>
+</Card>
+
+## useLayoutEffect vs useEffect
+
+<Tabs defaultValue="layout" className="w-full">
+  <TabsList>
+    <TabsTrigger value="layout">useLayoutEffect</TabsTrigger>
+    <TabsTrigger value="effect">useEffect</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="layout">
+    ```tsx
+    useLayoutEffect(() => {
+      // 동기적으로 실행
+      // 브라우저 페인팅 차단
+      const { height } = element.getBoundingClientRect();
+      setHeight(height);
+    }, []);
+    ```
+    - 브라우저 페인팅 전에 실행
+    - 화면 깜빡임 방지
+    - 성능에 영향을 줄 수 있음
+  </TabsContent>
+  
+  <TabsContent value="effect">
+    ```tsx
+    useEffect(() => {
+      // 비동기적으로 실행
+      // 브라우저 페인팅을 차단하지 않음
+      const { height } = element.getBoundingClientRect();
+      setHeight(height);
+    }, []);
+    ```
+    - 브라우저 페인팅 후에 실행
+    - 화면 깜빡임 가능성 있음
+    - 더 나은 성능
+  </TabsContent>
+</Tabs>
+
+## 실제 구현 예제
+
+### 툴팁 위치 조정
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    function Tooltip({ children, targetRect }) {
+      const ref = useRef(null);
+      const [tooltipHeight, setTooltipHeight] = useState(0);
+
+      useLayoutEffect(() => {
+        const { height } = ref.current.getBoundingClientRect();
+        setTooltipHeight(height);
+      }, []);
+
+      // 툴팁 위치 계산
+      let tooltipX = targetRect?.left ?? 0;
+      let tooltipY = 0;
+      
+      if (targetRect) {
+        tooltipY = targetRect.top - tooltipHeight;
+        // 위에 공간이 부족하면 아래에 표시
+        if (tooltipY < 0) {
+          tooltipY = targetRect.bottom;
+        }
+      }
+
+      return createPortal(
+        <div
+          ref={ref}
+          style={{
+            position: 'absolute',
+            left: tooltipX,
+            top: tooltipY
+          }}
+        >
+          {children}
+        </div>,
+        document.body
+      );
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 서버 사이드 렌더링 문제 해결
+
+<Alert className="mb-6" variant="warning">
+  <AlertTitle>서버 사이드 렌더링 시 주의사항</AlertTitle>
+  <AlertDescription>
+    "useLayoutEffect does nothing on the server" 오류가 발생하는 경우의 해결 방법입니다.
+  </AlertDescription>
+</Alert>
+
+<Tabs defaultValue="effect" className="w-full">
+  <TabsList>
+    <TabsTrigger value="effect">useEffect로 대체</TabsTrigger>
+    <TabsTrigger value="client">클라이언트 전용</TabsTrigger>
+    <TabsTrigger value="hybrid">하이브리드 접근</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="effect">
+    ```tsx
+    // 페인팅을 차단하지 않아도 되는 경우
+    useEffect(() => {
+      const { height } = ref.current.getBoundingClientRect();
+      setHeight(height);
+    }, []);
+    ```
+  </TabsContent>
+  
+  <TabsContent value="client">
+    ```tsx
+    // 컴포넌트를 클라이언트 전용으로 표시
+    function ClientOnlyTooltip(props) {
+      // 가장 가까운 <Suspense> 경계까지 로딩 폴백이 표시됨
+      return <Tooltip {...props} />;
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="hybrid">
+    ```tsx
+    function TooltipWithFallback() {
+      const [isMounted, setIsMounted] = useState(false);
+      
+      useEffect(() => {
+        setIsMounted(true);
+      }, []);
+
+      return isMounted ? (
+        <Tooltip />
+      ) : (
+        <FallbackContent />
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 성능 최적화 전략
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>성능 개선을 위한 권장 사항</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    1. **필요한 경우에만 사용**:
+       - 레이아웃 측정이 실제로 필요한 경우에만 사용
+       - 가능한 경우 useEffect 사용
+    
+    2. **측정 범위 최소화**:
+       ```tsx
+       // ✅ 필요한 요소만 측정
+       useLayoutEffect(() => {
+         const { height } = targetRef.current.getBoundingClientRect();
+         setHeight(height);
+       }, []);
+       ```
+    
+    3. **조건부 실행**:
+       ```tsx
+       // ✅ 필요한 경우에만 실행
+       useLayoutEffect(() => {
+         if (shouldMeasure) {
+           measureLayout();
+         }
+       }, [shouldMeasure]);
+       ```
+  </CardContent>
+</Card>
+
+## 일반적인 사용 패턴
+
+### DOM 요소 위치/크기 조정
+
+```tsx
+function ResizableElement() {
+  const elementRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const element = elementRef.current;
+    const { width, height } = element.getBoundingClientRect();
+    
+    // 크기에 따른 조정
+    if (width < 100) {
+      element.style.width = '100px';
+    }
+  }, []);
+
+  return <div ref={elementRef} />;
+}
+```
+
+<Alert className="mt-6">
+  <AlertTitle>최적화 팁</AlertTitle>
+  <AlertDescription>
+    useLayoutEffect는 성능에 영향을 줄 수 있으므로, 반드시 필요한 경우에만 사용하세요.
+    대부분의 경우 useEffect로도 충분합니다.
+  </AlertDescription>
+</Alert>

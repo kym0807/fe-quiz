@@ -1,0 +1,422 @@
+---
+title: "useMemo"
+description: "계산 결과를 리렌더링 사이에 캐시할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useMemo란?</CardTitle>
+    <CardDescription>
+      리렌더링 사이에 계산 결과를 캐시할 수 있게 해주는 React Hook입니다.
+      이를 통해 불필요한 재계산을 방지할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const cachedValue = useMemo(calculateValue, dependencies)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **calculateValue**: 캐시하고자 하는 값을 계산하는 함수. 인자를 받지 않으며, 어떤 타입의 값이든 반환할 수 있습니다.
+    - **dependencies**: calculateValue 코드 내부에서 참조하는 모든 반응형 값들의 배열
+  </CardContent>
+</Card>
+
+### 반환값
+
+<Card className="mb-4">
+  <CardContent>
+    - 초기 렌더링: calculateValue 함수를 호출한 결과
+    - 이후 렌더링: 
+      - 의존성이 변경되지 않았다면 이전에 저장된 값
+      - 의존성이 변경되었다면 calculateValue를 다시 호출한 결과
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Tabs defaultValue="calculation" className="w-full">
+  <TabsList>
+    <TabsTrigger value="calculation">비용이 큰 계산 건너뛰기</TabsTrigger>
+    <TabsTrigger value="render">컴포넌트 리렌더링 방지</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="calculation">
+    ```tsx
+    function TodoList({ todos, tab, theme }) {
+      const visibleTodos = useMemo(
+        () => filterTodos(todos, tab),
+        [todos, tab]
+      );
+      
+      return (
+        <div className={theme}>
+          {visibleTodos.map(todo => (
+            <Todo key={todo.id} todo={todo} />
+          ))}
+        </div>
+      );
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="render">
+    ```tsx
+    function TodoList({ todos, tab, theme }) {
+      const visibleTodos = useMemo(
+        () => filterTodos(todos, tab),
+        [todos, tab]
+      );
+      
+      return (
+        <div className={theme}>
+          <List items={visibleTodos} /> {/* memo로 감싼 컴포넌트 */}
+        </div>
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## 성능 최적화 고려사항
+
+<Alert className="my-6">
+  <AlertTitle>언제 useMemo를 사용해야 하나요?</AlertTitle>
+  <AlertDescription>
+    다음과 같은 경우에 useMemo 사용을 고려하세요:
+    1. 계산이 눈에 띄게 느리고, 의존성이 거의 변경되지 않는 경우
+    2. memo로 감싼 컴포넌트에 전달되는 prop인 경우
+    3. 다른 Hook의 의존성으로 사용되는 값인 경우
+  </AlertDescription>
+</Alert>
+
+### 계산이 비용이 큰지 확인하기
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    // 계산 시간 측정
+    console.time('filter array');
+    const visibleTodos = useMemo(() => {
+      return filterTodos(todos, tab);
+    }, [todos, tab]);
+    console.timeEnd('filter array');
+    ```
+
+    일반적으로 수천 개의 객체를 다루거나 복잡한 계산을 하지 않는 한,
+    memoization이 필요하지 않을 수 있습니다.
+  </CardContent>
+</Card>
+
+## Effect와 함께 사용하기
+
+### Effect 실행 빈도 제어
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    function ChatRoom({ roomId }) {
+      // 🔴 피해야 할 방법: 매 렌더링마다 새로운 객체 생성
+      const options = {
+        serverUrl: 'https://localhost:1234',
+        roomId: roomId
+      };
+
+      useEffect(() => {
+        const connection = createConnection(options);
+        connection.connect();
+        return () => connection.disconnect();
+      }, [options]); // options가 매번 변경되어 Effect가 계속 실행됨
+    }
+
+    // ✅ 권장하는 방법: Effect 내부로 이동
+    function ChatRoom({ roomId }) {
+      useEffect(() => {
+        const options = {
+          serverUrl: 'https://localhost:1234',
+          roomId: roomId
+        };
+        const connection = createConnection(options);
+        connection.connect();
+        return () => connection.disconnect();
+      }, [roomId]); // roomId만 의존성으로 사용
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 다른 Hook의 의존성으로 사용
+
+<Tabs defaultValue="problem" className="w-full">
+  <TabsList>
+    <TabsTrigger value="problem">문제</TabsTrigger>
+    <TabsTrigger value="solution">해결</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="problem">
+    ```tsx
+    function Dropdown({ allItems, text }) {
+      // 🔴 매 렌더링마다 새로운 객체 생성
+      const searchOptions = { 
+        matchMode: 'whole-word', 
+        text 
+      };
+
+      const visibleItems = useMemo(() => {
+        return searchItems(allItems, searchOptions);
+      }, [allItems, searchOptions]); // searchOptions가 매번 새로 생성됨
+    }
+    ```
+  </TabsContent>
+  
+  <TabsContent value="solution">
+    ```tsx
+    function Dropdown({ allItems, text }) {
+      // ✅ 계산 함수 내부로 이동
+      const visibleItems = useMemo(() => {
+        const searchOptions = { 
+          matchMode: 'whole-word', 
+          text 
+        };
+        return searchItems(allItems, searchOptions);
+      }, [allItems, text]); // 원시 값만 의존성으로 사용
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+## JSX 노드 메모이제이션
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>JSX 노드 캐싱</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    function TodoList({ todos, tab, theme }) {
+      const visibleTodos = useMemo(
+        () => filterTodos(todos, tab),
+        [todos, tab]
+      );
+
+      const content = useMemo(() => (
+        <div className={theme}>
+          <List items={visibleTodos} />
+        </div>
+      ), [theme, visibleTodos]);
+
+      return content;
+    }
+    ```
+
+    하지만 이 방식보다는 컴포넌트를 `memo`로 감싸는 것이 더 일반적입니다.
+  </CardContent>
+</Card>
+
+## 성능 최적화 원칙
+
+<Card className="mb-6">
+  <CardContent className="space-y-4">
+    1. **JSX를 children prop으로 전달**:
+       ```tsx
+       // ✅ 좋은 방식
+       <Layout>
+         <ExpensiveTree />
+       </Layout>
+       ```
+    
+    2. **상태를 필요한 곳에 유지**:
+       - 전역 상태나 상위 컴포넌트로 불필요하게 상태를 끌어올리지 않기
+       - 임시 상태(폼, 호버 상태 등)는 해당 컴포넌트에 유지
+    
+    3. **순수한 렌더링 로직 유지**:
+       - 렌더링 중에 외부 상태를 변경하지 않기
+       - 예측 가능한 결과만 반환하기
+    
+    4. **불필요한 Effect 제거**:
+       - 렌더링과 관련된 로직은 Effect 대신 이벤트 핸들러에서 처리
+    
+    5. **의존성 제거 또는 단순화**:
+       - 객체나 함수를 Effect나 컴포넌트 외부로 이동
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>메모이제이션 남용 주의</AlertTitle>
+  <AlertDescription>
+    모든 것을 메모이제이션하는 것은 코드를 더 복잡하게 만들 수 있습니다.
+    실제로 성능 문제가 있는 경우에만 메모이제이션을 적용하세요.
+  </AlertDescription>
+</Alert>
+
+## 일반적인 문제 해결
+
+### 계산이 두 번 실행되는 경우
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Strict Mode에서의 동작</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    function TodoList({ todos, tab }) {
+      const visibleTodos = useMemo(() => {
+        // Strict Mode에서 이 계산이 두 번 실행됨
+        console.log('계산 실행');
+        return filterTodos(todos, tab);
+      }, [todos, tab]);
+      
+      // ...
+    }
+    ```
+
+    - 개발 모드에서만 발생하는 정상적인 동작
+    - 순수하지 않은 계산을 찾아내는 데 도움
+    - 프로덕션 모드에서는 한 번만 실행
+  </CardContent>
+</Card>
+
+### 객체 반환 시 undefined가 되는 문제
+
+<Tabs defaultValue="problem" className="w-full">
+  <TabsList>
+    <TabsTrigger value="problem">문제</TabsTrigger>
+    <TabsTrigger value="solution">해결</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="problem">
+    ```tsx
+    // 🔴 잘못된 방법: 화살표 함수와 객체 리터럴 혼동
+    const searchOptions = useMemo(() => {
+      matchMode: 'whole-word',
+      text: text
+    }, [text]);
+    ```
+  </TabsContent>
+  
+  <TabsContent value="solution">
+    ```tsx
+    // ✅ 명시적 return 문 사용
+    const searchOptions = useMemo(() => {
+      return {
+        matchMode: 'whole-word',
+        text: text
+      };
+    }, [text]);
+
+    // ✅ 또는 괄호 사용
+    const searchOptions = useMemo(() => ({
+      matchMode: 'whole-word',
+      text: text
+    }), [text]);
+    ```
+  </TabsContent>
+</Tabs>
+
+### 의존성 디버깅
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    const visibleTodos = useMemo(() => {
+      return filterTodos(todos, tab);
+    }, [todos, tab]);
+
+    // 의존성 변경 확인을 위한 디버깅
+    console.log({
+      todos,
+      tab,
+      referentialEquality: {
+        todos: prevTodos === todos,
+        tab: prevTab === tab
+      }
+    });
+    ```
+
+    브라우저 콘솔에서 의존성 변경 추적:
+    1. 이전/현재 값을 전역 변수로 저장
+    2. Object.is()로 비교
+    3. 변경되는 의존성 찾기
+  </CardContent>
+</Card>
+
+### 루프에서 useMemo 사용
+
+<Alert className="mb-6" variant="destructive">
+  <AlertTitle>루프에서 Hook 사용 불가</AlertTitle>
+  <AlertDescription>
+    Hook은 컴포넌트의 최상위 레벨에서만 호출할 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+```tsx
+// 🔴 잘못된 방법: 루프에서 useMemo 사용
+function ReportList({ items }) {
+  return items.map(item => {
+    // Hook은 여기서 사용할 수 없음
+    const data = useMemo(() => calculateReport(item), [item]);
+    return <Report data={data} />;
+  });
+}
+
+// ✅ 해결: 개별 컴포넌트로 추출
+function ReportList({ items }) {
+  return items.map(item => (
+    <ReportItem key={item.id} item={item} />
+  ));
+}
+
+function ReportItem({ item }) {
+  const data = useMemo(() => calculateReport(item), [item]);
+  return <Report data={data} />;
+}
+```
+
+## 모범 사례
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>효과적인 useMemo 사용을 위한 팁</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    1. **성능 측정 먼저**:
+       - 실제로 성능 문제가 있는지 확인
+       - 프로덕션 모드에서 테스트
+    
+    2. **의존성 최소화**:
+       - 객체와 함수는 가능한 계산 함수 내부로 이동
+       - 필요한 원시값만 의존성으로 사용
+    
+    3. **적절한 추상화 레벨 선택**:
+       ```tsx
+       // ✅ 적절한 단위로 메모이제이션
+       const UserStats = memo(function UserStats({ user }) {
+         const stats = useMemo(() => computeStats(user), [user]);
+         return <StatsChart stats={stats} />;
+       });
+       ```
+    
+    4. **불필요한 메모이제이션 피하기**:
+       - 간단한 계산은 메모이제이션 불필요
+       - 렌더링 성능에 실제로 영향을 주는 경우에만 사용
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>미래의 React</AlertTitle>
+  <AlertDescription>
+    React 팀은 자동 메모이제이션을 연구 중입니다.
+    현재는 필요한 경우에만 선택적으로 사용하는 것이 좋습니다.
+  </AlertDescription>
+</Alert>

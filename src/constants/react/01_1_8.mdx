@@ -1,0 +1,178 @@
+---
+title: "useImperativeHandle"
+description: "ref로 노출되는 핸들을 커스터마이징할 수 있게 해주는 React Hook"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>useImperativeHandle이란?</CardTitle>
+    <CardDescription>
+      부모 컴포넌트에 노출되는 ref 핸들을 사용자가 정의할 수 있게 해주는 React Hook입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    useImperativeHandle(ref, createHandle, dependencies?)
+    ```
+  </CardContent>
+</Card>
+
+## API 레퍼런스
+
+### 매개변수
+
+<Card className="mb-4">
+  <CardContent className="space-y-4">
+    - **ref**: forwardRef 렌더 함수의 두 번째 인자로 받은 ref
+    - **createHandle**: 노출하고자 하는 ref 핸들을 반환하는 함수
+    - **dependencies?**: (선택적) createHandle 코드 내부에서 참조하는 모든 반응형 값들의 배열
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Tabs defaultValue="basic" className="w-full">
+  <TabsList>
+    <TabsTrigger value="basic">기본 예제</TabsTrigger>
+    <TabsTrigger value="custom">커스텀 메서드</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="basic">
+    ```tsx
+    import { forwardRef, useRef, useImperativeHandle } from 'react';
+
+    const MyInput = forwardRef(function MyInput(props, ref) {
+      const inputRef = useRef(null);
+
+      useImperativeHandle(ref, () => ({
+        focus() {
+          inputRef.current.focus();
+        },
+        scrollIntoView() {
+          inputRef.current.scrollIntoView();
+        }
+      }), []);
+
+      return <input {...props} ref={inputRef} />;
+    });
+    ```
+  </TabsContent>
+  
+  <TabsContent value="custom">
+    ```tsx
+    const Post = forwardRef((props, ref) => {
+      const commentsRef = useRef(null);
+      const addCommentRef = useRef(null);
+
+      useImperativeHandle(ref, () => ({
+        scrollAndFocusAddComment() {
+          commentsRef.current.scrollToBottom();
+          addCommentRef.current.focus();
+        }
+      }), []);
+
+      return (
+        <>
+          <CommentList ref={commentsRef} />
+          <AddComment ref={addCommentRef} />
+        </>
+      );
+    });
+    ```
+  </TabsContent>
+</Tabs>
+
+## 사용 사례
+
+### DOM 노드의 일부 메서드만 노출하기
+
+<Card className="mb-6">
+  <CardContent>
+    ```tsx
+    // 부모 컴포넌트
+    function Form() {
+      const inputRef = useRef(null);
+
+      function handleClick() {
+        inputRef.current.focus();
+        // ✅ 노출된 메서드만 사용 가능
+        // ❌ inputRef.current.style은 접근 불가
+      }
+
+      return (
+        <MyInput ref={inputRef} />
+      );
+    }
+    ```
+
+    DOM 노드의 모든 메서드가 아닌, 필요한 메서드만 선택적으로 노출할 수 있습니다.
+  </CardContent>
+</Card>
+
+### 사용자 정의 메서드 노출하기
+
+```tsx
+const Dialog = forwardRef((props, ref) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  useImperativeHandle(ref, () => ({
+    openAndScrollTo(position) {
+      setIsOpen(true);
+      window.scrollTo(position);
+    }
+  }), []);
+
+  return <div>{/* ... */}</div>;
+});
+```
+
+<Alert className="mt-6" variant="warning">
+  <AlertTitle>ref 사용 시 주의사항</AlertTitle>
+  <AlertDescription>
+    1. ref는 props로 표현할 수 없는 명령형 동작에만 사용하세요.
+    2. 가능하다면 선언적인 방식(props)을 우선적으로 사용하세요.
+    3. 예를 들어, Modal 컴포넌트에서 {`{ open, close }`} 메서드를 노출하는 대신
+       {`<Modal isOpen={isOpen} />`}처럼 prop을 사용하는 것이 좋습니다.
+  </AlertDescription>
+</Alert>
+
+## 고급 패턴
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>여러 개의 ref 조합하기</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const ComplexInput = forwardRef((props, ref) => {
+      const inputRef = useRef(null);
+      const labelRef = useRef(null);
+
+      useImperativeHandle(ref, () => ({
+        focusInput() {
+          inputRef.current.focus();
+        },
+        focusLabel() {
+          labelRef.current.focus();
+        },
+        // 여러 ref를 조합한 복잡한 동작 구현 가능
+        scrollBothIntoView() {
+          labelRef.current.scrollIntoView();
+          inputRef.current.scrollIntoView();
+        }
+      }), []);
+
+      return (
+        <>
+          <label ref={labelRef}>{props.label}</label>
+          <input ref={inputRef} />
+        </>
+      );
+    });
+    ```
+  </CardContent>
+</Card>

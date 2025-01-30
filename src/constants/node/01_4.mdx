@@ -1,0 +1,171 @@
+---
+title: "Node.js의 Blocking과 Non-Blocking 이해하기"
+description: "Node.js에서 블로킹과 논블로킹 호출의 차이점과 실제 사용 사례"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본 개념</CardTitle>
+    <CardDescription>
+      이벤트 루프와 libuv를 언급하지만, 해당 주제에 대한 사전 지식은 필요하지 않습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    여기서 "I/O"는 주로 libuv가 지원하는 시스템의 디스크 및 네트워크와의 상호 작용을 의미합니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Blocking이란?</CardTitle>
+    <CardDescription>
+      Node.js 프로세스에서 JavaScript 외의 작업이 완료될 때까지 대기해야 하는 상황
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    블로킹 작업이 발생하는 동안에는 이벤트 루프가 JavaScript를 계속 실행할 수 없습니다.
+    
+    <Alert className="mt-4">
+      <AlertTitle>중요</AlertTitle>
+      <AlertDescription>
+        CPU 집약적인 작업으로 인한 성능 저하는 일반적으로 블로킹으로 간주되지 않습니다.
+        주로 Node.js 표준 라이브러리의 동기 메서드들이 대표적인 블로킹 작업입니다.
+      </AlertDescription>
+    </Alert>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>코드 비교</CardTitle>
+    <CardDescription>
+      블로킹(동기) 메서드와 논블로킹(비동기) 메서드의 차이점
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="blocking" className="w-full">
+      <TabsList>
+        <TabsTrigger value="blocking">Blocking 예제</TabsTrigger>
+        <TabsTrigger value="non-blocking">Non-Blocking 예제</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="blocking">
+        ```javascript
+        const fs = require('node:fs');
+        const data = fs.readFileSync('/file.md'); // 파일을 읽을 때까지 여기서 블로킹
+        console.log(data);
+        moreWork(); // console.log 다음에 실행됨
+        ```
+        이 방식은 간단해 보이지만, 파일을 전부 읽을 때까지 다른 JavaScript 코드 실행이 
+        차단된다는 단점이 있습니다.
+      </TabsContent>
+      
+      <TabsContent value="non-blocking">
+        ```javascript
+        const fs = require('node:fs');
+        fs.readFile('/file.md', (err, data) => {
+          if (err) throw err;
+          console.log(data);
+        });
+        moreWork(); // console.log보다 먼저 실행됨
+        ```
+        파일 읽기를 기다리지 않고 다음 작업을 수행할 수 있어 더 높은 처리량을 제공합니다.
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동시성과 처리량</CardTitle>
+    <CardDescription>
+      Node.js의 단일 스레드 실행 모델과 이벤트 루프의 특징
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Node.js의 JavaScript 실행은 단일 스레드에서 이루어지며, 동시성은 이벤트 루프가 
+    다른 작업 완료 후 JavaScript 콜백 함수를 실행하는 능력을 의미합니다.
+
+    <Card className="mt-4">
+      <CardContent>
+        **실제 예시:**
+        웹 서버에서 각 요청이 처리되는데 50ms가 걸리고, 그 중 45ms가 비동기로 
+        처리할 수 있는 데이터베이스 I/O라고 가정해봅시다.
+
+        - **블로킹 방식**: 각 요청마다 50ms 전체를 대기
+        - **논블로킹 방식**: 45ms 동안 다른 요청 처리 가능
+
+        이러한 차이는 단순히 메서드 선택만으로도 서버의 처리 용량을 크게 향상시킬 수 있음을 보여줍니다.
+      </CardContent>
+    </Card>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>블로킹과 논블로킹 코드 혼용의 위험성</CardTitle>
+    <CardDescription>
+      I/O 작업 시 피해야 할 패턴과 올바른 접근 방식
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="danger" className="w-full">
+      <TabsList>
+        <TabsTrigger value="danger">위험한 방식</TabsTrigger>
+        <TabsTrigger value="safe">안전한 방식</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="danger">
+        ```javascript
+        const fs = require('node:fs');
+        fs.readFile('/file.md', (err, data) => {
+          if (err) throw err;
+          console.log(data);
+        });
+        fs.unlinkSync('/file.md');
+        ```
+        <Alert variant="destructive" className="mt-4">
+          <AlertTitle>문제점</AlertTitle>
+          <AlertDescription>
+            위 코드에서 fs.unlinkSync()가 fs.readFile()보다 먼저 실행될 가능성이 높아,
+            파일을 읽기도 전에 삭제될 수 있습니다.
+          </AlertDescription>
+        </Alert>
+      </TabsContent>
+      
+      <TabsContent value="safe">
+        ```javascript
+        const fs = require('node:fs');
+        fs.readFile('/file.md', (readFileErr, data) => {
+          if (readFileErr) throw readFileErr;
+          console.log(data);
+          fs.unlink('/file.md', unlinkErr => {
+            if (unlinkErr) throw unlinkErr;
+          });
+        });
+        ```
+        <Alert className="mt-4">
+          <AlertTitle>개선된 점</AlertTitle>
+          <AlertDescription>
+            완전히 논블로킹 방식으로 작성되었으며, fs.unlink()를 fs.readFile()의 
+            콜백 내부에 배치하여 작업 순서를 보장합니다.
+          </AlertDescription>
+        </Alert>
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Alert className="mt-6">
+  <AlertTitle>Node.js의 이벤트 루프와 다른 언어의 차이점</AlertTitle>
+  <AlertDescription>
+    다른 많은 프로그래밍 언어들이 동시 작업 처리를 위해 추가 스레드를 생성하는 
+    방식을 사용하는 반면, Node.js는 이벤트 루프를 통한 단일 스레드 비동기 처리 
+    방식을 사용합니다. 이는 Node.js의 고유한 특징이며, 개발자들이 반드시 이해하고 
+    있어야 할 중요한 개념입니다.
+  </AlertDescription>
+</Alert>

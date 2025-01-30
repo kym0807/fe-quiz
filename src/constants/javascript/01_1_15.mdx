@@ -1,0 +1,340 @@
+---
+title: "JavaScript 모듈"
+description: "JavaScript 모듈 시스템의 기본 개념과 사용법에 대한 종합 가이드"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈의 역사와 배경</CardTitle>
+    <CardDescription>
+      JavaScript 모듈이 등장하게 된 배경과 그 진화 과정을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    초기의 JavaScript는 간단한 스크립팅 작업을 위한 작은 규모의 프로그램이 대부분이었습니다. 
+    하지만 시간이 지나면서 브라우저에서 실행되는 복잡한 애플리케이션이 등장하고, Node.js와 같은 
+    새로운 환경에서도 JavaScript가 사용되기 시작했습니다.
+
+    이러한 복잡한 프로젝트들은 코드를 필요에 따라 불러올 수 있는 모듈 시스템을 필요로 했고,
+    이는 CommonJS, AMD, RequireJS, webpack, Babel 등 다양한 모듈 시스템의 탄생으로 이어졌습니다.
+
+    현대의 모든 브라우저는 모듈 기능을 기본적으로 지원합니다. 이는 매우 긍정적인 발전으로, 
+    브라우저가 모듈 로딩을 최적화할 수 있게 되었습니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>기본적인 모듈 사용법</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="export" className="mb-6">
+      <TabsList>
+        <TabsTrigger value="export">내보내기(Export)</TabsTrigger>
+        <TabsTrigger value="import">가져오기(Import)</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="export">
+        ```js
+        // 개별 내보내기
+        export const name = "square";
+        export function draw(ctx, length, x, y, color) {
+          ctx.fillStyle = color;
+          ctx.fillRect(x, y, length, length);
+          return { length, x, y, color };
+        }
+
+        // 한번에 여러 항목 내보내기
+        export { name, draw, reportArea, reportPerimeter };
+        ```
+      </TabsContent>
+      
+      <TabsContent value="import">
+        ```js
+        // 개별 항목 가져오기
+        import { name, draw, reportArea, reportPerimeter } from "./modules/square.js";
+
+        // 모듈의 모든 항목을 객체로 가져오기
+        import * as Square from "./modules/square.js";
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 활용 심화</CardTitle>
+    <CardDescription>
+      모듈의 고급 기능과 활용 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="rename" className="mb-6">
+      <TabsList>
+        <TabsTrigger value="rename">이름 변경</TabsTrigger>
+        <TabsTrigger value="default">기본 내보내기</TabsTrigger>
+        <TabsTrigger value="dynamic">동적 불러오기</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="rename">
+        ```js
+        // 내보낼 때 이름 변경
+        export { 
+          draw as drawSquare,
+          reportArea as reportSquareArea 
+        };
+
+        // 가져올 때 이름 변경
+        import { 
+          draw as drawCircle,
+          reportArea as reportCircleArea 
+        } from "./circle.js";
+        ```
+
+        이름 충돌을 방지하기 위해 모듈의 기능을 다른 이름으로 가져오거나 내보낼 수 있습니다.
+      </TabsContent>
+      
+      <TabsContent value="default">
+        ```js
+        // 기본 내보내기
+        export default function draw(ctx) {
+          // 도형 그리기 로직
+        }
+
+        // 기본 내보내기 가져오기
+        import draw from "./shape.js";
+        ```
+
+        모듈당 하나의 기본 내보내기를 가질 수 있으며, 이를 통해 주요 기능을 강조할 수 있습니다.
+      </TabsContent>
+      
+      <TabsContent value="dynamic">
+        ```js
+        // 동적으로 모듈 불러오기
+        button.addEventListener("click", async () => {
+          const module = await import("./shape.js");
+          module.draw();
+        });
+        ```
+
+        필요한 시점에 모듈을 동적으로 불러와 성능을 최적화할 수 있습니다.
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Top-level await</CardTitle>
+    <CardDescription>
+      모듈에서 최상위 레벨 await 사용하기
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // colors.js
+    const colors = await fetch("/api/colors.json")
+      .then(response => response.json());
+
+    export default colors;
+
+    // main.js
+    import colors from "./colors.js";
+    // colors는 이미 resolve된 값입니다
+    console.log(colors.primary);
+    ```
+
+    모듈의 최상위 레벨에서 await를 사용할 수 있어, 비동기 데이터를 더 편리하게 처리할 수 있습니다.
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>모듈 사용 시 주의사항</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    - **CORS**: 로컬에서 파일로 직접 실행하면 CORS 오류가 발생합니다. 반드시 서버를 통해 테스트해야 합니다.
+
+    - **strict mode**: 모듈은 자동으로 strict mode가 적용됩니다.
+
+    - **스코프**: 모듈의 최상위 스코프는 전역이 아닌 모듈 스코프입니다.
+
+    - **호이스팅**: import 선언은 호이스팅되지만, 가독성을 위해 파일 상단에 작성하는 것이 좋습니다.
+
+    - **MIME 타입**: .mjs 파일을 사용할 경우 서버가 올바른 MIME 타입(text/javascript)을 제공해야 합니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 응집화(Aggregating)</CardTitle>
+    <CardDescription>
+      여러 모듈을 하나로 묶어 관리하는 방법을 알아봅니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // shapes.js - 모듈 응집화
+    export { Square } from "./shapes/square.js";
+    export { Triangle } from "./shapes/triangle.js";
+    export { Circle } from "./shapes/circle.js";
+
+    // main.js - 응집된 모듈 사용
+    import { Square, Circle, Triangle } from "./modules/shapes.js";
+    ```
+
+    여러 하위 모듈을 하나의 진입점으로 묶어 관리할 수 있습니다. 이는 큰 프로젝트에서
+    모듈 구조를 단순화하는 데 도움이 됩니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Import Maps</CardTitle>
+    <CardDescription>
+      모듈 스펙파이어를 유연하게 관리하는 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```html
+    <script type="importmap">
+    {
+      "imports": {
+        "shapes": "./shapes/square.js",
+        "lodash": "/node_modules/lodash-es/lodash.js",
+        "lodash/": "/node_modules/lodash-es/"
+      },
+      "scopes": {
+        "/node_modules/dependency/": {
+          "shapes": "./other/path/shapes.js"
+        }
+      }
+    }
+    </script>
+    ```
+
+    Import Maps를 사용하면:
+
+    - 베어 모듈 이름 사용 가능
+    - 모듈 경로 리매핑
+    - 버전 관리 용이
+    - 캐싱 최적화
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>비JavaScript 리소스 불러오기</CardTitle>
+    <CardDescription>
+      JSON, CSS 등 다양한 리소스를 모듈로 불러오기
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```js
+    // JSON 불러오기
+    import colors from "./colors.json" with { type: "json" };
+    
+    // CSS 불러오기
+    import styles from "./styles.css" with { type: "css" };
+    
+    // 사용 예시
+    console.log(colors.primary);
+    document.adoptedStyleSheets = [styles];
+    ```
+
+    모듈 시스템을 통해 다양한 타입의 리소스를 불러와 사용할 수 있습니다.
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 성능 최적화</CardTitle>
+    <CardDescription>
+      모듈을 효율적으로 로드하고 실행하기 위한 방법들
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="preload" className="mb-6">
+      <TabsList>
+        <TabsTrigger value="preload">모듈 프리로드</TabsTrigger>
+        <TabsTrigger value="dynamic">동적 임포트</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="preload">
+        ```html
+        <!-- 모듈 프리로드 -->
+        <link rel="modulepreload" href="./modules/square.js">
+        <link rel="modulepreload" href="./modules/circle.js">
+        ```
+
+        `modulepreload`를 사용하면 브라우저가 모듈을 미리 다운로드하고 
+        파싱할 수 있어 실제 사용 시점에서의 지연을 줄일 수 있습니다.
+      </TabsContent>
+      
+      <TabsContent value="dynamic">
+        ```js
+        // 필요한 시점에 동적으로 모듈 로드
+        button.addEventListener('click', async () => {
+          const { Rectangle } = await import(
+            `./modules/${shape}.js`
+          );
+          new Rectangle().draw();
+        });
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>모듈 디버깅</CardTitle>
+    <CardDescription>
+      모듈 관련 일반적인 문제와 해결 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    - **CORS 오류**: 로컬 파일을 직접 실행할 때 발생
+      ```bash
+      # 해결: 로컬 서버 사용
+      npx serve .
+      python -m http.server
+      ```
+
+    - **MIME 타입 오류**: .mjs 파일 사용 시 발생
+      ```nginx
+      # nginx 설정 예시
+      types {
+        text/javascript mjs;
+      }
+      ```
+
+    - **모듈 스코프 문제**: 전역 변수 접근 불가
+      ```js
+      // window 객체를 통한 전역 접근
+      window.globalVar = 'value';
+      ```
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>번들러와의 관계</CardTitle>
+    <CardDescription>
+      네이티브 모듈과 번들러의 역할
+    </CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    브라우저의 네이티브 모듈 지원이 있더라도 번들러(webpack, Rollup 등)는 여전히 중요한 역할을 합니다:
+
+    - **코드 분할**: 적절한 크기의 청크로 코드 분할
+    - **트리 쉐이킹**: 사용하지 않는 코드 제거
+    - **자산 최적화**: 이미지, CSS 등의 자산 최적화
+    - **개발 경험**: HMR(Hot Module Replacement) 등 개발 도구 제공
+    - **하위 호환성**: 구형 브라우저 지원
+  </CardContent>
+</Card>

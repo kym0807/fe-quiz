@@ -1,0 +1,205 @@
+---
+title: "React 서버 컴포넌트"
+description: "React 서버 컴포넌트의 개념과 활용법에 대해 알아봅니다"
+---
+
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>서버 컴포넌트란?</CardTitle>
+    <CardDescription>
+      서버 컴포넌트는 클라이언트 앱이나 SSR 서버와는 별도의 환경에서, 번들링 이전에 미리 렌더링되는 
+      새로운 유형의 컴포넌트입니다. 빌드 시점에 CI 서버에서 실행되거나, 웹 서버에서 각 요청마다 
+      실행될 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+</Card>
+
+<Alert className="mb-6">
+  <AlertDescription>
+    React 19에서 서버 컴포넌트는 안정적이지만, 번들러나 프레임워크에서 서버 컴포넌트를 구현하는 데 
+    사용되는 기본 API는 semver를 따르지 않으며 React 19.x의 마이너 버전 간에 변경될 수 있습니다.
+  </AlertDescription>
+</Alert>
+
+## 서버 없이 사용하는 서버 컴포넌트
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    <div className="space-y-4">
+      <p>파일시스템이나 정적 콘텐츠를 읽기 위해 빌드 시점에 실행될 수 있어 웹 서버가 필요하지 않습니다.</p>
+
+      <Tabs defaultValue="before" className="mt-4">
+        <TabsList>
+          <TabsTrigger value="before">서버 컴포넌트 이전</TabsTrigger>
+          <TabsTrigger value="after">서버 컴포넌트 사용</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="before">
+          ```jsx
+          // bundle.js
+          import marked from 'marked'; // 35.9K (11.2K gzipped)
+          import sanitizeHtml from 'sanitize-html'; // 206K (63.3K gzipped)
+
+          function Page({page}) {
+            const [content, setContent] = useState('');
+            // 첫 페이지 렌더링 이후에 로드됨
+            useEffect(() => {
+              fetch(`/api/content/${page}`).then((data) => {
+                setContent(data.content);
+              });
+            }, [page]);
+            
+            return <div>{sanitizeHtml(marked(content))}</div>;
+          }
+          ```
+        </TabsContent>
+        
+        <TabsContent value="after">
+          ```jsx
+          import marked from 'marked'; // 번들에 포함되지 않음
+          import sanitizeHtml from 'sanitize-html'; // 번들에 포함되지 않음
+
+          async function Page({page}) {
+            // 앱이 빌드될 때 렌더링 중에 로드됨
+            const content = await file.readFile(`${page}.md`);
+            
+            return <div>{sanitizeHtml(marked(content))}</div>;
+          }
+          ```
+        </TabsContent>
+      </Tabs>
+    </div>
+  </CardContent>
+</Card>
+
+## 서버와 함께 사용하는 서버 컴포넌트
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동적 데이터 처리</CardTitle>
+    <CardDescription>
+      페이지 요청 시 웹 서버에서 실행되어, API를 만들지 않고도 데이터 레이어에 접근할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```jsx
+    import db from './database';
+
+    async function Note({id}) {
+      // 렌더링 중에 로드됨
+      const note = await db.notes.get(id);
+      return (
+        <div>
+          <Author id={note.authorId} />
+          <p>{note}</p>
+        </div>
+      );
+    }
+
+    async function Author({id}) {
+      // Note 이후에 로드되지만, 데이터가 함께 있다면 빠름
+      const author = await db.authors.get(id);
+      return <span>작성자: {author.name}</span>;
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 서버 컴포넌트에 상호작용 추가하기
+
+<Card className="mb-6">
+  <CardContent>
+    ```jsx
+    // 서버 컴포넌트
+    import Expandable from './Expandable';
+
+    async function Notes() {
+      const notes = await db.notes.getAll();
+      return (
+        <div>
+          {notes.map(note => (
+            <Expandable key={note.id}>
+              <p note={note} />
+            </Expandable>
+          ))}
+        </div>
+      )
+    }
+
+    // 클라이언트 컴포넌트
+    "use client"
+
+    export default function Expandable({children}) {
+      const [expanded, setExpanded] = useState(false);
+      return (
+        <div>
+          <button onClick={() => setExpanded(!expanded)}>
+            토글
+          </button>
+          {expanded && children}
+        </div>
+      )
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mb-6">
+  <AlertDescription>
+    서버 컴포넌트를 위한 별도의 지시어는 없습니다. "use server"는 서버 함수를 위한 것이며,
+    서버 컴포넌트를 표시하는 데 사용되지 않습니다.
+  </AlertDescription>
+</Alert>
+
+## 서버 컴포넌트의 비동기 처리
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>async/await 사용하기</CardTitle>
+    <CardDescription>
+      서버 컴포넌트는 async/await를 사용한 새로운 방식의 컴포넌트 작성을 지원합니다.
+      Suspense와 함께 서버/클라이언트 경계를 넘어 스트리밍을 지원합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```jsx
+    // 서버 컴포넌트
+    async function Page({id}) {
+      const note = await db.notes.get(id);
+      // 클라이언트에서 대기할 프로미스 시작
+      const commentsPromise = db.comments.get(note.id);
+      
+      return (
+        <div>
+          {note}
+          <Suspense fallback={<p>댓글 로딩중...</p>}>
+            <Comments commentsPromise={commentsPromise} />
+          </Suspense>
+        </div>
+      );
+    }
+
+    // 클라이언트 컴포넌트
+    "use client";
+    import {use} from 'react';
+
+    function Comments({commentsPromise}) {
+      // 서버의 프로미스를 재개
+      const comments = use(commentsPromise);
+      return comments.map(comment => <p>{comment}</p>);
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert className="mt-6 bg-blue-50">
+  <AlertDescription>
+    중요한 데이터는 서버에서 await하고, 우선순위가 낮은 데이터는 프로미스를 시작한 후 
+    클라이언트에서 use API로 대기할 수 있습니다. 이를 통해 주요 콘텐츠의 렌더링을 차단하지 
+    않으면서도 효율적인 데이터 로딩이 가능합니다.
+  </AlertDescription>
+</Alert>

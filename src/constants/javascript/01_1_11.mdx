@@ -1,0 +1,274 @@
+---
+title: "JavaScript Promise"
+description: "자바스크립트의 비동기 처리를 위한 Promise 완벽 가이드"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Promise란?</CardTitle>
+    <CardDescription>
+      Promise는 비동기 작업의 최종 완료(또는 실패)와 그 결과값을 나타내는 객체입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    Promise는 콜백을 함수에 전달하는 대신 객체에 콜백을 연결하는 방식으로 동작합니다. 
+    이는 비동기 코드를 더 직관적이고 관리하기 쉽게 만듭니다.
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Tabs defaultValue="before" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="before">기존 콜백 방식</TabsTrigger>
+    <TabsTrigger value="after">Promise 방식</TabsTrigger>
+  </TabsList>
+  <TabsContent value="before">
+    ```javascript
+    function successCallback(result) {
+      console.log(`Audio file ready at URL: ${result}`);
+    }
+
+    function failureCallback(error) {
+      console.error(`Error generating audio file: ${error}`);
+    }
+
+    createAudioFileAsync(audioSettings, successCallback, failureCallback);
+    ```
+  </TabsContent>
+  <TabsContent value="after">
+    ```javascript
+    createAudioFileAsync(audioSettings)
+      .then(successCallback)
+      .catch(failureCallback);
+    ```
+  </TabsContent>
+</Tabs>
+
+## Promise 체이닝
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Promise 체인의 장점</CardTitle>
+    <CardDescription>
+      여러 비동기 작업을 순차적으로 처리할 때 Promise 체인을 사용하면 콜백 지옥을 피할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    doSomething()
+      .then(result => doSomethingElse(result))
+      .then(newResult => doThirdThing(newResult))
+      .then(finalResult => {
+        console.log(`최종 결과: ${finalResult}`);
+      })
+      .catch(failureCallback);
+    ```
+  </CardContent>
+</Card>
+
+<Alert>
+  <AlertTitle>중요한 점</AlertTitle>
+  <AlertDescription>
+    then() 핸들러에서는 반드시 Promise를 반환하는 것이 좋습니다. 
+    그렇지 않으면 Promise가 "떠다니게" 되어 처리 상태를 추적할 수 없게 됩니다.
+  </AlertDescription>
+</Alert>
+
+## async/await 구문
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>더 직관적인 비동기 처리</CardTitle>
+    <CardDescription>
+      async/await를 사용하면 비동기 코드를 동기 코드처럼 작성할 수 있습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    async function processData() {
+      try {
+        const url = await doSomething();
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log(data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    ```
+  </CardContent>
+</Card>
+
+## 에러 처리
+
+<Tabs defaultValue="promises" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="promises">Promise 체인</TabsTrigger>
+    <TabsTrigger value="async">async/await</TabsTrigger>
+  </TabsList>
+  <TabsContent value="promises">
+    ```javascript
+    doSomething()
+      .then(result => doSomethingElse(result))
+      .then(newResult => doThirdThing(newResult))
+      .catch(error => {
+        console.error(`처리 중 오류 발생: ${error}`);
+      });
+    ```
+  </TabsContent>
+  <TabsContent value="async">
+    ```javascript
+    async function process() {
+      try {
+        const result = await doSomething();
+        const newResult = await doSomethingElse(result);
+        return await doThirdThing(newResult);
+      } catch (error) {
+        console.error(`처리 중 오류 발생: ${error}`);
+      }
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert>
+  <AlertTitle>Promise의 에러 처리 특징</AlertTitle>
+  <AlertDescription>
+    Promise는 동기 코드의 try/catch와 유사하게 작동하며, 체인 내의 모든 에러를 catch에서 처리할 수 있습니다.
+    예외나 프로그래밍 오류까지도 포착할 수 있어 비동기 작업의 안정성을 높여줍니다.
+  </AlertDescription>
+</Alert>
+
+## Promise의 중첩과 스코프
+
+<Card className="mb-6">
+  <CardContent>
+    ```javascript
+    doSomethingCritical()
+      .then(result => 
+        doSomethingOptional(result)
+          .then(optionalResult => doSomethingExtra(optionalResult))
+          .catch(e => {}) // 선택적 작업의 실패는 무시
+      )
+      .then(() => moreCriticalStuff())
+      .catch(e => console.error(`치명적 오류: ${e.message}`));
+    ```
+
+    위 코드는 중요도에 따라 에러 처리를 다르게 하는 예시입니다.
+    선택적 작업의 실패는 무시하고 진행하되, 중요 작업의 실패는 별도로 처리합니다.
+  </CardContent>
+</Card>
+
+## Promise 조합하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>동시 실행과 순차 실행</CardTitle>
+    <CardDescription>
+      여러 Promise를 조합하는 다양한 방법을 알아보겠습니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <Tabs defaultValue="all">
+      <TabsList>
+        <TabsTrigger value="all">Promise.all</TabsTrigger>
+        <TabsTrigger value="race">Promise.race</TabsTrigger>
+        <TabsTrigger value="sequential">순차 실행</TabsTrigger>
+      </TabsList>
+      <TabsContent value="all">
+        ```javascript
+        // 모든 Promise가 완료될 때까지 기다림
+        Promise.all([func1(), func2(), func3()])
+          .then(([result1, result2, result3]) => {
+            console.log(result1, result2, result3);
+          });
+        ```
+      </TabsContent>
+      <TabsContent value="race">
+        ```javascript
+        // 가장 먼저 완료되는 Promise의 결과를 반환
+        Promise.race([func1(), func2(), func3()])
+          .then(result => {
+            console.log('가장 빠른 결과:', result);
+          });
+        ```
+      </TabsContent>
+      <TabsContent value="sequential">
+        ```javascript
+        // Promise를 순차적으로 실행
+        async function sequential() {
+          const result1 = await func1();
+          const result2 = await func2(result1);
+          const result3 = await func3(result2);
+          return result3;
+        }
+        ```
+      </TabsContent>
+    </Tabs>
+  </CardContent>
+</Card>
+
+## Promise 타이밍 이해하기
+
+<Alert className="mb-6">
+  <AlertTitle>Promise의 실행 보장</AlertTitle>
+  <AlertDescription>
+    Promise는 현재 실행 중인 JavaScript 이벤트 루프가 완료된 후에야 콜백이 호출됩니다.
+    이는 Promise의 동작을 예측 가능하게 만드는 중요한 특징입니다.
+  </AlertDescription>
+</Alert>
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>마이크로태스크 vs 태스크 큐</CardTitle>
+    <CardDescription>
+      Promise 콜백과 setTimeout 콜백의 실행 순서 차이를 이해하는 것이 중요합니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```javascript
+    Promise.resolve().then(() => console.log('마이크로태스크'));
+    setTimeout(() => console.log('태스크 큐'), 0);
+    console.log('동기 코드');
+
+    // 출력 순서:
+    // 1. 동기 코드
+    // 2. 마이크로태스크
+    // 3. 태스크 큐
+    ```
+  </CardContent>
+</Card>
+
+## 실제 활용 예시
+
+<Card>
+  <CardContent className="pt-6">
+    ```javascript
+    // 기존 setTimeout을 Promise로 래핑
+    const wait = ms => new Promise(resolve => 
+      setTimeout(resolve, ms)
+    );
+
+    async function example() {
+      console.log('시작');
+      await wait(2000);
+      console.log('2초 후');
+      await wait(1000);
+      console.log('3초 후');
+    }
+    ```
+  </CardContent>
+</Card>
+
+<Alert variant="default" className="mt-6">
+  <AlertTitle>모범 사례</AlertTitle>
+  <AlertDescription>
+    콜백 기반의 API를 가능한 가장 낮은 레벨에서 Promise로 감싸고,
+    이후에는 Promise나 async/await만을 사용하여 일관된 코드 스타일을 유지하세요.
+  </AlertDescription>
+</Alert>

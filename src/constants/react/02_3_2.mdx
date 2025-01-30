@@ -1,0 +1,284 @@
+---
+title: "hydrateRoot"
+description: "서버에서 React로 생성된 HTML 콘텐츠를 클라이언트에서 상호작용 가능한 React 애플리케이션으로 변환하는 API"
+---
+
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>hydrateRoot란?</CardTitle>
+    <CardDescription>
+      서버에서 React로 렌더링된 HTML에 클라이언트 측 React를 "연결"하여 상호작용이 가능한 애플리케이션으로 만듭니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    const root = hydrateRoot(domNode, reactNode, options?)
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+<Card className="mb-6">
+  <CardContent className="pt-6">
+    ```tsx
+    import { hydrateRoot } from 'react-dom/client';
+    
+    const root = hydrateRoot(
+      document.getElementById('root'),
+      <App />
+    );
+    ```
+    
+    React는 domNode 내부의 기존 HTML에 연결하여 DOM 관리를 시작합니다. React로 완전히 구축된 앱은 일반적으로 루트 컴포넌트에 대해 hydrateRoot를 한 번만 호출합니다.
+  </CardContent>
+</Card>
+
+## 매개변수
+
+<Card className="mb-6">
+  <CardContent className="space-y-4 pt-6">
+    <div>
+      <h3 className="font-bold mb-2">domNode</h3>
+      <p>서버에서 루트 엘리먼트로 렌더링된 DOM 엘리먼트</p>
+    </div>
+
+    <div>
+      <h3 className="font-bold mb-2">reactNode</h3>
+      <p>기존 HTML을 렌더링하는 데 사용된 React 노드. 일반적으로 <code>renderToPipeableStream(&lt;App /&gt;)</code>과 같은 ReactDOM Server 메서드로 렌더링된 JSX입니다.</p>
+    </div>
+
+    <div>
+      <h3 className="font-bold mb-2">options (선택사항)</h3>
+      <ul className="list-disc pl-6">
+        <li>onCaughtError: Error Boundary에서 잡힌 에러 처리 콜백</li>
+        <li>onUncaughtError: Error Boundary에서 잡히지 않은 에러 처리 콜백</li>
+        <li>onRecoverableError: React가 자동으로 복구한 에러 처리 콜백</li>
+        <li>identifierPrefix: useId로 생성되는 ID의 접두사 (서버와 동일해야 함)</li>
+      </ul>
+    </div>
+  </CardContent>
+</Card>
+
+## 주요 주의사항
+
+<Alert variant="destructive" className="mb-6">
+  <AlertTitle>중요한 주의사항</AlertTitle>
+  <AlertDescription className="space-y-2">
+    <p>• hydrateRoot()는 서버에서 렌더링된 내용과 클라이언트 렌더링 내용이 동일할 것으로 예상합니다.</p>
+    <p>• 개발 모드에서 React는 hydration 불일치에 대해 경고를 표시합니다.</p>
+    <p>• 클라이언트에서만 렌더링되는 앱의 경우 hydrateRoot() 대신 createRoot()를 사용해야 합니다.</p>
+  </AlertDescription>
+</Alert>
+
+## Hydration 이해하기
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>Hydration 프로세스</CardTitle>
+    <CardDescription>
+      서버 렌더링된 HTML을 대화형 React 앱으로 전환하는 과정
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // 서버에서 생성된 HTML
+    <div id="root">
+      <h1>Hello, world!</h1>
+      <button>클릭 횟수: 0</button>
+    </div>
+
+    // 클라이언트 측 hydration
+    hydrateRoot(
+      document.getElementById('root'),
+      <App />
+    );
+    ```
+
+    hydration은 다음과 같은 작업을 수행합니다:
+    1. 서버에서 생성된 HTML 구조 유지
+    2. React 컴포넌트의 로직 연결
+    3. 이벤트 핸들러 및 상태 관리 활성화
+  </CardContent>
+</Card>
+
+## 고급 사용법
+
+### 전체 문서 Hydration
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>전체 HTML 문서 Hydration</CardTitle>
+    <CardDescription>
+      React로 전체 웹 페이지를 렌더링하는 경우의 hydration 방법
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    // App 컴포넌트
+    function App() {
+      return (
+        <html>
+          <head>
+            <meta charSet="utf-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+            <link rel="stylesheet" href="/styles.css" />
+            <title>My app</title>
+          </head>
+          <body>
+            <Router />
+          </body>
+        </html>
+      );
+    }
+
+    // Hydration
+    import { hydrateRoot } from 'react-dom/client';
+    hydrateRoot(document, <App />);
+    ```
+  </CardContent>
+</Card>
+
+### Hydration 불일치 처리
+
+<Tabs defaultValue="suppress" className="mb-6">
+  <TabsList>
+    <TabsTrigger value="suppress">경고 숨기기</TabsTrigger>
+    <TabsTrigger value="different">다른 내용 처리</TabsTrigger>
+  </TabsList>
+  
+  <TabsContent value="suppress">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        export default function App() {
+          return (
+            <h1 suppressHydrationWarning={true}>
+              현재 시간: {new Date().toLocaleTimeString()}
+            </h1>
+          );
+        }
+        ```
+        
+        suppressHydrationWarning은 불가피한 불일치(예: 타임스탬프)에만 사용해야 합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+  
+  <TabsContent value="different">
+    <Card>
+      <CardContent className="pt-6">
+        ```tsx
+        export default function App() {
+          const [isClient, setIsClient] = useState(false);
+
+          useEffect(() => {
+            setIsClient(true);
+          }, []);
+
+          return (
+            <h1>
+              {isClient ? '클라이언트' : '서버'}
+            </h1>
+          );
+        }
+        ```
+        
+        클라이언트와 서버에서 의도적으로 다른 내용을 렌더링해야 할 때 사용합니다.
+      </CardContent>
+    </Card>
+  </TabsContent>
+</Tabs>
+
+## 에러 처리
+
+### 에러 유형별 처리 방법
+
+<Card className="mb-6">
+  <CardContent className="space-y-6 pt-6">
+    <div>
+      <h3 className="font-bold mb-2">1. 잡히지 않은 에러 (onUncaughtError)</h3>
+      ```tsx
+      const root = hydrateRoot(container, <App />, {
+        onUncaughtError: (error, errorInfo) => {
+          showErrorDialog({
+            title: '예상치 못한 오류',
+            error,
+            componentStack: errorInfo.componentStack
+          });
+        }
+      });
+      ```
+    </div>
+
+    <div>
+      <h3 className="font-bold mb-2">2. Error Boundary에서 잡은 에러 (onCaughtError)</h3>
+      ```tsx
+      const root = hydrateRoot(container, <App />, {
+        onCaughtError: (error, errorInfo) => {
+          if (error.message !== '알려진 에러') {
+            reportError({
+              error,
+              componentStack: errorInfo.componentStack
+            });
+          }
+        }
+      });
+      ```
+    </div>
+
+    <div>
+      <h3 className="font-bold mb-2">3. 복구 가능한 에러 (onRecoverableError)</h3>
+      ```tsx
+      const root = hydrateRoot(container, <App />, {
+        onRecoverableError: (error, errorInfo) => {
+          logError({
+            error,
+            cause: error.cause,
+            componentStack: errorInfo.componentStack
+          });
+        }
+      });
+      ```
+    </div>
+  </CardContent>
+</Card>
+
+## 문제 해결 가이드
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>자주 발생하는 Hydration 문제</CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div>
+      <h4 className="font-bold">1. 화이트스페이스 불일치</h4>
+      <p className="text-gray-700">루트 노드 내부의 React가 생성한 HTML 주변에 추가 공백이나 줄바꿈이 있는지 확인하세요.</p>
+    </div>
+    
+    <div>
+      <h4 className="font-bold">2. 브라우저 전용 API 사용</h4>
+      <p className="text-gray-700">렌더링 로직에서 window.matchMedia와 같은 브라우저 전용 API 사용을 피하세요.</p>
+    </div>
+    
+    <div>
+      <h4 className="font-bold">3. 서버/클라이언트 데이터 불일치</h4>
+      <p className="text-gray-700">서버와 클라이언트에서 동일한 데이터가 사용되는지 확인하세요.</p>
+    </div>
+  </CardContent>
+</Card>
+
+## 성능 최적화 팁
+
+<Alert className="mb-6">
+  <AlertTitle>성능 고려사항</AlertTitle>
+  <AlertDescription className="space-y-2">
+    <p>• 불필요한 hydration 불일치를 피해 초기 로딩 성능을 최적화하세요.</p>
+    <p>• 클라이언트/서버 렌더링 차이가 필요한 경우 two-pass 렌더링이 성능에 미치는 영향을 고려하세요.</p>
+    <p>• 가능한 한 suppressHydrationWarning의 사용을 최소화하세요.</p>
+  </AlertDescription>
+</Alert>

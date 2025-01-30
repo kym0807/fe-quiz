@@ -1,0 +1,172 @@
+---
+title: "prefetchDNS"
+description: "리소스를 로드할 서버의 IP 주소를 미리 조회할 수 있게 해주는 React 함수"
+---
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+<Card className="mb-6">
+  <CardHeader>
+    <CardTitle>prefetchDNS란?</CardTitle>
+    <CardDescription>
+      리소스를 로드할 것으로 예상되는 서버의 IP 주소를 미리 조회하여 성능을 최적화할 수 있는 함수입니다.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    ```tsx
+    import { prefetchDNS } from 'react-dom';
+
+    prefetchDNS("https://example.com");
+    ```
+  </CardContent>
+</Card>
+
+## 기본 사용법
+
+### 컴포넌트 렌더링 시 사용
+
+```tsx
+import { prefetchDNS } from 'react-dom';
+
+function App() {
+  // 여러 도메인의 DNS를 미리 조회
+  prefetchDNS("https://api.example.com");
+  prefetchDNS("https://images.example.com");
+  prefetchDNS("https://fonts.example.com");
+  
+  return (
+    <div className="app">
+      {/* 컴포넌트 내용 */}
+    </div>
+  );
+}
+```
+
+### 이벤트 핸들러에서 사용
+
+```tsx
+function MediaGallery() {
+  const handleOpenGallery = () => {
+    // 갤러리가 열리기 전에 필요한 도메인들의 DNS 미리 조회
+    prefetchDNS('https://media.example.com');
+    prefetchDNS('https://cdn.example.com');
+    openGallery();
+  };
+
+  return (
+    <button 
+      onClick={handleOpenGallery}
+      className="px-4 py-2 bg-blue-500 text-white rounded"
+    >
+      미디어 갤러리 열기
+    </button>
+  );
+}
+```
+
+## preconnect vs prefetchDNS
+
+<Card className="my-4">
+  <CardHeader>
+    <CardTitle>두 API의 차이점과 사용 시점</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <h4 className="font-bold">preconnect</h4>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>전체 연결 설정</li>
+          <li>더 많은 리소스 사용</li>
+          <li>소수의 중요한 도메인에 적합</li>
+        </ul>
+      </div>
+      <div>
+        <h4 className="font-bold">prefetchDNS</h4>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>DNS 조회만 수행</li>
+          <li>더 가벼운 리소스 사용</li>
+          <li>다수의 도메인 처리에 적합</li>
+        </ul>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 최적화 전략
+
+<Tabs defaultValue="early" className="w-full">
+  <TabsList>
+    <TabsTrigger value="early">사전 최적화</TabsTrigger>
+    <TabsTrigger value="user">사용자 인터랙션</TabsTrigger>
+  </TabsList>
+  <TabsContent value="early">
+    ```tsx
+    function Layout() {
+      useEffect(() => {
+        // 앱에서 자주 사용되는 도메인들의 DNS를 미리 조회
+        prefetchDNS('https://api.service.com');
+        prefetchDNS('https://images.service.com');
+        prefetchDNS('https://fonts.service.com');
+        prefetchDNS('https://analytics.service.com');
+      }, []);
+
+      return <div>{/* 레이아웃 내용 */}</div>;
+    }
+    ```
+  </TabsContent>
+  <TabsContent value="user">
+    ```tsx
+    function Navigation() {
+      const handleHover = () => {
+        // 사용자가 메뉴에 호버했을 때 관련 도메인들의 DNS 조회
+        prefetchDNS('https://content.service.com');
+        prefetchDNS('https://media.service.com');
+      };
+
+      return (
+        <nav onMouseEnter={handleHover}>
+          {/* 네비게이션 메뉴 */}
+        </nav>
+      );
+    }
+    ```
+  </TabsContent>
+</Tabs>
+
+<Alert className="my-4">
+  <AlertTitle>주의사항</AlertTitle>
+  <AlertDescription>
+    <ul className="list-disc pl-6 space-y-2">
+      <li>동일한 서버에 대한 중복 호출은 한 번의 효과만 있음</li>
+      <li>웹페이지가 호스팅된 서버는 이미 DNS 조회가 완료된 상태</li>
+      <li>서버 컴포넌트에서는 렌더링 중이나 관련 비동기 컨텍스트에서만 작동</li>
+      <li>특정 리소스를 정확히 알고 있다면 다른 최적화 함수 사용 고려</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 권장 사용 패턴
+
+<Card className="mt-4">
+  <CardHeader>
+    <CardTitle>효과적인 사용을 위한 권장사항</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <h4 className="font-bold">1. 다수의 도메인 처리</h4>
+        <p>많은 수의 서로 다른 도메인을 사용하는 경우 prefetchDNS 사용</p>
+      </div>
+      <div>
+        <h4 className="font-bold">2. 사용자 행동 예측</h4>
+        <p>사용자의 다음 행동을 예측하여 미리 DNS 조회 수행</p>
+      </div>
+      <div>
+        <h4 className="font-bold">3. 성능 모니터링</h4>
+        <p>DNS 조회가 실제로 성능 향상에 도움이 되는지 측정</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
